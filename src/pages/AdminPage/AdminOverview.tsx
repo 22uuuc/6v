@@ -71,35 +71,35 @@ export default function AdminOverview() {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((c) => (
           <Card key={c.label} className="card-anime">
-            <CardContent className="p-5">
-              <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <CardContent className="p-4 md:p-5">
+              <p className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <c.icon className="h-4 w-4" />
                 </span>
-                {c.label}
+                <span className="truncate">{c.label}</span>
               </p>
-              <p className="mt-3 text-3xl font-bold tracking-tight">{c.value}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{c.sub}</p>
+              <p className="mt-2.5 text-2xl font-bold tracking-tight md:text-3xl">{c.value}</p>
+              <p className="mt-1 truncate text-xs leading-4 text-muted-foreground">{c.sub}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {secCards.map((c) => (
           <Card key={c.label} className={c.label.includes('危险') ? 'border-destructive/40' : ''}>
-            <CardContent className="p-5">
-              <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted/70 text-foreground/80">
+            <CardContent className="p-4 md:p-5">
+              <p className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted/70 text-foreground/80">
                   <c.icon className="h-3.5 w-3.5" />
                 </span>
-                {c.label}
+                <span className="truncate">{c.label}</span>
               </p>
-              <p className="mt-3 text-2xl font-bold tracking-tight">{c.value}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{c.sub}</p>
+              <p className="mt-2.5 text-xl font-bold tracking-tight md:text-2xl">{c.value}</p>
+              <p className="mt-1 truncate text-xs leading-4 text-muted-foreground">{c.sub}</p>
             </CardContent>
           </Card>
         ))}
