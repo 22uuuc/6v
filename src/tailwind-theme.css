@@ -465,6 +465,103 @@
     100% { transform: translateY(106vh) translateX(3vmax); opacity: 0; }
   }
 
+  /* ===== 氛围风格库：国风（祥云+朱砂花瓣）/ 清新漫感（云朵+叶子） ===== */
+
+  /* 国风氛围：水墨朱砂光晕（覆盖极光光斑） */
+  .atmo-guofeng::before {
+    background: radial-gradient(circle, hsl(4 62% 58% / 0.14), transparent 66%);
+    animation-duration: 34s;
+  }
+  .atmo-guofeng::after {
+    background: radial-gradient(circle, hsl(45 48% 55% / 0.12), transparent 66%);
+    animation-duration: 38s;
+  }
+  /* 清新漫感氛围：薄荷/蜜桃光晕 */
+  .atmo-kawaii::before {
+    background: radial-gradient(circle, hsl(155 48% 42% / 0.1), transparent 66%);
+  }
+  .atmo-kawaii::after {
+    background: radial-gradient(circle, hsl(345 85% 74% / 0.12), transparent 66%);
+    animation-delay: -13s;
+    animation-duration: 31s;
+  }
+
+  /* 云朵装饰：三个半透明圆组合，横向缓慢漂移 */
+  .atmo-cloud {
+    position: absolute;
+    display: block;
+    width: 92px;
+    height: 26px;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.06);
+    filter: blur(2px);
+    opacity: 0.55;
+    animation: cloud-drift ease-in-out infinite alternate;
+  }
+  .atmo-cloud::before,
+  .atmo-cloud::after {
+    content: "";
+    position: absolute;
+    border-radius: 9999px;
+    background: inherit;
+  }
+  .atmo-cloud::before { width: 46px; height: 46px; left: 14px; top: -22px; }
+  .atmo-cloud::after { width: 30px; height: 30px; right: 16px; top: -12px; }
+  .cloud-1 { top: 12vh; left: -6%; animation-duration: 22s; }
+  .cloud-2 { top: 30vh; right: -8%; animation-duration: 26s; animation-delay: -8s; }
+  .cloud-3 { top: 58vh; left: 4%; animation-duration: 24s; animation-delay: -14s; }
+  .atmo-kawaii .atmo-cloud { background: rgba(255, 255, 255, 0.75); }
+  .atmo-kawaii .cloud-2 { background: rgba(214, 238, 255, 0.85); }
+  @keyframes cloud-drift {
+    from { transform: translateX(0); }
+    to { transform: translateX(9vmax); }
+  }
+
+  /* 国风朱砂花瓣：椭圆花瓣，红/金两色，旋转飘落 */
+  .falling-petal {
+    position: absolute;
+    top: -14px;
+    height: var(--petal-h, 5px);
+    border-radius: 80% 20% 80% 20%;
+    background: linear-gradient(135deg, hsl(4 62% 62%), hsl(10 70% 52%));
+    box-shadow: 0 0 6px 1px hsl(4 62% 58% / 0.35);
+    opacity: 0;
+    animation: petal-fall linear infinite;
+  }
+  .falling-petal:nth-of-type(even) {
+    background: linear-gradient(135deg, hsl(45 55% 66%), hsl(38 60% 55%));
+    box-shadow: 0 0 6px 1px hsl(45 55% 60% / 0.35);
+  }
+  @keyframes petal-fall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.55; }
+    85% { opacity: 0.4; }
+    100% { transform: translateY(108vh) translateX(4vmax) rotate(300deg); opacity: 0; }
+  }
+
+  /* 清新漫感叶子：椭圆叶子，绿/粉两色，摇摆飘落 */
+  .falling-leaf {
+    position: absolute;
+    top: -12px;
+    height: var(--petal-h, 6px);
+    border-radius: 90% 10% 90% 10%;
+    background: linear-gradient(135deg, hsl(155 48% 56%), hsl(150 55% 44%));
+    box-shadow: 0 0 5px 1px hsl(155 48% 45% / 0.3);
+    opacity: 0;
+    animation: leaf-fall linear infinite;
+  }
+  .falling-leaf:nth-of-type(even) {
+    background: linear-gradient(135deg, hsl(345 85% 78%), hsl(340 80% 68%));
+    box-shadow: 0 0 5px 1px hsl(345 85% 70% / 0.3);
+  }
+  @keyframes leaf-fall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.6; }
+    50% { transform: translateX(1.5vmax) rotate(160deg); }
+    85% { opacity: 0.45; }
+    100% { transform: translateY(108vh) translateX(-1.5vmax) rotate(340deg); opacity: 0; }
+  }
+
   /* 卡片流光：hover 金边 + 紫粉光晕 + 左上光斑（番剧卡感） */
   .card-anime {
     position: relative;
