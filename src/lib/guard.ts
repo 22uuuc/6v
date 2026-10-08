@@ -6,7 +6,7 @@
 //       4) 提供守护状态（运行中 / 上次巡检 / 累计自动修复次数）给安全中心展示。
 
 import { store, notify } from '@/lib/store';
-import { security, deobfuscate } from '@/lib/security';
+import { security, deobfuscate, scanText } from '@/lib/security';
 import { api } from '@/lib/api';
 
 /** 守护统计（持久化，跨刷新保留） */
@@ -117,14 +117,105 @@ export function deepScan(): { virusFlags: number; cleaned: number; tamperedRepai
   return { virusFlags: flaggedNow, cleaned, tamperedRepaired: patrol.repaired, sessionBroken };
 }
 
-/** 启动守护：定时巡检 + 跨标签页写入监控。返回停止函数 */
+/* ---------- 反破解防卫（开发者模式 / 控制台篡改 / URL 注入 / 脚本篡改检测） ---------- */
+
+/** 是否疑似开发者工具打开：通过窗口尺寸差与定时器节流检测 */
+function devtoolsOpen(): boolean {
+  try {
+    if (typeof window === 'undefined') return false;
+    const widthDiff = window.outerWidth - window.innerWidth;
+    const heightDiff = window.outerHeight - window.innerHeight;
+    if (widthDiff > 160 || heightDiff > 160) return true; // 停靠式 devtools
+    // 独立窗口 devtools：尺寸差小，用 debugger 时序陷阱检测
+    const t0 = performance.now();
+    // eslint-disable-next-line no-debugger
+    debugger;
+    return performance.now() - t0 > 100;
+  } catch {
+    return false;
+  }
+}
+
+/** URL 注入检测：查询参数 / hash 中的脚本载荷与敏感调用 */
+function urlInjection(): string | null {
+  try {
+    const raw = `${window.location.search} ${window.location.hash}`;
+    if (!raw) return null;
+    const hits = scanText(raw.slice(0, 500));
+    if (hits.length > 0) return hits.join('、');
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** 全局对象篡改检测：关键 API 被控制台替换则报警 */
+function globalTamper(): string | null {
+  try {
+    if (typeof window === 'undefined') return null;
+    // 常见的破解手段：覆盖 console / 替换 storage 方法 / 挂载注入脚本
+    const probes: { name: string; ok: boolean }[] = [
+      { name: 'localStorage.setItem', ok: typeof localStorage?.setItem === 'function' },
+      { name: 'localStorage.getItem', ok: typeof localStorage?.getItem === 'function' },
+      { name: 'JSON.parse', ok: typeof JSON?.parse === 'function' },
+      { name: 'crypto.getRandomValues', ok: typeof crypto?.getRandomValues === 'function' },
+    ];
+    const bad = probes.filter((p) => !p.ok);
+    return bad.length > 0 ? bad.map((b) => b.name).join('、') : null;
+  } catch {
+    return null;
+  }
+}
+
+/** 反破解巡检：一次调用返回新发现项数，发现则写安全日志 */
+export function antiCrackPatrol(): number {
+  let found = 0;
+  try {
+    if (devtoolsOpen()) {
+      // 开发者模式：可能用于审查/篡改，仅记录（不误伤正常调试）
+      security.write({
+        kind: 'suspicious', level: 'warn',
+        message: '检测到开发者模式（DevTools 打开），已记录；如在调试请关闭后正常使用',
+        status: 'flagged',
+      });
+      found += 1;
+    }
+    const inj = urlInjection();
+    if (inj) {
+      security.write({
+        kind: 'xss', level: 'danger',
+        message: `URL 参数含注入载荷（${inj}），已拦截访问痕迹`,
+        status: 'flagged',
+      });
+      found += 1;
+    }
+    const g = globalTamper();
+    if (g) {
+      security.write({
+        kind: 'tamper', level: 'danger',
+        message: `检测到浏览器关键 API 被替换（${g}），可能为破解行为，已记录入侵警告`,
+        status: 'flagged',
+      });
+      found += 1;
+    }
+  } catch {
+    /* 忽略 */
+  }
+  if (found > 0) notify();
+  return found;
+}
+
+/** 启动守护：定时巡检 + 跨标签页写入监控 + 反破解巡检。返回停止函数 */
 export function startGuard(intervalMs = 30000): () => void {
   let timer: number | undefined;
   try {
     timer = window.setInterval(() => {
       const p = guardPatrol();
       if (p.repaired > 0 || p.damage.length > 0) notify();
+      antiCrackPatrol(); // 反破解巡检（低频，随主巡检一起）
     }, intervalMs);
+    // 启动即先做一次反破解巡检（检测已打开的开发者模式 / 注入痕迹）
+    setTimeout(() => antiCrackPatrol(), 2000);
   } catch {
     /* 非浏览器环境跳过 */
   }
