@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, BookCheck, Landmark, ShieldCheck, Settings2, Banknote, Lock, KeyRound, UserCheck, Headset, Cloud,
+  LayoutDashboard, Users, BookCheck, Landmark, ShieldCheck, Settings2, Banknote, Lock, KeyRound, UserCheck, Headset, Cloud, Wallet,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
@@ -24,6 +24,7 @@ import AdminSettings from '@/pages/AdminPage/AdminSettings';
 import AdminCloudSync from '@/pages/AdminPage/AdminCloudSync';
 import AdminApplications from '@/pages/AdminPage/AdminApplications';
 import AdminService from '@/pages/AdminPage/AdminService';
+import AdminPayments from '@/pages/AdminPage/AdminPayments';
 
 const UNLOCK_KEY = 'moying-admin-unlocked';
 
@@ -142,66 +143,72 @@ export default function AdminPage() {
       </div>
 
       <Tabs defaultValue="overview">
-        <TabsList className="flex w-full flex-wrap justify-start sm:w-auto">
-          <TabsTrigger value="overview" className="gap-1.5">
-            <LayoutDashboard className="h-3.5 w-3.5" /> 概览
+        <TabsList className="flex w-full flex-wrap justify-start gap-1.5 p-2 sm:w-auto">
+          <TabsTrigger value="overview" className="gap-1.5 rounded-xl px-3.5 py-2.5 text-[13px]">
+            <LayoutDashboard className="h-4 w-4" /> 概览
           </TabsTrigger>
-          <TabsTrigger value="users" className="gap-1.5">
-            <Users className="h-3.5 w-3.5" /> 用户与等级
+          <TabsTrigger value="users" className="gap-1.5 rounded-xl px-3.5 py-2.5 text-[13px]">
+            <Users className="h-4 w-4" /> 用户与等级
           </TabsTrigger>
-          <TabsTrigger value="applications" className="gap-1.5">
-            <UserCheck className="h-3.5 w-3.5" /> 资质审核
+          <TabsTrigger value="applications" className="gap-1.5 rounded-xl px-3.5 py-2.5 text-[13px]">
+            <UserCheck className="h-4 w-4" /> 资质审核
           </TabsTrigger>
-          <TabsTrigger value="books" className="gap-1.5">
-            <BookCheck className="h-3.5 w-3.5" /> 作品审核
+          <TabsTrigger value="books" className="gap-1.5 rounded-xl px-3.5 py-2.5 text-[13px]">
+            <BookCheck className="h-4 w-4" /> 作品审核
           </TabsTrigger>
-          <TabsTrigger value="settlements" className="gap-1.5">
-            <Banknote className="h-3.5 w-3.5" /> 收益结算
+          <TabsTrigger value="settlements" className="gap-1.5 rounded-xl px-3.5 py-2.5 text-[13px]">
+            <Banknote className="h-4 w-4" /> 收益结算
           </TabsTrigger>
-          <TabsTrigger value="withdrawals" className="gap-1.5">
-            <Landmark className="h-3.5 w-3.5" /> 提现审核
+          <TabsTrigger value="withdrawals" className="gap-1.5 rounded-xl px-3.5 py-2.5 text-[13px]">
+            <Landmark className="h-4 w-4" /> 提现审核
           </TabsTrigger>
-          <TabsTrigger value="service" className="gap-1.5">
-            <Headset className="h-3.5 w-3.5" /> 用户服务
+          <TabsTrigger value="payments" className="gap-1.5 rounded-xl px-3.5 py-2.5 text-[13px]">
+            <Wallet className="h-4 w-4" /> 支付对接
           </TabsTrigger>
-          <TabsTrigger value="security" className="gap-1.5">
-            <ShieldCheck className="h-3.5 w-3.5" /> 安全中心
+          <TabsTrigger value="service" className="gap-1.5 rounded-xl px-3.5 py-2.5 text-[13px]">
+            <Headset className="h-4 w-4" /> 用户服务
           </TabsTrigger>
-          <TabsTrigger value="cloud" className="gap-1.5">
-            <Cloud className="h-3.5 w-3.5" /> 云同步
+          <TabsTrigger value="security" className="gap-1.5 rounded-xl px-3.5 py-2.5 text-[13px]">
+            <ShieldCheck className="h-4 w-4" /> 安全中心
           </TabsTrigger>
-          <TabsTrigger value="settings" className="gap-1.5">
-            <Settings2 className="h-3.5 w-3.5" /> 全站设置
+          <TabsTrigger value="cloud" className="gap-1.5 rounded-xl px-3.5 py-2.5 text-[13px]">
+            <Cloud className="h-4 w-4" /> 云同步
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="gap-1.5 rounded-xl px-3.5 py-2.5 text-[13px]">
+            <Settings2 className="h-4 w-4" /> 全站设置
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="overview" className="pt-4">
+        <TabsContent value="overview" className="pt-6">
           <AdminOverview />
         </TabsContent>
-        <TabsContent value="users" className="pt-4">
+        <TabsContent value="users" className="pt-6">
           <AdminUsers />
         </TabsContent>
-        <TabsContent value="applications" className="pt-4">
+        <TabsContent value="applications" className="pt-6">
           <AdminApplications />
         </TabsContent>
-        <TabsContent value="books" className="pt-4">
+        <TabsContent value="books" className="pt-6">
           <AdminBooks />
         </TabsContent>
-        <TabsContent value="settlements" className="pt-4">
+        <TabsContent value="settlements" className="pt-6">
           <AdminSettlements />
         </TabsContent>
-        <TabsContent value="withdrawals" className="pt-4">
+        <TabsContent value="withdrawals" className="pt-6">
           <AdminWithdrawals />
         </TabsContent>
-        <TabsContent value="service" className="pt-4">
+        <TabsContent value="payments" className="pt-6">
+          <AdminPayments />
+        </TabsContent>
+        <TabsContent value="service" className="pt-6">
           <AdminService />
         </TabsContent>
-        <TabsContent value="security" className="pt-4">
+        <TabsContent value="security" className="pt-6">
           <AdminSecurity />
         </TabsContent>
-        <TabsContent value="cloud" className="pt-4">
+        <TabsContent value="cloud" className="pt-6">
           <AdminCloudSync />
         </TabsContent>
-        <TabsContent value="settings" className="pt-4">
+        <TabsContent value="settings" className="pt-6">
           <AdminSettings />
         </TabsContent>
       </Tabs>
