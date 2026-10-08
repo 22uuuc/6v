@@ -1,0 +1,6 @@
+[
+  {"id":"b6k1","bookId":"b6","index":1,"title":"周一","pageIds":["b6p1","b6p2","b6p3"],"price":0},
+  {"id":"b6k2","bookId":"b6","index":2,"title":"提案","pageIds":["b6p4","b6p5","b6p6"],"price":30},
+  {"id":"b7k1","bookId":"b7","index":1,"title":"九尾狐的拉面","pageIds":["b7p1","b7p2","b7p3"],"price":0},
+  {"id":"b7k2","bookId":"b7","index":2,"title":"饕餮的甜点","pageIds":["b7p4","b7p5","b7p6"],"price":30}
+]

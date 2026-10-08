@@ -1,0 +1,14 @@
+[
+  {"id":"b6p1","bookId":"b6","chapterId":"b6k1","index":1,"scene":"street","caption":"周一的闹钟，响了三次。","dialogue":["小满：再睡五分钟……","猫：喵。","小满：你也不想起床对吧，我懂你。"]},
+  {"id":"b6p2","bookId":"b6","chapterId":"b6k1","index":2,"scene":"kitchen","caption":"茶水间，一天的开端。","dialogue":["同事：今天喝的不是咖啡，是命。","小满：干了这杯，还有三杯。"]},
+  {"id":"b6p3","bookId":"b6","chapterId":"b6k1","index":3,"scene":"night-city","caption":"晚上十点，终于下班。","dialogue":["小满：地铁还有三站……我还能活。","旁白：她活了。周一结束了。"]},
+  {"id":"b6p4","bookId":"b6","chapterId":"b6k2","index":1,"scene":"street","caption":"提案前夜，小满买了个包子。","dialogue":["包子铺老板：姑娘，黑眼圈比包子还大。","小满：谢谢，我会带着它战斗。"]},
+  {"id":"b6p5","bookId":"b6","chapterId":"b6k2","index":2,"scene":"night-city","caption":"凌晨十二点，PPT 改了第八版。","dialogue":["小满：第八版了……客户到底要什么？","电脑：你猜。","小满：我猜他想让我死。"]},
+  {"id":"b6p6","bookId":"b6","chapterId":"b6k2","index":3,"scene":"sea","caption":"提案通过！周末报复性放假。","dialogue":["小满：我把 PPT 丢进了海里。","浪：哗——","小满：再见，第八版。"]},
+  {"id":"b7p1","bookId":"b7","chapterId":"b7k1","index":1,"scene":"tea-house","caption":"山海异兽食堂，深夜营业。","dialogue":["九尾狐：老板，一碗拉面，汤要浓。","老板：你尾巴这么多，站门口挡路了。","九尾狐：……这是我新做的造型。"]},
+  {"id":"b7p2","bookId":"b7","chapterId":"b7k1","index":2,"scene":"kitchen","caption":"老板的汤底，会发光。","dialogue":["老板：秘方，不外传。","九尾狐：你汤里是不是放了龙鳞？","老板：不是。是葱。"]},
+  {"id":"b7p3","bookId":"b7","chapterId":"b7k1","index":3,"scene":"tea-house","caption":"吃完，尾巴一根一根亮了。","dialogue":["九尾狐：好吃。三百年没这么好吃过了。","老板：吃完就回去好好修炼。","九尾狐：知道了知道了。"]},
+  {"id":"b7p4","bookId":"b7","chapterId":"b7k2","index":1,"scene":"kitchen","caption":"饕餮进门，地都在抖。","dialogue":["饕餮：老板！把你们店最甜的东西全端上来！","老板：你上次吃了三座山。","饕餮：那是点心，不算。"]},
+  {"id":"b7p5","bookId":"b7","chapterId":"b7k2","index":2,"scene":"kitchen","caption":"蛋糕山，端了上来。","dialogue":["饕餮：就……就这？","老板：吃不完不收钱。","饕餮：你等着。"]},
+  {"id":"b7p6","bookId":"b7","chapterId":"b7k2","index":3,"scene":"sea","caption":"饕餮吃完，打了个嗝。","dialogue":["饕餮：嗝。","旁白：整个食堂安静了三秒。","老板：……明天再来，打八折。"]}
+]
