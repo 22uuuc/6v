@@ -154,11 +154,12 @@ export default function UploadComicPage() {
       await api.saveComic(existing.id, clean);
       if (saveDraft) {
         toast.success('已保存到草稿箱');
-      } else if (existing.status === 'draft' || existing.status === 'rejected' || existing.status === 'offline') {
-        api.setBookStatus(existing.id, 'pending');
-        toast.success('已保存并提交审核');
+      } else if (existing.status === 'published') {
+        api.setBookStatus(existing.id, 'pending', '', user.id);
+        toast.success('内容已更新，已重新提交审核，审核通过后自动上架');
       } else {
-        toast.success('已保存（保持原上架状态）');
+        api.setBookStatus(existing.id, 'pending', '', user.id);
+        toast.success('已保存并提交审核');
       }
     } else {
       const book = api.createBook({
