@@ -90,7 +90,7 @@ export default function CategoryPage() {
       </div>
 
       {books.length === 0 ? (
-        <EmptyState text={effectiveType === 'anime' ? '动漫视频区还没有内容，仅管理员可上传' : '这个分类还没有作品，去创作中心上传第一本吧'} />
+        <EmptyState text={effectiveType === 'anime' ? '动漫视频区还没有内容，仅管理员可上传' : '这个分类还没有作品，去创作中心上传第一本吧'} mascot />
       ) : (
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-5 sm:gap-4 lg:grid-cols-6">
           {books.map((book) => (
