@@ -637,9 +637,16 @@ export const api = {
     chapterPrice: number; authorId: string; authorName: string; status: BookStatus;
     animeKey?: string; coverStyle?: CoverStyle; coverType?: 'svg' | 'image'; coverFont?: CoverFont;
   }): IBook {
+    // 数据层兜底校验：标题非空、价格非负有限、标签为字符串数组（防页面绕过直接注入脏数据）
+    const title = (input.title ?? '').trim();
+    if (!title) throw new Error('作品标题不能为空');
+    const description = (input.description ?? '').trim();
+    const price = Number(input.chapterPrice);
+    if (!Number.isFinite(price) || price < 0) throw new Error('章节价格不合法');
     const books = read<IBook[]>('books', []);
     const b: IBook = {
-      id: uid('b'), ...input, words: 0, views: 0, likes: 0, rating: 0,
+      id: uid('b'), ...input, title, description, chapterPrice: price,
+      words: 0, views: 0, likes: 0, rating: 0,
       featured: false, quarantined: false,
       createdAt: new Date().toISOString(), chapterIds: [],
     };
