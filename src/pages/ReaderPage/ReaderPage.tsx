@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, List, Lock, Minus, Plus, ChevronLeft, ChevronRight, SunMoon } from 'lucide-react';
 import { toast } from 'sonner';
 import { api, isVip, fmtCoins } from '@/lib/api';
+import { fontStack } from '@/lib/platform-style';
 import { useDataVersion } from '@/hooks/use-data';
 import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
@@ -19,8 +20,19 @@ export default function ReaderPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   useDataVersion();
-  const [fontSize, setFontSize] = useState(19);
-  const [theme, setTheme] = useState<ReaderTheme>('ink');
+  // 个性化偏好：阅读主题/字号/行距/字体（个人设置覆盖平台默认）
+  const prefs = user ? api.getPrefs(user.id) : null;
+  const [fontSize, setFontSize] = useState(prefs?.fontSize ?? 19);
+  // 行距由个性化设置提供（ProfilePage），阅读页只读应用
+  const lineHeight = prefs?.lineHeight ?? 1.9;
+  const [theme, setTheme] = useState<ReaderTheme>((prefs?.readerTheme as ReaderTheme) ?? 'ink');
+
+  // 保存偏好到个人设置（阅读主题/字号），换设备/浏览器后通过个人资料恢复
+  useEffect(() => {
+    if (!user) return;
+    api.setPrefs(user.id, { fontSize, lineHeight, readerTheme: theme });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fontSize, theme]);
 
   const book = api.getBook(bookId);
   const chapters = useMemo(() => (book ? api.chaptersOf(bookId) : []), [book, bookId]);
@@ -139,7 +151,7 @@ export default function ReaderPage() {
               ? 'reading-article mt-4 rounded-2xl bg-black/50 p-5 text-foreground/80 sm:p-7'
               : 'reading-article text-foreground/90'
         }`}
-        style={{ fontSize: `${fontSize}px` }}
+        style={{ fontSize: `${fontSize}px`, lineHeight, fontFamily: fontStack(prefs?.fontFamily ?? 'system') }}
       >
         <h1
           className={`mb-1 font-serif text-xl font-bold ${
