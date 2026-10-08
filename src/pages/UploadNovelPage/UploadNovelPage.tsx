@@ -83,11 +83,13 @@ export default function UploadNovelPage() {
       );
       if (saveDraft) {
         toast.success('已保存到草稿箱');
-      } else if (existing.status === 'draft' || existing.status === 'rejected' || existing.status === 'offline') {
-        api.setBookStatus(existing.id, 'pending');
-        toast.success('已保存并提交审核');
+      } else if (existing.status === 'published') {
+        // 已上架作品被编辑：内容改动必须重新进入审核，防止绕过审核直接生效
+        api.setBookStatus(existing.id, 'pending', '', user.id);
+        toast.success('内容已更新，已重新提交审核，审核通过后自动上架');
       } else {
-        toast.success('已保存（作品保持原上架状态）');
+        api.setBookStatus(existing.id, 'pending', '', user.id);
+        toast.success('已保存并提交审核');
       }
     } else {
       const book = api.createBook({
