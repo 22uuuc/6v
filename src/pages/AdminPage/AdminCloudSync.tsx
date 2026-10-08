@@ -3,7 +3,7 @@
 //  - 拉取：配置令牌走 API（支持私有仓库）；未配置令牌匿名拉取公开仓库
 //  - 推送：管理员配置 GitHub 令牌 + 加密口令，AES-GCM 加密 + HMAC 签名后落库
 import { useState } from 'react';
-import { Cloud, Download, Upload, KeyRound, Database, ShieldCheck, GitBranch, ExternalLink, Lock, Unlock, Palette } from 'lucide-react';
+import { Cloud, Download, Upload, KeyRound, Database, ShieldCheck, GitBranch, ExternalLink, Lock, Unlock, Palette, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { cloud } from '@/lib/cloud';
 import { useDataVersion } from '@/hooks/use-data';
@@ -21,6 +21,9 @@ export default function AdminCloudSync() {
   const [uTokenInput, setUTokenInput] = useState('');
   const [uPassInput, setUPassInput] = useState('');
   const [uBusy, setUBusy] = useState<'pull' | 'push' | null>(null);
+  // 一键改口令
+  const [newPassInput, setNewPassInput] = useState('');
+  const [rotateBusy, setRotateBusy] = useState(false);
   // 平台设置仓（第三库）
   const [sBusy, setSBusy] = useState<'pull' | 'push' | null>(null);
   const sRepo = cloud.settingsRepo();
@@ -163,6 +166,24 @@ export default function AdminCloudSync() {
     cloud.savePass(passInput.trim());
     setPassInput('');
     toast.success('云端加密口令已保存（推送将加密落库，拉取需验签）');
+  };
+
+  /** 一键修改全部加密口令：换新口令并自动重推三仓（内容库/用户库/设置仓） */
+  const handleRotatePass = async () => {
+    if (newPassInput.trim().length < 6) {
+      toast.error('新口令至少 6 位');
+      return;
+    }
+    setRotateBusy(true);
+    const r = await cloud.rotateAllPasswords(newPassInput.trim());
+    setRotateBusy(false);
+    if (r.ok) {
+      toast.success(r.msg);
+      setNewPassInput('');
+    } else {
+      toast.error(r.msg);
+      toast.info(r.results.map((x) => `${x.repo}：${x.ok ? '成功' : x.msg || '失败'}`).join('；'));
+    }
   };
 
   return (
@@ -444,6 +465,35 @@ export default function AdminCloudSync() {
             </Button>
             <Button onClick={handleSettingsPush} disabled={sBusy !== null}>
               <Upload className="mr-1 h-4 w-4" /> {sBusy === 'push' ? '推送中…' : '加密推送平台设置'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-primary/30 bg-primary/5">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <RefreshCw className="h-4 w-4 text-primary" /> 一键修改加密口令
+            <Badge className="bg-amber-500/15 text-amber-600">推荐</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            输入新口令（≥6 位）后点击下方按钮：系统会<strong className="text-foreground">自动用新口令重新加密推送内容库、用户数据、平台设置三仓</strong>，
+            云端旧密文会被新密文覆盖，完成后旧口令立即失效。换设备拉取时只需输入这一个新口令。
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Input
+              type="password"
+              className="max-w-xs"
+              value={newPassInput}
+              onChange={(e) => setNewPassInput(e.target.value)}
+              placeholder="输入新口令（≥6 位）"
+              autoComplete="off"
+            />
+            <Button onClick={handleRotatePass} disabled={rotateBusy || newPassInput.trim().length < 6}>
+              <RefreshCw className={`mr-1 h-4 w-4 ${rotateBusy ? 'animate-spin' : ''}`} />
+              {rotateBusy ? '正在重推三仓…' : '一键修改并重推三仓'}
             </Button>
           </div>
         </CardContent>
