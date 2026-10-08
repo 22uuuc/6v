@@ -17,11 +17,12 @@ const TYPES: { value: IFeedback['type']; label: string }[] = [
   { value: 'suggest', label: '功能建议' },
   { value: 'bug', label: 'Bug 反馈' },
   { value: 'report', label: '内容举报' },
+  { value: 'refund', label: '退款申请' },
   { value: 'other', label: '其他' },
 ];
 
 const TYPE_LABEL: Record<IFeedback['type'], string> = {
-  suggest: '功能建议', bug: 'Bug 反馈', report: '内容举报', other: '其他',
+  suggest: '功能建议', bug: 'Bug 反馈', report: '内容举报', refund: '退款申请', other: '其他',
 };
 
 export default function FeedbackPage() {
@@ -121,6 +122,17 @@ export default function FeedbackPage() {
                 </div>
                 <p className="font-medium">{f.title}</p>
                 <p className="mt-1 text-sm text-muted-foreground">{f.content}</p>
+                {f.refund && (
+                  <div className={`mt-3 rounded-lg border p-3 text-sm ${f.refund.status === 'approved' ? 'border-emerald-500/30 bg-emerald-500/5' : f.refund.status === 'rejected' ? 'border-destructive/30 bg-destructive/5' : 'border-amber-500/30 bg-amber-500/5'}`}>
+                    <p className="mb-1 text-xs font-medium text-muted-foreground">退款进度</p>
+                    <p className="text-sm">
+                      退款单 {f.refund.txId} · {f.refund.yuan} 元（{f.refund.coin} 币）：
+                      {f.refund.status === 'none' && <span className="text-amber-600">等待管理员审核</span>}
+                      {f.refund.status === 'approved' && <span className="text-emerald-600">已审核通过，书币已原路退回余额</span>}
+                      {f.refund.status === 'rejected' && <span className="text-destructive">已被管理员驳回</span>}
+                    </p>
+                  </div>
+                )}
                 {f.reply && (
                   <div className="mt-3 rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm">
                     <p className="mb-1 text-xs font-medium text-primary">管理员回复（{f.replyAt ? new Date(f.replyAt).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}）</p>
