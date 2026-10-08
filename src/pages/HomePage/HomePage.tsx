@@ -105,6 +105,32 @@ export default function HomePage() {
               <MoyingMascot mood="reading" size={104} className="hidden md:block" />
             </div>
           </div>
+          {/* 写意墨点与云纹装饰层（国风氛围，缓慢漂移） */}
+          <span className="drift-slow absolute right-[24%] top-[16%] h-14 w-14 rounded-full bg-primary/15 blur-md" />
+          <span className="drift-slower absolute left-[9%] top-[42%] h-6 w-6 rounded-full bg-accent/25 blur-[2px]" />
+          <span className="drift-slow absolute right-[9%] bottom-[22%] h-8 w-8 rounded-full bg-[hsl(333_92%_66%)]/20 blur-sm" />
+          <span className="drift-slower absolute left-[22%] bottom-[14%] h-3 w-3 rounded-full bg-primary/30" />
+          <svg
+            className="drift-slow absolute right-[15%] top-[46%] hidden h-16 w-24 opacity-60 md:block"
+            viewBox="0 0 96 64"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M8 40 Q20 20 36 32 Q48 42 60 30 Q74 16 88 28"
+              stroke="hsl(var(--primary) / 0.35)"
+              strokeWidth="3"
+              strokeLinecap="round"
+              fill="none"
+            />
+            <path
+              d="M12 50 Q26 34 42 44 Q56 52 68 42"
+              stroke="hsl(var(--accent) / 0.3)"
+              strokeWidth="2"
+              strokeLinecap="round"
+              fill="none"
+            />
+          </svg>
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 flex flex-col items-start gap-3 p-5 md:p-8">
             <Badge className="bg-primary/20 text-primary backdrop-blur">一页一画 · 有画面的故事</Badge>
