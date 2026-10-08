@@ -139,20 +139,20 @@ export default function HomePage() {
 
       {/* 分类入口 */}
       <section>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {TYPE_ENTRY.map((e) => (
             <Link key={e.type} to={`/category/${e.type}`}>
               <Card className="card-anime card-hover-glow h-full">
-                <CardContent className="flex items-start gap-3 p-4">
-                  <span className={`icon-tile ${e.tile} flex h-10 w-10 shrink-0 items-center justify-center rounded-lg`}>
-                    <e.icon className="h-5 w-5" />
+                <CardContent className="flex items-start gap-4 p-5">
+                  <span className={`icon-tile ${e.tile} flex h-12 w-12 shrink-0 items-center justify-center rounded-xl`}>
+                    <e.icon className="h-6 w-6" />
                   </span>
                   <div className="min-w-0">
                     <h3 className="flex items-center gap-2 font-medium">
                       {e.title}
                       <span className="text-xs text-muted-foreground">{entryCount(e.type)} 部</span>
                     </h3>
-                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{e.desc}</p>
+                    <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{e.desc}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -161,10 +161,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 编辑推荐（管理员推流量） */}
+      {/* 编辑推荐（管理员推流量）：首本加大错落 */}
       {featured.length > 0 && (
         <section>
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-4 flex items-center justify-between">
             <h2 className="section-title flex items-center gap-2 font-serif text-lg font-bold">
               编辑推荐
               <span className="rounded-md bg-primary/15 px-1.5 py-0.5 text-[10px] font-normal text-primary">管理员推流量</span>
@@ -173,27 +173,36 @@ export default function HomePage() {
               全部作品 <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-6 sm:gap-4">
-            {featured.slice(0, 6).map((book) => (
-              <BookCard key={book.id} book={book} />
+          <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
+            {featured.slice(0, 6).map((book, i) => (
+              <div key={book.id} className={i === 0 ? 'sm:col-span-2 sm:row-span-2' : ''}>
+                <BookCard book={book} />
+              </div>
             ))}
           </div>
         </section>
       )}
 
-      {/* 热门榜 */}
+      {/* 热门榜：前三名错落，第一名跨双列 */}
       <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="section-title font-serif text-lg font-bold">热门榜</h2>
+        <div className="mb-4 flex items-end justify-between">
+          <div>
+            <h2 className="section-title font-serif text-lg font-bold">热门榜</h2>
+            <p className="mt-1 text-xs text-muted-foreground">读者正在追 · 按浏览量排序</p>
+          </div>
           <Link to="/category/all" className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
             全部作品 <ArrowRight className="h-3 w-3" />
           </Link>
         </div>
-        <div className="grid grid-cols-5 gap-3 sm:gap-4">
+        <div className="grid grid-cols-5 gap-4">
           {hot.map((book, i) => (
-            <div key={book.id} className="relative">
+            <div key={book.id} className={`relative ${i === 0 ? 'col-span-2 sm:col-span-1' : ''}`}>
               <BookCard book={book} />
-              <span className="absolute -left-1 -top-2 flex h-6 w-6 items-center justify-center rounded-md bg-primary font-serif text-sm font-bold text-primary-foreground shadow">
+              <span
+                className={`absolute -left-1.5 -top-2 flex h-7 w-7 items-center justify-center rounded-lg font-serif text-sm font-bold shadow ${
+                  i === 0 ? 'bg-amber-400 text-black' : i === 1 ? 'bg-slate-300 text-black' : i === 2 ? 'bg-orange-400 text-black' : 'bg-primary text-primary-foreground'
+                }`}
+              >
                 {i + 1}
               </span>
             </div>
@@ -203,8 +212,16 @@ export default function HomePage() {
 
       {/* 新书上架 */}
       <section>
-        <h2 className="section-title mb-3 font-serif text-lg font-bold">新书上架</h2>
-        <div className="grid grid-cols-3 gap-3 sm:grid-cols-6 sm:gap-4">
+        <div className="mb-4 flex items-end justify-between">
+          <div>
+            <h2 className="section-title font-serif text-lg font-bold">新书上架</h2>
+            <p className="mt-1 text-xs text-muted-foreground">刚点亮的故事 · 按上架时间</p>
+          </div>
+          <Link to="/category/all" className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
+            全部作品 <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+        <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
           {fresh.map((book) => (
             <BookCard key={book.id} book={book} />
           ))}
@@ -213,9 +230,12 @@ export default function HomePage() {
 
       {/* 分类浏览 */}
       <section>
-        <h2 className="section-title mb-3 font-serif text-lg font-bold">逛书城</h2>
+        <div className="mb-4">
+          <h2 className="section-title font-serif text-lg font-bold">逛书城</h2>
+          <p className="mt-1 text-xs text-muted-foreground">四种读法，一个书城</p>
+        </div>
         <Tabs defaultValue="all">
-          <TabsList className="mb-4">
+          <TabsList className="mb-5">
             <TabsTrigger value="all">全部</TabsTrigger>
             <TabsTrigger value="novel">普通小说</TabsTrigger>
             <TabsTrigger value="visual">互动小说</TabsTrigger>
@@ -224,7 +244,7 @@ export default function HomePage() {
           </TabsList>
           {(['all', 'novel', 'visual', 'comic', 'anime'] as const).map((t) => (
             <TabsContent key={t} value={t}>
-              <div className="grid grid-cols-3 gap-3 sm:grid-cols-6 sm:gap-4">
+              <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
                 {published
                   .filter((b) => t === 'all' || b.type === t)
                   .slice(0, 12)
