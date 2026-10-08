@@ -14,6 +14,14 @@ startGuard(30000);
 import { cloud } from '@/lib/cloud';
 void cloud.initAutoPull();
 
+// PWA：注册 Service Worker（供安装到手机 / 桌面，离线回退壳缓存）
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  const base = import.meta.env.MIAODA_CLIENT_BASE_PATH || '/';
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register(`${base}sw.js`, { scope: base }).catch(() => null);
+  });
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter basename={import.meta.env.MIAODA_CLIENT_BASE_PATH || '/'}>

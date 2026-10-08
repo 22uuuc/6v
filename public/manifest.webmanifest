@@ -1,0 +1,35 @@
+{
+  "name": "墨影书城 · 一页一画",
+  "short_name": "墨影书城",
+  "description": "有画面感的小说应用：普通小说、画面互动小说、漫画、动漫视频，四种读法都在夜里点灯。创作者上传作品，读者用书币支持，好故事自己会发光。",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#120d2e",
+  "theme_color": "#1a1440",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "categories": ["books", "entertainment"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
