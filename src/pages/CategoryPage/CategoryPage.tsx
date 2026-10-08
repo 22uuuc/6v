@@ -1,9 +1,10 @@
 // EXPORTS: CategoryPage（组件文件）
 import { useMemo, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { useDataVersion } from '@/hooks/use-data';
 import BookCard from '@/components/BookCard';
+import BookCover from '@/components/BookCover';
 import EmptyState from '@/components/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -91,6 +92,56 @@ export default function CategoryPage() {
 
       {books.length === 0 ? (
         <EmptyState text={effectiveType === 'anime' ? '动漫视频区还没有内容，仅管理员可上传' : '这个分类还没有作品，去创作中心上传第一本吧'} mascot />
+      ) : effectiveType === 'comic' || effectiveType === 'anime' ? (
+        /* 漫画 / 动漫：番剧墙海报流（大封面 + 渐变信息条 + 角标） */
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {books.map((book) => {
+            const isAnime = effectiveType === 'anime' || (book.type === 'anime');
+            const to = isAnime
+              ? `/anime/${book.id}`
+              : book.type === 'comic'
+                ? `/comic/${book.id}`
+                : `/book/${book.id}`;
+            return (
+              <Link
+                key={book.id}
+                to={to}
+                className="group relative block overflow-hidden rounded-2xl border border-border shadow-[0_14px_30px_-20px_hsl(0_0%_0%/0.55)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_22px_40px_-22px_hsl(0_0%_0%/0.6)]"
+              >
+                <div className={isAnime ? 'aspect-video w-full' : 'aspect-[3/4] w-full'}>
+                  <BookCover
+                    seed={book.coverSeed}
+                    title={book.title}
+                    author={book.authorName}
+                    genre={book.genre}
+                    style={book.coverStyle}
+                    bookId={book.id}
+                    coverType={book.coverType}
+                    font={book.coverFont}
+                  />
+                </div>
+                {/* 渐变信息条：标题 + 标签 */}
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent p-3 pt-12">
+                  <p className="truncate text-sm font-bold text-white drop-shadow">{book.title}</p>
+                  <p className="mt-1 flex items-center gap-1.5 text-[10px] text-white/80">
+                    <span className="rounded bg-white/20 px-1.5 py-0.5 backdrop-blur">{book.genre}</span>
+                    <span>{isAnime ? '动漫' : '漫画'}</span>
+                    <span className="ml-auto">{book.views.toLocaleString()} 追</span>
+                  </p>
+                </div>
+                {/* 类型角标 */}
+                <span className="absolute left-2 top-2 rounded-md bg-black/55 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur">
+                  {isAnime ? '▶ 动漫' : '漫画'}
+                </span>
+                {book.rating >= 4.5 && (
+                  <span className="absolute right-2 top-2 rounded-md bg-[hsl(333_92%_66%)]/90 px-1.5 py-0.5 text-[10px] font-bold text-white shadow">
+                    {book.rating.toFixed(1)} 分
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </div>
       ) : (
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-5 sm:gap-4 lg:grid-cols-6">
           {books.map((book) => (
