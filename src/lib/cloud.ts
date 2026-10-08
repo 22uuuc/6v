@@ -758,4 +758,30 @@ export const cloud = {
       ? { ok: true, pushed, failed, msg: `已加密推送 ${pushed.length}/${SETTINGS_FILES.length} 个文件到设置仓（排版风格/认证会话已入库）` }
       : { ok: false, pushed, failed, msg: '设置仓推送失败，请检查令牌权限与网络' };
   },
+
+  /** 一键修改全部加密口令：换新口令并自动用新口令重新加密推送三仓（内容库/用户库/设置仓）。本地数据为明文，直接重加密即可，无需先拉旧密文。 */
+  async rotateAllPasswords(
+    newPass: string,
+  ): Promise<{ ok: boolean; results: { repo: string; ok: boolean; msg: string }[]; msg: string }> {
+    const p = (newPass ?? '').trim();
+    if (p.length < 6) return { ok: false, results: [], msg: '新口令至少 6 位' };
+    // 先落新口令：后续三个推送内部读取新口令派生新密钥（内容库 cloud-pass、用户库/设置仓 user-cloud-pass 统一更换）
+    savePass(p);
+    saveUserPass(p);
+    const results: { repo: string; ok: boolean; msg: string }[] = [];
+    const r1 = await this.pushToCloud();
+    results.push({ repo: '内容库 22uuuc/6v', ok: r1.ok, msg: r1.msg ?? (r1.failed ?? []).join('、') });
+    const r2 = await this.pushUserData();
+    results.push({ repo: '用户库 22uuuc/fantastic-rotary-phone', ok: r2.ok, msg: r2.msg ?? (r2.failed ?? []).join('、') });
+    const r3 = await this.pushSettings();
+    results.push({ repo: '设置仓 22uuuc/moying-settings', ok: r3.ok, msg: r3.msg ?? (r3.failed ?? []).join('、') });
+    const allOk = results.every((r) => r.ok);
+    return {
+      ok: allOk,
+      results,
+      msg: allOk
+        ? '口令已更新，三仓已全部用新口令重新加密推送（旧密文已覆盖）'
+        : '口令已更新，但部分仓库推送失败，请检查令牌与网络后重试',
+    };
+  },
 };
