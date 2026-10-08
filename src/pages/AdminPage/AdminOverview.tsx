@@ -1,14 +1,24 @@
 // EXPORTS: AdminOverview（组件文件）
 import ReactECharts from 'echarts-for-react';
-import { Users, BookOpen, CheckCircle2, Landmark, Clock3, Crown, Banknote, ShieldAlert, Hourglass, MessageSquareText } from 'lucide-react';
-import { api } from '@/lib/api';
+import { Users, BookOpen, CheckCircle2, Landmark, Clock3, Crown, Banknote, ShieldAlert, Hourglass, MessageSquareText, Wallet, Zap } from 'lucide-react';
+import { api, rechargeMethodLabel } from '@/lib/api';
 import { useDataVersion } from '@/hooks/use-data';
 import { CHART_HEX } from '@/components/chart-colors';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+
+function fmtTime(iso: string): string {
+  try {
+    return new Date(iso).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return '';
+  }
+}
 
 export default function AdminOverview() {
   useDataVersion();
   const stats = api.adminStats();
+  const recharges = api.realtimeRecharges(12);
 
   const lineOption = {
     color: [CHART_HEX[0], CHART_HEX[2]],
@@ -109,6 +119,35 @@ export default function AdminOverview() {
           </CardContent>
         </Card>
       </div>
+
+      {/* 实时收款：用户支付实时到账（管理员实时可见） */}
+      <Card>
+        <CardContent className="p-4">
+          <h3 className="mb-1 flex items-center gap-1.5 font-medium">
+            <Zap className="h-4 w-4 text-primary" /> 实时收款 · 用户支付即时到账
+          </h3>
+          <p className="mb-3 text-xs text-muted-foreground">用户扫码支付成功后，回调实时入账并出现在这里（含支付方式与平台单号），提现由客服审核实时下发。</p>
+          {recharges.length === 0 ? (
+            <p className="rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground">暂无充值订单，用户支付后这里实时出现</p>
+          ) : (
+            <div className="max-h-72 space-y-1.5 overflow-y-auto pr-1">
+              {recharges.map(({ tx, user }) => (
+                <div key={tx.id} className="flex flex-wrap items-center gap-2 rounded-lg border border-border/60 bg-card px-3 py-2">
+                  <Badge variant="outline" className="gap-1 text-[10px]">
+                    <Wallet className="h-3 w-3" /> 到账
+                  </Badge>
+                  <span className="min-w-0 flex-1 truncate text-sm">
+                    {user ? `${user.nickname}（@${user.username}）` : '用户'} · {tx.amount.toFixed(2)} 元
+                    <span className="ml-2 text-xs text-muted-foreground">{rechargeMethodLabel(tx.method ?? 'alipay')}</span>
+                    {tx.payNo && <span className="ml-2 font-mono text-[10px] text-muted-foreground">单号 {tx.payNo}</span>}
+                  </span>
+                  <span className="shrink-0 text-[11px] text-muted-foreground">{fmtTime(tx.createdAt)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
