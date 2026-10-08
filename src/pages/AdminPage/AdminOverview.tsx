@@ -70,69 +70,75 @@ export default function AdminOverview() {
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {cards.map((c) => (
-          <Card key={c.label}>
-            <CardContent className="p-4">
-              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <c.icon className="h-3.5 w-3.5" /> {c.label}
+          <Card key={c.label} className="card-anime">
+            <CardContent className="p-5">
+              <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <c.icon className="h-4 w-4" />
+                </span>
+                {c.label}
               </p>
-              <p className="mt-1 text-2xl font-bold">{c.value}</p>
-              <p className="mt-0.5 text-[11px] text-muted-foreground">{c.sub}</p>
+              <p className="mt-3 text-3xl font-bold tracking-tight">{c.value}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{c.sub}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {secCards.map((c) => (
           <Card key={c.label} className={c.label.includes('危险') ? 'border-destructive/40' : ''}>
-            <CardContent className="p-4">
-              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <c.icon className="h-3.5 w-3.5" /> {c.label}
+            <CardContent className="p-5">
+              <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted/70 text-foreground/80">
+                  <c.icon className="h-3.5 w-3.5" />
+                </span>
+                {c.label}
               </p>
-              <p className="mt-1 text-xl font-bold">{c.value}</p>
-              <p className="mt-0.5 text-[11px] text-muted-foreground">{c.sub}</p>
+              <p className="mt-3 text-2xl font-bold tracking-tight">{c.value}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{c.sub}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+      <div className="grid gap-5 lg:grid-cols-[1.6fr_1fr]">
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-5">
             <h3 className="mb-1 flex items-center gap-1.5 font-medium">
               <Crown className="h-4 w-4 text-primary" /> 近 7 日趋势
             </h3>
-            <p className="mb-2 text-xs text-muted-foreground">新增用户与平台收入（充值抽成 30%）</p>
-            <ReactECharts option={lineOption} style={{ height: 280 }} notMerge />
+            <p className="mb-3 text-xs text-muted-foreground">新增用户与平台收入（充值抽成 30%）</p>
+            <ReactECharts option={lineOption} style={{ height: 300 }} notMerge />
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-5">
             <h3 className="mb-1 flex items-center gap-1.5 font-medium">
               <CheckCircle2 className="h-4 w-4 text-primary" /> 收入构成
             </h3>
-            <p className="mb-2 text-xs text-muted-foreground">充值 / 订阅分成 / 打赏分成</p>
-            <ReactECharts option={pieOption} style={{ height: 280 }} notMerge />
+            <p className="mb-3 text-xs text-muted-foreground">充值 / 订阅分成 / 打赏分成</p>
+            <ReactECharts option={pieOption} style={{ height: 300 }} notMerge />
           </CardContent>
         </Card>
       </div>
 
       {/* 实时收款：用户支付实时到账（管理员实时可见） */}
       <Card>
-        <CardContent className="p-4">
+        <CardContent className="p-5">
           <h3 className="mb-1 flex items-center gap-1.5 font-medium">
             <Zap className="h-4 w-4 text-primary" /> 实时收款 · 用户支付即时到账
           </h3>
           <p className="mb-3 text-xs text-muted-foreground">用户扫码支付成功后，回调实时入账并出现在这里（含支付方式与平台单号），提现由客服审核实时下发。</p>
           {recharges.length === 0 ? (
-            <p className="rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground">暂无充值订单，用户支付后这里实时出现</p>
+            <p className="rounded-lg border border-dashed p-5 text-center text-xs text-muted-foreground">暂无充值订单，用户支付后这里实时出现</p>
           ) : (
-            <div className="max-h-72 space-y-1.5 overflow-y-auto pr-1">
+            <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
               {recharges.map(({ tx, user }) => (
-                <div key={tx.id} className="flex flex-wrap items-center gap-2 rounded-lg border border-border/60 bg-card px-3 py-2">
+                <div key={tx.id} className="flex flex-wrap items-center gap-2.5 rounded-xl border border-border/60 bg-card px-3.5 py-2.5">
                   <Badge variant="outline" className="gap-1 text-[10px]">
                     <Wallet className="h-3 w-3" /> 到账
                   </Badge>
