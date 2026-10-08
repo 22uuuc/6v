@@ -10,6 +10,7 @@ import {
   RotateCcw, Palette, MonitorSmartphone,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import { api, isVip, fmtCoins, rechargeMethodLabel } from '@/lib/api';
 import { FONT_STYLES } from '@/lib/platform-style';
 import { useDataVersion } from '@/hooks/use-data';
@@ -87,6 +88,7 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   useDataVersion();
   const [rechargeOpen, setRechargeOpen] = useState(false);
+  const [stampKey, setStampKey] = useState(0);
   const [vipOpen, setVipOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
@@ -183,6 +185,7 @@ export default function ProfilePage() {
       toast.error(res.msg ?? '签到失败');
       return;
     }
+    setStampKey((k) => k + 1); // 触发盖章动画
     toast.success(`签到成功！连续 ${res.streak} 天，+${res.reward} 书币`);
   };
 
@@ -309,9 +312,22 @@ export default function ProfilePage() {
                 连续签到 {checkinInfo.streak} 天 · 签到 +{checkinInfo.checkinReward} 币 · 阅读一章 +{checkinInfo.readReward} 币
               </p>
             </div>
-            <Button size="sm" onClick={doCheckin} disabled={checkinInfo.today} className="gap-1.5">
-              <Coins className="h-3.5 w-3.5" /> {checkinInfo.today ? '今日已签到' : '立即签到'}
-            </Button>
+            <button
+              key={stampKey}
+              type="button"
+              onClick={doCheckin}
+              disabled={checkinInfo.today}
+              aria-label="每日签到"
+              className={cn(
+                'relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 transition-all',
+                checkinInfo.today
+                  ? 'stamp-seal border-red-500/70 bg-red-500/10 text-red-500'
+                  : 'border-red-400/60 text-red-400 hover:scale-105 hover:bg-red-500/10',
+              )}
+            >
+              <span className="font-serif text-base font-bold">{checkinInfo.today ? '已签' : '签'}</span>
+              {checkinInfo.today && <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 animate-ping rounded-full bg-red-500" />}
+            </button>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             <span className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs ${checkinInfo.today ? 'border-primary/40 bg-primary/10 text-primary' : 'border-border text-muted-foreground'}`}>
