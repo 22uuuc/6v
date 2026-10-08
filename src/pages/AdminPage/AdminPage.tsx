@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, BookCheck, Landmark, ShieldCheck, Settings2, Banknote, Lock, KeyRound, UserCheck, Headset,
+  LayoutDashboard, Users, BookCheck, Landmark, ShieldCheck, Settings2, Banknote, Lock, KeyRound, UserCheck, Headset, Cloud,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
@@ -21,6 +21,7 @@ import AdminWithdrawals from '@/pages/AdminPage/AdminWithdrawals';
 import AdminSecurity from '@/pages/AdminPage/AdminSecurity';
 import AdminSettlements from '@/pages/AdminPage/AdminSettlements';
 import AdminSettings from '@/pages/AdminPage/AdminSettings';
+import AdminCloudSync from '@/pages/AdminPage/AdminCloudSync';
 import AdminApplications from '@/pages/AdminPage/AdminApplications';
 import AdminService from '@/pages/AdminPage/AdminService';
 
@@ -166,6 +167,9 @@ export default function AdminPage() {
           <TabsTrigger value="security" className="gap-1.5">
             <ShieldCheck className="h-3.5 w-3.5" /> 安全中心
           </TabsTrigger>
+          <TabsTrigger value="cloud" className="gap-1.5">
+            <Cloud className="h-3.5 w-3.5" /> 云同步
+          </TabsTrigger>
           <TabsTrigger value="settings" className="gap-1.5">
             <Settings2 className="h-3.5 w-3.5" /> 全站设置
           </TabsTrigger>
@@ -193,6 +197,9 @@ export default function AdminPage() {
         </TabsContent>
         <TabsContent value="security" className="pt-4">
           <AdminSecurity />
+        </TabsContent>
+        <TabsContent value="cloud" className="pt-4">
+          <AdminCloudSync />
         </TabsContent>
         <TabsContent value="settings" className="pt-4">
           <AdminSettings />

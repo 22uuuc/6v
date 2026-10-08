@@ -233,6 +233,8 @@ export interface ITx {
   note: string;
   createdAt: string;
   bookId?: string;
+  /** 订阅的章节 id（小说/漫画章节粒度，互动/动漫为整本无此字段） */
+  chapterId?: string;
   /** 充值方式（recharge 时记录） */
   method?: string;
 }

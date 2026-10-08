@@ -56,31 +56,41 @@ export default function AuthPage() {
   const [forgotOpen, setForgotOpen] = useState(false);
   const [fAccount, setFAccount] = useState('');
   const [fCode, setFCode] = useState('');
-  const [fSentCode, setFSentCode] = useState('');
-  const [fSending, setFSending] = useState(false);
+  const [fCountdown, setFCountdown] = useState(0);
   const [fNewPwd, setFNewPwd] = useState('');
   const [fNewPwd2, setFNewPwd2] = useState('');
 
-  /** 忘记密码：发送演示验证码（toast 展示） */
+  /** 验证码重发倒计时（60 秒） */
+  const startCountdown = () => {
+    setFCountdown(60);
+    const tick = () => {
+      setFCountdown((s) => {
+        if (s <= 1) return 0;
+        setTimeout(tick, 1000);
+        return s - 1;
+      });
+    };
+    setTimeout(tick, 1000);
+  };
+
+  /** 忘记密码：向后端申请验证码（验证码由后端生成并校验，演示环境直接显示） */
   const sendForgotCode = () => {
     if (!fAccount.trim()) {
       toast.error('请先输入注册账号（用户名 / 手机号 / 邮箱）');
       return;
     }
-    const code = String(Math.floor(100000 + Math.random() * 900000));
-    setFSentCode(code);
-    setFSending(true);
-    setTimeout(() => setFSending(false), 1200);
-    toast.info(`演示环境验证码已发送：${code}`);
+    const res = api.requestResetCode(fAccount.trim());
+    if (!res.ok) {
+      toast.error(res.msg ?? '发送失败');
+      return;
+    }
+    startCountdown();
+    toast.info(`${res.msg}：${res.demoCode}`);
   };
 
   const doResetPwd = () => {
     if (!fAccount.trim() || !fCode.trim()) {
       toast.error('请填写账号与验证码');
-      return;
-    }
-    if (fCode !== fSentCode) {
-      toast.error('验证码不对，请核对');
       return;
     }
     if (fNewPwd.length < 6) {
@@ -91,7 +101,7 @@ export default function AuthPage() {
       toast.error('两次输入的新密码不一致');
       return;
     }
-    const res = api.resetPassword(fAccount.trim(), fNewPwd);
+    const res = api.resetPassword(fAccount.trim(), fCode.trim(), fNewPwd);
     if (!res.ok) {
       toast.error(res.msg ?? '重置失败');
       return;
@@ -99,9 +109,9 @@ export default function AuthPage() {
     setForgotOpen(false);
     setFAccount('');
     setFCode('');
-    setFSentCode('');
     setFNewPwd('');
     setFNewPwd2('');
+    setFCountdown(0);
     toast.success('密码已重置，请使用新密码登录');
   };
 
@@ -485,8 +495,8 @@ export default function AuthPage() {
                 <Label>验证码</Label>
                 <Input value={fCode} onChange={(e) => setFCode(e.target.value)} placeholder="6 位验证码" maxLength={6} />
               </div>
-              <Button type="button" variant="outline" className="mt-6 shrink-0" onClick={sendForgotCode} disabled={fSending}>
-                <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> 发送验证码
+              <Button type="button" variant="outline" className="mt-6 shrink-0" onClick={sendForgotCode} disabled={fCountdown > 0}>
+                <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> {fCountdown > 0 ? `${fCountdown}s 后重发` : '发送验证码'}
               </Button>
             </div>
             <div className="space-y-1.5">

@@ -39,6 +39,24 @@ function readUsers(): IUser[] {
   return read<IUser[]>('users', []).map(normalizeUser);
 }
 
+/* ---------- 找回密码验证码（后端模拟层：内存存储，10 分钟有效、一次性、防爆破） ---------- */
+
+interface IResetCode {
+  code: string;
+  sentAt: number;
+  expiresAt: number;
+  attempts: number;
+}
+const resetCodeStore = new Map<string, IResetCode>();
+const RESET_CODE_TTL = 10 * 60 * 1000; // 10 分钟
+const RESET_CODE_MAX_ATTEMPTS = 5; // 连错 5 次作废
+const RESET_CODE_COOLDOWN = 60 * 1000; // 同账号 60 秒内只能发一次
+
+/** 生成 6 位数字验证码 */
+function genResetCode(): string {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
 /* ---------- 系统设置 ---------- */
 
 const DEFAULT_SETTINGS: ISettings = {
@@ -842,9 +860,9 @@ export const api = {
       .sort((a, b) => (b.createdAt < a.createdAt ? -1 : 1));
   },
 
-  pushTx(userId: string, kind: TxKind, coin: number, note: string, amount = 0, bookId?: string, method?: string) {
+  pushTx(userId: string, kind: TxKind, coin: number, note: string, amount = 0, bookId?: string, method?: string, chapterId?: string) {
     const txs = read<ITx[]>('txs', []);
-    txs.unshift({ id: uid('tx'), userId, kind, amount, coin, note, createdAt: new Date().toISOString(), bookId, method });
+    txs.unshift({ id: uid('tx'), userId, kind, amount, coin, note, createdAt: new Date().toISOString(), bookId, method, chapterId });
     write('txs', txs);
     const users = read<IUser[]>('users', []);
     const i = users.findIndex((u) => u.id === userId);
@@ -867,9 +885,10 @@ export const api = {
     const me = this.getUser(userId);
     if (!me) return { ok: false, msg: '请先登录' };
     if (me.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
+    if (me.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
     if (isVip(me)) return { ok: true };
     if (me.coins < chapter.price) return { ok: false, msg: '书币不足，请先充值' };
-    this.pushTx(userId, 'subscribe', -chapter.price, `订阅《${this.getBook(chapter.bookId)?.title ?? ''}》第${chapter.index}章`, 0, chapter.bookId);
+    this.pushTx(userId, 'subscribe', -chapter.price, `订阅《${this.getBook(chapter.bookId)?.title ?? ''}》第${chapter.index}章`, 0, chapter.bookId, undefined, chapter.id);
     this.creditAuthor(chapter.bookId, chapter.price, '订阅');
     return { ok: true };
   },
@@ -880,6 +899,7 @@ export const api = {
     if (price <= 0) return { ok: true };
     const me = this.getUser(userId);
     if (!me) return { ok: false, msg: '请先登录' };
+    if (me.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
     if (me.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
     if (isVip(me)) return { ok: true };
     if (me.coins < price) return { ok: false, msg: '书币不足，请先充值' };
@@ -894,9 +914,10 @@ export const api = {
     const me = this.getUser(userId);
     if (!me) return { ok: false, msg: '请先登录' };
     if (me.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
+    if (me.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
     if (isVip(me)) return { ok: true };
     if (me.coins < chapter.price) return { ok: false, msg: '书币不足，请先充值' };
-    this.pushTx(userId, 'subscribe', -chapter.price, `订阅漫画《${book.title}》第${chapter.index}章`, 0, book.id);
+    this.pushTx(userId, 'subscribe', -chapter.price, `订阅漫画《${book.title}》第${chapter.index}章`, 0, book.id, undefined, chapter.id);
     this.creditAuthor(book.id, chapter.price, '订阅');
     return { ok: true };
   },
@@ -911,6 +932,7 @@ export const api = {
   buyVip(userId: string): { ok: boolean; msg?: string } {
     const me = this.getUser(userId);
     if (!me) return { ok: false, msg: '请先登录' };
+    if (me.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
     if (me.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
     const price = this.getSettings().vipPrice;
     if (me.coins < price) return { ok: false, msg: '书币不足，请先充值' };
@@ -1192,15 +1214,55 @@ export const api = {
     return { ok: true };
   },
 
-  /** 忘记密码：按注册账号（用户名/手机号/邮箱）重置密码（验证码在界面层演示校验） */
-  resetPassword(account: string, newPwd: string): { ok: boolean; msg?: string } {
+  /** 申请找回密码验证码：校验账号存在、60 秒频控，验证码存后端模拟层（10 分钟有效） */
+  requestResetCode(account: string): { ok: boolean; msg?: string; demoCode?: string } {
+    const accountKey = account.trim();
+    if (!accountKey) return { ok: false, msg: '请输入注册账号（用户名 / 手机号 / 邮箱）' };
     const users = readUsers();
-    const i = users.findIndex((u) => u.username === account);
-    if (i < 0) return { ok: false, msg: '该账号不存在，请检查输入' };
+    const u = users.find((x) => x.username === accountKey);
+    if (!u) return { ok: false, msg: '该账号不存在，请检查输入' };
+    if (u.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
+    const exist = resetCodeStore.get(accountKey);
+    if (exist && Date.now() - exist.sentAt < RESET_CODE_COOLDOWN) {
+      return { ok: false, msg: '验证码已发送，请 60 秒后再试' };
+    }
+    const code = genResetCode();
+    resetCodeStore.set(accountKey, { code, sentAt: Date.now(), expiresAt: Date.now() + RESET_CODE_TTL, attempts: 0 });
+    security.audit(u.id, u.nickname, '申请找回密码验证码', '账号安全', '验证码已生成（10 分钟有效）');
+    // 演示环境：验证码直接返回展示；真实生产由短信/邮件网关下发
+    return { ok: true, msg: '验证码已发送（演示环境直接显示）', demoCode: code };
+  },
+
+  /** 忘记密码：按注册账号重置密码。验证码由后端校验：一次性、10 分钟有效、连错 5 次作废 */
+  resetPassword(account: string, code: string, newPwd: string): { ok: boolean; msg?: string } {
+    const accountKey = account.trim();
+    const users = readUsers();
+    const u = users.find((x) => x.username === accountKey);
+    if (!u) return { ok: false, msg: '该账号不存在，请检查输入' };
+    const rec = resetCodeStore.get(accountKey);
+    if (!rec) return { ok: false, msg: '请先获取验证码' };
+    if (rec.expiresAt < Date.now()) {
+      resetCodeStore.delete(accountKey);
+      return { ok: false, msg: '验证码已过期，请重新获取' };
+    }
+    if (rec.attempts >= RESET_CODE_MAX_ATTEMPTS) {
+      resetCodeStore.delete(accountKey);
+      security.audit(u.id, u.nickname, '重置密码拦截', '账号安全', '验证码尝试次数超限，已作废并要求重新获取');
+      return { ok: false, msg: '验证码错误次数过多，已作废，请重新获取' };
+    }
+    if (rec.code !== code.trim()) {
+      rec.attempts += 1;
+      resetCodeStore.set(accountKey, rec);
+      return { ok: false, msg: `验证码不对，请核对（剩余 ${RESET_CODE_MAX_ATTEMPTS - rec.attempts} 次机会）` };
+    }
     if (!newPwd || newPwd.length < 6) return { ok: false, msg: '新密码至少 6 位' };
+    if (newPwd === u.password) return { ok: false, msg: '新密码不能与原密码相同' };
+    // 校验通过：作废验证码（一次性），更新密码
+    resetCodeStore.delete(accountKey);
+    const i = users.findIndex((x) => x.id === u.id);
     users[i].password = newPwd;
     write('users', users);
-    security.audit(users[i].id, users[i].nickname, '重置密码', '账号安全', '通过验证码找回密码');
+    security.audit(u.id, u.nickname, '重置密码', '账号安全', '通过验证码校验重置密码成功');
     notify();
     return { ok: true };
   },
@@ -1263,6 +1325,7 @@ export const api = {
   saveChannel(userId: string, data: { type: ChannelType; account: string; accountName: string; bankName?: string }): { ok: boolean; msg?: string } {
     const me = this.getUser(userId);
     if (!me) return { ok: false, msg: '请先登录' };
+    if (me.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
     if (me.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
     if (!data.type || !data.account.trim() || !data.accountName.trim()) return { ok: false, msg: '请填写完整的渠道信息' };
     if (data.account.trim().length < 4) return { ok: false, msg: '账号长度不合法' };
@@ -1528,21 +1591,24 @@ export const api = {
     return read<IReview[]>('reviews', []).sort((a, b) => (b.createdAt < a.createdAt ? -1 : 1));
   },
 
-  /** 是否已解锁付费内容（VIP / 已购 / 免费） */
+  /** 是否已解锁付费内容（VIP / 已购 / 免费）。章节类（novel/comic）按章节 id 粒度判断，互动/动漫按整本判断 */
   isUnlocked(userId: string | null, book: IBook, kind: 'chapter' | 'visual' | 'comic', target?: IChapter | IComicChapter): boolean {
+    let targetId: string | undefined;
     if (kind === 'chapter') {
       const ch = target as IChapter;
       if (ch.price <= 0) return true;
+      targetId = ch.id;
     } else if (kind === 'comic') {
       const ch = target as IComicChapter;
       if (ch.price <= 0) return true;
+      targetId = ch.id;
     } else {
       if (book.chapterPrice <= 0) return true;
     }
     if (!userId) return false;
     const me = this.getUser(userId);
     if (me && isVip(me)) return true;
-    const txs = read<ITx[]>('txs', []).filter((t) => t.userId === userId && t.kind === 'subscribe' && t.bookId === book.id);
+    const txs = read<ITx[]>('txs', []).filter((t) => t.userId === userId && t.kind === 'subscribe' && t.bookId === book.id && (!targetId || t.chapterId === targetId));
     return txs.length > 0;
   },
 };

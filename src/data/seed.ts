@@ -278,11 +278,11 @@ export function buildSeed(): ISeedData {
 
   const txs: ITx[] = [
     { id: 'tx1', userId: 'u-r1', kind: 'recharge', amount: 30, coin: 3000, note: '充值 30 元', createdAt: day(-20) },
-    { id: 'tx2', userId: 'u-r1', kind: 'subscribe', amount: 20, coin: -20, note: '订阅《巷口馄饨摊》第2章', createdAt: day(-18) },
+    { id: 'tx2', userId: 'u-r1', kind: 'subscribe', amount: 20, coin: -20, note: '订阅《巷口馄饨摊》第2章', bookId: 'b1', chapterId: 'b1c2', createdAt: day(-18) },
     { id: 'tx3', userId: 'u-r1', kind: 'vip', amount: 18, coin: -1800, note: '开通月度 VIP', createdAt: day(-15) },
     { id: 'tx4', userId: 'u-r2', kind: 'recharge', amount: 12, coin: 1200, note: '充值 12 元', createdAt: day(-10) },
     { id: 'tx5', userId: 'u-r2', kind: 'tip', amount: 50, coin: -50, note: '打赏《第七封信》', createdAt: day(-8) },
-    { id: 'tx6', userId: 'u-r1', kind: 'subscribe', amount: 50, coin: -50, note: '解锁《雾港灯塔》', createdAt: day(-6) },
+    { id: 'tx6', userId: 'u-r1', kind: 'subscribe', amount: 50, coin: -50, note: '解锁《雾港灯塔》', bookId: 'b4', createdAt: day(-6) },
     { id: 'tx7', userId: 'u-r2', kind: 'tip', amount: 100, coin: -100, note: '打赏《打工人小满》', createdAt: day(-4) },
     { id: 'tx8', userId: 'u-c1', kind: 'reward', amount: 0, coin: 420, note: '作品订阅分成入账', createdAt: day(-3) },
     { id: 'tx9', userId: 'u-c2', kind: 'reward', amount: 0, coin: 260, note: '打赏与订阅分成入账', createdAt: day(-2) },
