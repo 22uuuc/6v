@@ -1,7 +1,7 @@
 // EXPORTS: ReaderPage（组件文件）
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, List, Lock, Minus, Plus, ChevronLeft, ChevronRight, SunMoon } from 'lucide-react';
+import { ArrowLeft, List, Lock, Minus, Plus, ChevronLeft, ChevronRight, SunMoon, Maximize2, Minimize2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { api, isVip, fmtCoins } from '@/lib/api';
 import { fontStack } from '@/lib/platform-style';
@@ -26,6 +26,18 @@ export default function ReaderPage() {
   // 行距由个性化设置提供（ProfilePage），阅读页只读应用
   const lineHeight = prefs?.lineHeight ?? 1.9;
   const [theme, setTheme] = useState<ReaderTheme>((prefs?.readerTheme as ReaderTheme) ?? 'ink');
+  // 沉浸阅读：顶栏/底栏淡出，点正文呼出
+  const [immersive, setImmersive] = useState(false);
+  // 阅读模式：连续滚动 / 分页翻读（B站漫画式）
+  const [mode, setMode] = useState<'scroll' | 'page'>('scroll');
+  const [pageIdx, setPageIdx] = useState(0);
+  const PAGE_SIZE = 3;
+
+  const switchMode = (m: 'scroll' | 'page') => {
+    setMode(m);
+    setPageIdx(0);
+    window.scrollTo(0, 0);
+  };
 
   // 保存偏好到个人设置（阅读主题/字号），换设备/浏览器后通过个人资料恢复
   useEffect(() => {
@@ -77,11 +89,25 @@ export default function ReaderPage() {
 
   const paras = chapter.content.split('\n\n');
   const progress = chapters.length > 0 ? Math.min(100, Math.round(((index + 1) / chapters.length) * 100)) : 0;
+  const pageCount = Math.max(1, Math.ceil(paras.length / PAGE_SIZE));
+  const pageParas = mode === 'page' ? paras.slice(pageIdx * PAGE_SIZE, (pageIdx + 1) * PAGE_SIZE) : paras;
+
+  // 沉浸阅读：点击正文空白处呼出/收起顶栏（选中文字时不触发）
+  const tapToggleBars = () => {
+    if (!immersive) return;
+    const sel = window.getSelection();
+    if (sel && sel.toString().trim().length > 0) return;
+    setImmersive((v) => !v);
+  };
 
   return (
     <div className="mx-auto max-w-2xl">
-      {/* 顶栏 */}
-      <div className="sticky top-14 z-30 -mx-4 mb-4 flex items-center gap-2 border-b border-border bg-background/90 px-4 py-2.5 backdrop-blur">
+      {/* 顶栏（沉浸阅读时淡出，点正文呼出） */}
+      <div
+        className={`sticky top-14 z-30 -mx-4 mb-4 flex items-center gap-2 border-b border-border bg-background/90 px-4 py-2.5 backdrop-blur transition-all duration-300 ${
+          immersive ? 'pointer-events-none -translate-y-3 opacity-0' : ''
+        }`}
+      >
         <Button variant="ghost" size="icon" onClick={() => navigate(`/book/${bookId}`)} aria-label="返回">
           <ArrowLeft className="h-4.5 w-4.5" />
         </Button>
@@ -89,6 +115,9 @@ export default function ReaderPage() {
           <p className="truncate text-sm font-medium">{book.title}</p>
           <p className="truncate text-xs text-muted-foreground">第{chapter.index}章 · {chapter.title}</p>
         </div>
+        <Button variant="ghost" size="icon" onClick={() => setImmersive((v) => !v)} aria-label={immersive ? '退出沉浸阅读' : '沉浸阅读'}>
+          {immersive ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+        </Button>
         <Button variant="ghost" size="icon" onClick={() => setFontSize((s) => Math.max(16, s - 1))} aria-label="减小字号">
           <Minus className="h-4 w-4" />
         </Button>
@@ -144,7 +173,8 @@ export default function ReaderPage() {
 
       {/* 正文 */}
       <article
-        className={`min-h-[60vh] px-2 pb-10 transition-colors duration-300 ${
+        onClick={tapToggleBars}
+        className={`min-h-[60vh] cursor-default select-text px-2 pb-10 transition-colors duration-300 ${
           theme === 'paper'
             ? 'reading-article mt-4 rounded-2xl border border-[hsl(40_30%_72%)] bg-[#f5ecd9] p-5 text-[#33302a] shadow-[0_12px_30px_-14px_hsl(0_0%_0%/0.5)] sm:p-7'
             : theme === 'night'
@@ -162,32 +192,94 @@ export default function ReaderPage() {
         </h1>
         <p className={`mb-6 text-xs ${theme === 'paper' ? 'text-[#8a7c66]' : 'text-muted-foreground'}`}>
           第{chapter.index}章 · {book.title} · {book.authorName}
+          {mode === 'page' && ` · 第 ${pageIdx + 1} / ${pageCount} 页`}
         </p>
-        {paras.map((p, i) => (
+        {pageParas.map((p, i) => (
           <p key={i} className="mb-4 text-justify">
             {p}
           </p>
         ))}
+        {mode === 'page' && pageIdx < pageCount - 1 && (
+          <p className={`mt-8 text-center text-xs ${theme === 'paper' ? 'text-[#a89472]' : 'text-muted-foreground'}`}>
+            — 本页完 · 继续向下 —
+          </p>
+        )}
       </article>
 
-      {/* 翻页 */}
-      <div className="flex items-center justify-between gap-2 border-t border-border py-4">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={index <= 0}
-          onClick={() => navigate(`/read/${bookId}/${chapters[index - 1].id}`)}
-        >
-          <ChevronLeft className="mr-1 h-4 w-4" /> 上一章
-        </Button>
-        <span className="text-xs text-muted-foreground">{index + 1} / {chapters.length}</span>
-        <Button
-          size="sm"
-          disabled={index >= chapters.length - 1}
-          onClick={() => navigate(`/read/${bookId}/${chapters[index + 1].id}`)}
-        >
-          下一章 <ChevronRight className="ml-1 h-4 w-4" />
-        </Button>
+      {/* 翻页（沉浸阅读时同步淡出） */}
+      <div
+        className={`border-t border-border py-4 transition-all duration-300 ${
+          immersive ? 'pointer-events-none opacity-0' : ''
+        }`}
+      >
+        {/* 阅读模式切换：连续滚动 / 分页翻读 */}
+        <div className="mb-3 flex items-center justify-center gap-2">
+          <span className="text-[11px] text-muted-foreground">阅读模式</span>
+          <div className="flex rounded-full border border-border bg-muted/60 p-0.5 text-xs">
+            <button
+              type="button"
+              onClick={() => switchMode('scroll')}
+              className={`rounded-full px-3 py-1 transition-colors ${mode === 'scroll' ? 'bg-primary font-medium text-primary-foreground' : 'text-muted-foreground'}`}
+            >
+              连续滚动
+            </button>
+            <button
+              type="button"
+              onClick={() => switchMode('page')}
+              className={`rounded-full px-3 py-1 transition-colors ${mode === 'page' ? 'bg-primary font-medium text-primary-foreground' : 'text-muted-foreground'}`}
+            >
+              分页翻读
+            </button>
+          </div>
+        </div>
+
+        {mode === 'page' ? (
+          <div className="flex items-center justify-between gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={pageIdx <= 0}
+              onClick={() => {
+                setPageIdx((p) => Math.max(0, p - 1));
+                window.scrollTo(0, 0);
+              }}
+            >
+              <ChevronLeft className="mr-1 h-4 w-4" /> 上一页
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              第 {pageIdx + 1} / {pageCount} 页 · 章 {index + 1}/{chapters.length}
+            </span>
+            <Button
+              size="sm"
+              disabled={pageIdx >= pageCount - 1}
+              onClick={() => {
+                setPageIdx((p) => Math.min(pageCount - 1, p + 1));
+                window.scrollTo(0, 0);
+              }}
+            >
+              下一页 <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={index <= 0}
+              onClick={() => navigate(`/read/${bookId}/${chapters[index - 1].id}`)}
+            >
+              <ChevronLeft className="mr-1 h-4 w-4" /> 上一章
+            </Button>
+            <span className="text-xs text-muted-foreground">{index + 1} / {chapters.length}</span>
+            <Button
+              size="sm"
+              disabled={index >= chapters.length - 1}
+              onClick={() => navigate(`/read/${bookId}/${chapters[index + 1].id}`)}
+            >
+              下一章 <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* 付费拦截 */}
