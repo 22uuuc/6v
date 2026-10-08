@@ -45,10 +45,10 @@ export const SETTINGS_FILES = [
   { key: 'loginSessions', path: `${DB_DIR}/auth-sessions.json` },
 ] as const;
 
-/** 设置仓本地存储键（与 store 键一致，推送/拉取共用） */
+/** 设置仓本地存储键（与 store 键一致，推送/拉取共用；认证会话实际存储键为 session） */
 export const SETTINGS_STORE_KEYS: Record<string, string> = {
   settings: 'settings',
-  loginSessions: 'loginSessions',
+  loginSessions: 'session',
 };
 
 const TOKEN_KEY = 'cloud-token';
@@ -158,28 +158,41 @@ function bytesToHex(buf: ArrayBuffer | Uint8Array): string {
 }
 
 /** 由加密口令派生 AES-GCM / HMAC 密钥（PBKDF2，固定盐保证跨会话可解；口令仅存本机浏览器）。saltKey 区分仓库：内容库与用户库各自独立盐与口令 */
-async function deriveKey(pass: string, saltKey: string): Promise<CryptoKey> {
+/** 派生双密钥：encKey 用于 AES-GCM 加解密，macKey 用于 HMAC-SHA256 签名/验签（同一口令独立盐派生，互不混用） */
+interface CloudKeys {
+  encKey: CryptoKey;
+  macKey: CryptoKey;
+}
+async function deriveKeys(pass: string, saltKey: string): Promise<CloudKeys> {
   const enc = new TextEncoder();
-  const baseKey = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']);
-  return crypto.subtle.deriveKey(
+  const baseKey = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey', 'deriveBits']);
+  const encKey = await crypto.subtle.deriveKey(
     { name: 'PBKDF2', salt: enc.encode(`moying-cloud-${saltKey}`), iterations: 10000, hash: 'SHA-256' },
     baseKey,
     { name: 'AES-GCM', length: 256 },
     false,
     ['encrypt', 'decrypt'],
   );
+  const macKey = await crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt: enc.encode(`moying-cloud-mac-${saltKey}`), iterations: 10000, hash: 'SHA-256' },
+    baseKey,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign', 'verify'],
+  );
+  return { encKey, macKey };
 }
 
 /** 加密 + 签名：{"enc":true,"v":1,"iv","data","sig"}（AES-GCM 加密，HMAC-SHA256 防篡改，签名只依赖密文与 iv） */
-async function sealJson(jsonStr: string, key: CryptoKey): Promise<string> {
+async function sealJson(jsonStr: string, keys: CloudKeys): Promise<string> {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const data = new TextEncoder().encode(jsonStr);
-  const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, data);
+  const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, keys.encKey, data);
   const ivB64 = encodeBase64(String.fromCharCode(...Array.from(iv)));
   const dataB64 = encodeBase64(String.fromCharCode(...new Uint8Array(cipher)));
   const sigBuf = await crypto.subtle.sign(
     { name: 'HMAC', hash: 'SHA-256' },
-    key,
+    keys.macKey,
     new TextEncoder().encode(`${ivB64}:${dataB64}`),
   );
   return JSON.stringify({
@@ -192,7 +205,7 @@ async function sealJson(jsonStr: string, key: CryptoKey): Promise<string> {
 }
 
 /** 验签 + 解密；验签失败返回 null（上层拒收并记安全日志） */
-async function unsealJson(text: string, key: CryptoKey): Promise<string | null> {
+async function unsealJson(text: string, keys: CloudKeys): Promise<string | null> {
   let obj: { enc?: boolean; v?: number; iv?: string; data?: string; sig?: string };
   try {
     obj = JSON.parse(text);
@@ -205,14 +218,14 @@ async function unsealJson(text: string, key: CryptoKey): Promise<string | null> 
     const expected = bytesToHex(
       await crypto.subtle.sign(
         { name: 'HMAC', hash: 'SHA-256' },
-        key,
+        keys.macKey,
         new TextEncoder().encode(`${obj.iv}:${obj.data}`),
       ),
     );
     if (expected.toLowerCase() !== obj.sig.toLowerCase()) return null;
     const iv = decodeBase64(obj.iv);
     const cipher = decodeBase64(obj.data);
-    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, cipher);
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, keys.encKey, cipher);
     return new TextDecoder().decode(plain);
   } catch {
     return null;
@@ -392,8 +405,8 @@ export const cloud = {
         return null;
       }
       if (obj && obj.enc === true) {
-        const key = await deriveKey(pass, `${REPO_OWNER}/${REPO_NAME}`);
-        const jsonStr = await unsealJson(text, key);
+        const keys = await deriveKeys(pass, `${REPO_OWNER}/${REPO_NAME}`);
+        const jsonStr = await unsealJson(text, keys);
         if (jsonStr === null) {
           // 加密文件验签失败：仓库数据被篡改或口令不符，拒收并记安全日志
           security.recordAttack('云端加密内容验签失败已拒收（仓库数据疑似被篡改或口令不符）');
@@ -465,7 +478,7 @@ export const cloud = {
     } catch {
       return { ok: false, msg: '无法连接 GitHub，请检查网络后重试' };
     }
-    const key = await deriveKey(pass, `${REPO_OWNER}/${REPO_NAME}`);
+    const keys = await deriveKeys(pass, `${REPO_OWNER}/${REPO_NAME}`);
     const pushed: string[] = [];
     const failed: string[] = [];
     for (const f of CLOUD_FILES) {
@@ -475,7 +488,7 @@ export const cloud = {
         continue;
       }
       try {
-        const sealed = await sealJson(JSON.stringify(data), key);
+        const sealed = await sealJson(JSON.stringify(data), keys);
         const sha = await fetchSha(f.path, tk);
         await putFile(f.path, sealed, tk, sha);
         pushed.push(f.key);
@@ -542,8 +555,8 @@ export const cloud = {
       security.recordAttack('云端用户数据非加密文件已拒收（用户数据仓库必须加密落库）');
       return null;
     }
-    const key = await deriveKey(pass, `${USER_REPO_OWNER}/${USER_REPO_NAME}`);
-    const jsonStr = await unsealJson(text, key);
+    const keys = await deriveKeys(pass, `${USER_REPO_OWNER}/${USER_REPO_NAME}`);
+    const jsonStr = await unsealJson(text, keys);
     if (jsonStr === null) {
       security.recordAttack('云端用户数据验签失败已拒收（用户仓库疑似被篡改或口令不符）');
       return null;
@@ -604,7 +617,7 @@ export const cloud = {
     } catch {
       return { ok: false, msg: '无法连接 GitHub，请检查网络后重试' };
     }
-    const key = await deriveKey(pass, `${USER_REPO_OWNER}/${USER_REPO_NAME}`);
+    const keys = await deriveKeys(pass, `${USER_REPO_OWNER}/${USER_REPO_NAME}`);
     const pushed: string[] = [];
     const failed: string[] = [];
     for (const f of USER_DATA_FILES) {
@@ -614,7 +627,7 @@ export const cloud = {
         continue;
       }
       try {
-        const sealed = await sealJson(JSON.stringify(data), key);
+        const sealed = await sealJson(JSON.stringify(data), keys);
         const sha = await fetchUserSha(f.path, tk);
         await putUserFile(f.path, sealed, tk, sha);
         pushed.push(f.key);
@@ -657,8 +670,8 @@ export const cloud = {
       security.recordAttack('云端设置仓非加密文件已拒收（平台设置/会话必须加密落库）');
       return null;
     }
-    const key = await deriveKey(pass, `${REPO_OWNER}/${SETTINGS_REPO_NAME}`);
-    const jsonStr = await unsealJson(text, key);
+    const keys = await deriveKeys(pass, `${REPO_OWNER}/${SETTINGS_REPO_NAME}`);
+    const jsonStr = await unsealJson(text, keys);
     if (jsonStr === null) {
       security.recordAttack('云端设置仓验签失败已拒收（设置仓疑似被篡改或口令不符）');
       return null;
@@ -719,7 +732,7 @@ export const cloud = {
     } catch {
       return { ok: false, msg: '无法连接 GitHub，请检查网络后重试' };
     }
-    const key = await deriveKey(pass, `${REPO_OWNER}/${SETTINGS_REPO_NAME}`);
+    const keys = await deriveKeys(pass, `${REPO_OWNER}/${SETTINGS_REPO_NAME}`);
     const pushed: string[] = [];
     const failed: string[] = [];
     for (const f of SETTINGS_FILES) {
@@ -729,7 +742,7 @@ export const cloud = {
         continue;
       }
       try {
-        const sealed = await sealJson(JSON.stringify(data), key);
+        const sealed = await sealJson(JSON.stringify(data), keys);
         const sha = await fetchSettingsSha(f.path, tk);
         await putSettingsFile(f.path, sealed, tk, sha);
         pushed.push(f.key);
