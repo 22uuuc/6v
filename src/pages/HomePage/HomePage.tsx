@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { useDataVersion } from '@/hooks/use-data';
 import SceneArt from '@/components/SceneArt';
 import BookCard from '@/components/BookCard';
+import MoyingMascot from '@/components/MoyingMascot';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -97,6 +98,13 @@ export default function HomePage() {
               style={{ left: p.left, top: p.top, width: p.size, height: p.size, animationDelay: p.delay }}
             />
           ))}
+          {/* 墨影书灵：IP 吉祥物漂浮（手机小号、桌面大号） */}
+          <div className="mascot-float absolute right-4 top-4 md:right-10 md:top-8">
+            <div className="drop-shadow-[0_0_18px_rgba(168,130,255,0.45)]">
+              <MoyingMascot mood="reading" size={64} className="md:hidden" />
+              <MoyingMascot mood="reading" size={104} className="hidden md:block" />
+            </div>
+          </div>
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 flex flex-col items-start gap-3 p-5 md:p-8">
             <Badge className="bg-primary/20 text-primary backdrop-blur">一页一画 · 有画面的故事</Badge>
