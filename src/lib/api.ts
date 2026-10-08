@@ -12,6 +12,7 @@ import type {
   IWithdrawChannel, ChannelType, IApplicant, IPrivacy, IFeedback, IMessage,
   CoverStyle, CoverFont, IComment,
   PaymentProviderId, IPaymentProvider, IPayTransfer,
+  ILoginSession, IUserPrefs,
 } from '@/lib/types';
 import { LEVELS } from '@/lib/types';
 
@@ -72,6 +73,11 @@ const DEFAULT_SETTINGS: ISettings = {
   adminCode: '',
   adminLockedUntil: 0,
   adminFailCount: 0,
+  devWhitelist: [],
+  layoutStyle: 'anime',
+  fontFamily: 'system',
+  fontSize: 18,
+  lineHeight: 1.9,
 };
 
 export function defaultSettings(): ISettings {
@@ -185,11 +191,28 @@ export const api = {
   },
 
   login(username: string, password: string): { ok: boolean; msg?: string; user?: IUser } {
+    // 防暴力破解：连续失败 5 次锁定 10 分钟（锁定期间直接拒绝）
+    const fail = store.get<{ n: number; until: number }>('loginFail', { n: 0, until: 0 });
+    if (fail.until > Date.now()) {
+      const mins = Math.ceil((fail.until - Date.now()) / 60000);
+      return { ok: false, msg: `登录尝试过多，已锁定，请 ${mins} 分钟后重试` };
+    }
     const users = readUsers();
     const u = users.find((x) => x.username === username && x.password === password);
-    if (!u) return { ok: false, msg: '账号或密码不对' };
+    if (!u) {
+      const n = fail.n + 1;
+      if (n >= 5) {
+        store.set('loginFail', { n: 0, until: Date.now() + 10 * 60 * 1000 });
+        security.recordAttack('登录接口疑似暴力破解：连续失败 5 次，已锁定 10 分钟');
+        return { ok: false, msg: '登录失败次数过多，已锁定 10 分钟' };
+      }
+      store.set('loginFail', { n, until: 0 });
+      return { ok: false, msg: `账号或密码不对（剩余尝试 ${5 - n} 次）` };
+    }
+    store.set('loginFail', { n: 0, until: 0 }); // 登录成功清零
     if (u.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
     writeSession(u.id);
+    this.recordSession(u.id); // 登录设备会话留痕（身份认证与设备安全）
     this.addExp(u.id, 10, '每日登录');
     notify();
     return { ok: true, user: this.getUser(u.id) ?? u };
@@ -208,6 +231,7 @@ export const api = {
     users.push(u);
     write('users', users);
     writeSession(u.id);
+    this.recordSession(u.id);
     this.addExp(u.id, 10, '新账号注册');
     notify();
     return { ok: true, user: this.getUser(u.id) ?? u };
@@ -236,15 +260,107 @@ export const api = {
     }
     if (u.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
     writeSession(u.id);
+    this.recordSession(u.id);
     this.addExp(u.id, 10, '每日登录');
     notify();
     return { ok: true, user: this.getUser(u.id) ?? u };
+  },
+
+  /* ---- 账号认证与设备安全（身份认证增强） ---- */
+
+  /** 记录一次登录设备会话（保留最近 10 条/用户） */
+  recordSession(userId: string) {
+    try {
+      if (typeof navigator === 'undefined') return;
+      const ua = navigator.userAgent || '未知设备';
+      const device = ua.length > 60 ? `${ua.slice(0, 60)}…` : ua;
+      const sessions = store.get<ILoginSession[]>('loginSessions', []);
+      const mine = sessions.filter((s) => s.userId === userId);
+      if (mine.length >= 10) {
+        const oldest = mine.sort((a, b) => (a.lastAt < b.lastAt ? -1 : 1))[0];
+        store.set('loginSessions', sessions.filter((s) => s.id !== oldest.id));
+      }
+      store.set('loginSessions', [
+        { id: uid('s'), userId, device, at: new Date().toISOString(), lastAt: new Date().toISOString() },
+        ...store.get<ILoginSession[]>('loginSessions', []),
+      ].slice(0, 60));
+    } catch {
+      /* 忽略 */
+    }
+  },
+
+  /** 我的登录设备会话（本人可见） */
+  mySessions(userId: string): ILoginSession[] {
+    return store.get<ILoginSession[]>('loginSessions', []).filter((s) => s.userId === userId);
+  },
+
+  /** 退出其他设备（保留当前会话），并记录审计 */
+  killOtherSessions(userId: string, keepId: string, byUserId: string) {
+    const me = this.getUser(byUserId);
+    store.set('loginSessions', store.get<ILoginSession[]>('loginSessions', []).filter((s) => s.userId !== userId || s.id === keepId));
+    security.audit(byUserId, me?.nickname ?? '', '退出其他设备', userId, '已下线其余登录设备');
+    notify();
+  },
+
+  /** 完成邮箱认证（身份认证等级提升） */
+  verifyEmail(userId: string) {
+    const users = readUsers();
+    const i = users.findIndex((u) => u.id === userId);
+    if (i < 0) return { ok: false, msg: '用户不存在' };
+    users[i] = { ...users[i], verified: { ...(users[i].verified ?? {}), email: true }, authLevel: this.authLevelOf({ ...users[i], verified: { ...(users[i].verified ?? {}), email: true } }) };
+    write('users', users);
+    notify();
+    return { ok: true };
+  },
+
+  /** 完成手机认证 */
+  verifyPhone(userId: string) {
+    const users = readUsers();
+    const i = users.findIndex((u) => u.id === userId);
+    if (i < 0) return { ok: false, msg: '用户不存在' };
+    users[i] = { ...users[i], verified: { ...(users[i].verified ?? {}), phone: true }, authLevel: this.authLevelOf({ ...users[i], verified: { ...(users[i].verified ?? {}), phone: true } }) };
+    write('users', users);
+    notify();
+    return { ok: true };
+  },
+
+  /** 计算认证等级：0 未认证 / 1 基础（任一已验）/ 2 完整（邮箱+手机已验） */
+  authLevelOf(u: IUser): number {
+    const v = u.verified ?? {};
+    return v.email && v.phone ? 2 : v.email || v.phone ? 1 : 0;
+  },
+
+  /* ---- 个性化偏好（字体/字号/行距/阅读主题） ---- */
+
+  getPrefs(userId: string): IUserPrefs {
+    const u = this.getUser(userId);
+    return u?.prefs ?? {};
+  },
+
+  setPrefs(userId: string, prefs: IUserPrefs) {
+    const users = readUsers();
+    const i = users.findIndex((u) => u.id === userId);
+    if (i < 0) return;
+    users[i] = { ...users[i], prefs: { ...(users[i].prefs ?? {}), ...prefs } };
+    write('users', users);
+    notify();
   },
 
   /* ---- 用户 ---- */
   getUser(id: string): IUser | null {
     const u = readUsers().find((u) => u.id === id);
     return u ? normalizeUser(u) : null;
+  },
+
+  /** 管理操作身份校验：返回管理员用户，非管理员返回 null（越权调用一律拒绝并记录） */
+  requireAdmin(byUserId?: string): IUser | null {
+    if (!byUserId) return null;
+    const me = this.getUser(byUserId);
+    if (!me || me.role !== 'admin') {
+      security.audit(byUserId, me?.nickname ?? '未知用户', '越权操作被拦截', '', '尝试调用管理员接口，身份校验未通过');
+      return null;
+    }
+    return me;
   },
 
   allUsers(): IUser[] {
@@ -261,7 +377,8 @@ export const api = {
     }
   },
 
-  setRole(id: string, role: UserRole) {
+  setRole(id: string, role: UserRole, byUserId?: string) {
+    if (byUserId && !this.requireAdmin(byUserId)) return;
     const users = readUsers();
     const i = users.findIndex((u) => u.id === id);
     if (i >= 0) {
@@ -314,6 +431,7 @@ export const api = {
 
   /** 管理员审核创作者资质：通过则开通创作者身份并生成首部作品（待审核） */
   decideApplication(appId: string, ok: boolean, byUserId: string, note = '') {
+    if (!this.requireAdmin(byUserId)) return;
     const all = read<IApplicant[]>('applicants', []);
     const i = all.findIndex((a) => a.id === appId);
     if (i < 0) return;
@@ -354,6 +472,7 @@ export const api = {
   /* ---- 管理员更多权限：封禁 / 调币 ---- */
 
   setBanned(id: string, banned: boolean, byUserId: string) {
+    if (!this.requireAdmin(byUserId)) return;
     const users = readUsers();
     const i = users.findIndex((u) => u.id === id);
     if (i < 0 || users[i].role === 'admin') return;
@@ -366,6 +485,7 @@ export const api = {
 
   /** 管理员调整用户书币（delta 可为负，不能低于 0） */
   adjustCoins(id: string, delta: number, byUserId: string) {
+    if (!this.requireAdmin(byUserId)) return;
     const users = readUsers();
     const i = users.findIndex((u) => u.id === id);
     if (i < 0 || users[i].role === 'admin') return;
@@ -381,7 +501,8 @@ export const api = {
   },
 
   /** 后台 VIP 授权 */
-  setVip(id: string, vip: boolean, days = 30) {
+  setVip(id: string, vip: boolean, days = 30, byUserId?: string) {
+    if (byUserId && !this.requireAdmin(byUserId)) return;
     const users = readUsers();
     const i = users.findIndex((u) => u.id === id);
     if (i >= 0) {
@@ -418,7 +539,8 @@ export const api = {
     notify();
   },
 
-  setLevel(id: string, level: number) {
+  setLevel(id: string, level: number, byUserId?: string) {
+    if (byUserId && !this.requireAdmin(byUserId)) return;
     const users = readUsers();
     const i = users.findIndex((u) => u.id === id);
     if (i >= 0) {
@@ -440,6 +562,7 @@ export const api = {
   },
 
   setSettings(patch: Partial<ISettings>, byUserId?: string) {
+    if (byUserId && !this.requireAdmin(byUserId)) return;
     const next = { ...this.getSettings(), ...patch };
     if ('adminCode' in patch && patch.adminCode) {
       next.adminCode = hashString(patch.adminCode);
@@ -533,6 +656,7 @@ export const api = {
   },
 
   setFeatured(id: string, featured: boolean, byUserId?: string) {
+    if (byUserId && !this.requireAdmin(byUserId)) return;
     const books = read<IBook[]>('books', []);
     const i = books.findIndex((b) => b.id === id);
     if (i >= 0) {
@@ -675,7 +799,23 @@ export const api = {
     return { ok: true };
   },
 
-  setBookStatus(id: string, status: BookStatus, note = '') {
+  setBookStatus(id: string, status: BookStatus, note = '', byUserId?: string) {
+    // 越权防护：byUserId 存在时必须为管理员，或该书作者本人（只能操作自己的作品）
+    if (byUserId) {
+      const me = this.getUser(byUserId);
+      const book = this.getBook(id);
+      const isAuthor = !!book && book.authorId === byUserId;
+      const isAdminOp = !!me && me.role === 'admin';
+      if (!me || (!isAdminOp && !isAuthor)) {
+        security.audit(byUserId, me?.nickname ?? '未知用户', '越权操作被拦截', '', `尝试修改作品状态（${id}→${status}）`);
+        return;
+      }
+      // 上架/驳回仅管理员可执行（创作者只能提交审核 / 下架 / 存草稿）
+      if ((status === 'published' || status === 'rejected') && !isAdminOp) {
+        security.audit(byUserId, me?.nickname ?? '', '越权操作被拦截', '', '尝试上架/驳回作品，仅管理员可操作');
+        return;
+      }
+    }
     const books = read<IBook[]>('books', []);
     const i = books.findIndex((b) => b.id === id);
     if (i >= 0) {
@@ -725,7 +865,12 @@ export const api = {
 
   saveChapters(bookId: string, chapters: Omit<IChapter, 'id' | 'bookId'>[]) {
     const all = read<IChapter[]>('chapters', []).filter((c) => c.bookId !== bookId);
-    const created = chapters.map((c, i) => ({ ...c, id: uid('c'), bookId, index: i + 1 }));
+    // 保留已有章节 id（按原序号匹配）：编辑作品不重建章节 id，否则已订阅/阅读进度会因 id 变化而失效
+    const old = read<IChapter[]>('chapters', []).filter((c) => c.bookId === bookId);
+    const created = chapters.map((c, i) => {
+      const prev = old.find((o) => o.index === i + 1);
+      return { ...c, id: prev?.id ?? uid('c'), bookId, index: i + 1 };
+    });
     write('chapters', [...all, ...created]);
     const books = read<IBook[]>('books', []);
     const bi = books.findIndex((b) => b.id === bookId);
@@ -869,15 +1014,18 @@ export const api = {
       .sort((a, b) => (b.createdAt < a.createdAt ? -1 : 1));
   },
 
-  pushTx(userId: string, kind: TxKind, coin: number, note: string, amount = 0, bookId?: string, method?: string, chapterId?: string, payNo?: string) {
+  pushTx(userId: string, kind: TxKind, coin: number, note: string, amount = 0, bookId?: string, method?: string, chapterId?: string, payNo?: string, noBalance = false) {
     const txs = read<ITx[]>('txs', []);
     txs.unshift({ id: uid('tx'), userId, kind, amount, coin, note, createdAt: new Date().toISOString(), bookId, method, chapterId, payNo });
     write('txs', txs);
-    const users = read<IUser[]>('users', []);
-    const i = users.findIndex((u) => u.id === userId);
-    if (i >= 0) {
-      users[i].coins += coin;
-      write('users', users);
+    // noBalance=true 时仅记账不动余额（提现流水只反映冻结/退回，余额由 withdrawable 负责）
+    if (!noBalance) {
+      const users = read<IUser[]>('users', []);
+      const i = users.findIndex((u) => u.id === userId);
+      if (i >= 0) {
+        users[i].coins += coin;
+        write('users', users);
+      }
     }
     notify();
   },
@@ -904,7 +1052,6 @@ export const api = {
     const me = this.getUser(userId);
     if (!me) return { ok: false, msg: '请先登录' };
     if (me.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
-    if (me.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
     if (isVip(me)) return { ok: true };
     if (me.coins < chapter.price) return { ok: false, msg: '书币不足，请先充值' };
     this.pushTx(userId, 'subscribe', -chapter.price, `订阅《${this.getBook(chapter.bookId)?.title ?? ''}》第${chapter.index}章`, 0, chapter.bookId, undefined, chapter.id);
@@ -919,7 +1066,6 @@ export const api = {
     const me = this.getUser(userId);
     if (!me) return { ok: false, msg: '请先登录' };
     if (me.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
-    if (me.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
     if (isVip(me)) return { ok: true };
     if (me.coins < price) return { ok: false, msg: '书币不足，请先充值' };
     this.pushTx(userId, 'subscribe', -price, `解锁互动小说《${book.title}》`, 0, book.id);
@@ -932,7 +1078,6 @@ export const api = {
     if (chapter.price <= 0) return { ok: true };
     const me = this.getUser(userId);
     if (!me) return { ok: false, msg: '请先登录' };
-    if (me.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
     if (me.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
     if (isVip(me)) return { ok: true };
     if (me.coins < chapter.price) return { ok: false, msg: '书币不足，请先充值' };
@@ -951,7 +1096,6 @@ export const api = {
   buyVip(userId: string): { ok: boolean; msg?: string } {
     const me = this.getUser(userId);
     if (!me) return { ok: false, msg: '请先登录' };
-    if (me.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
     if (me.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
     const price = this.getSettings().vipPrice;
     if (me.coins < price) return { ok: false, msg: '书币不足，请先充值' };
@@ -998,6 +1142,7 @@ export const api = {
     return read<ISettlement[]>('settlements', []).filter((s) => s.userId === userId);
   },
   decideSettlement(id: string, ok: boolean, byUserId: string) {
+    if (!this.requireAdmin(byUserId)) return;
     const all = read<ISettlement[]>('settlements', []);
     const i = all.findIndex((s) => s.id === id);
     if (i < 0) return;
@@ -1334,7 +1479,8 @@ export const api = {
       createdAt: new Date().toISOString(),
     });
     write('withdrawals', all);
-    this.pushTx(userId, 'withdraw', -needCoins, `申请提现 ${amount} 元（${channelLabel(channel.type)} · ${maskAccount(channel.account)} · ${provider.label}代付）`, amount);
+    // 提现只冻结 withdrawable（可提现收益），不动 coins 书币余额：收益入账时已计 coins，提现是变现收益而非扣减书币
+    this.pushTx(userId, 'withdraw', -needCoins, `申请提现 ${amount} 元（${channelLabel(channel.type)} · ${maskAccount(channel.account)} · ${provider.label}代付）`, amount, undefined, undefined, undefined, undefined, true);
     notify();
     return { ok: true };
   },
@@ -1353,7 +1499,6 @@ export const api = {
   saveChannel(userId: string, data: { type: ChannelType; account: string; accountName: string; bankName?: string }): { ok: boolean; msg?: string } {
     const me = this.getUser(userId);
     if (!me) return { ok: false, msg: '请先登录' };
-    if (me.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
     if (me.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
     if (!data.type || !data.account.trim() || !data.accountName.trim()) return { ok: false, msg: '请填写完整的渠道信息' };
     if (data.account.trim().length < 4) return { ok: false, msg: '账号长度不合法' };
@@ -1387,6 +1532,7 @@ export const api = {
 
   /** 管理员审核渠道 */
   decideChannel(id: string, ok: boolean, byUserId: string, note?: string) {
+    if (!this.requireAdmin(byUserId)) return;
     const all = read<IWithdrawChannel[]>('channels', []);
     const i = all.findIndex((c) => c.id === id);
     if (i < 0) return;
@@ -1411,20 +1557,21 @@ export const api = {
   },
 
   decideWithdrawal(id: string, status: 'done' | 'rejected', byUserId: string) {
+    if (!this.requireAdmin(byUserId)) return;
     const all = read<IWithdrawal[]>('withdrawals', []);
     const i = all.findIndex((w) => w.id === id);
     if (i >= 0) {
       all[i].status = status;
       write('withdrawals', all);
       if (status === 'rejected') {
-        // 驳回退回冻结资金
+        // 驳回退回冻结资金（退回 withdrawable；提现流水仅记账，不动 coins，与申请时对称）
         const users = readUsers();
         const ui = users.findIndex((u) => u.id === all[i].userId);
         if (ui >= 0) {
           users[ui].withdrawable = (users[ui].withdrawable ?? 0) + Math.round(all[i].amount * 100);
           write('users', users);
         }
-        this.pushTx(all[i].userId, 'withdraw', Math.round(all[i].amount * 100), `提现被驳回，资金退回`, all[i].amount);
+        this.pushTx(all[i].userId, 'withdraw', Math.round(all[i].amount * 100), `提现被驳回，资金退回`, all[i].amount, undefined, undefined, undefined, undefined, true);
       }
       if (status === 'done' && all[i].providerId) {
         // 放款即模拟调用代付平台：生成平台单号与代付记录（真实对接由服务端替换此处实现）
@@ -1644,8 +1791,8 @@ export const api = {
   },
 
   replyFeedback(feedbackId: string, reply: string, byUserId: string) {
-    const me = this.getUser(byUserId);
-    if (!me) return { ok: false, msg: '请先登录' };
+    const me = this.requireAdmin(byUserId);
+    if (!me) return { ok: false, msg: '仅管理员可回复工单' };
     if (!reply.trim()) return { ok: false, msg: '回复内容不能为空' };
     const list = read<IFeedback[]>('feedback', []);
     const f = list.find((x) => x.id === feedbackId);
@@ -1663,9 +1810,8 @@ export const api = {
 
   /** 管理员审核退款工单：通过 → 原路退回充值对应的书币；驳回 → 关闭工单 */
   decideRefund(feedbackId: string, ok: boolean, byUserId: string): { ok: boolean; msg?: string } {
-    const me = this.getUser(byUserId);
-    if (!me) return { ok: false, msg: '请先登录' };
-    if (me.role !== 'admin') return { ok: false, msg: '仅管理员可审核退款' };
+    const me = this.requireAdmin(byUserId);
+    if (!me) return { ok: false, msg: '仅管理员可审核退款' };
     const list = read<IFeedback[]>('feedback', []);
     const f = list.find((x) => x.id === feedbackId);
     if (!f) return { ok: false, msg: '退款工单不存在' };
