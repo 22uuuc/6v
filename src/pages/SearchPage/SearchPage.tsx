@@ -44,7 +44,7 @@ export default function SearchPage() {
       </form>
 
       {query === '' ? (
-        <EmptyState text="输入关键词，找到你想读的那本书" />
+        <EmptyState text="输入关键词，找到你想读的那本书" mascot />
       ) : results.length === 0 ? (
         <div className="py-16 text-center">
           <SearchX className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
