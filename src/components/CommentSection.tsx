@@ -94,7 +94,7 @@ export default function CommentSection({ bookId, bookTitle }: { bookId: string; 
       </div>
 
       {comments.length === 0 ? (
-        <EmptyState text="还没有评论，来抢首评" className="py-8" />
+        <EmptyState text="还没有评论，来抢首评" className="py-8" mascot />
       ) : (
         <div className="space-y-3">
           {topLevel.map((c) => {
