@@ -80,6 +80,16 @@ export const store = {
           return fb;
         }
       }
+      if (sig === null) {
+        // 主键存在但签名缺失：可能是签名被恶意删除（篡改绕过路径）或旧版遗留。
+        // 先尝试从备份恢复签名；无备份则视为不可信数据，丢弃并记录，防止"删签名绕过校验"。
+        if (tryRepairFromShadow(k)) {
+          const repaired = localStorage.getItem(`${NS}:${k}`);
+          if (repaired !== null) return JSON.parse(repaired) as T;
+        }
+        logTamper(k, '数据无签名且无可用备份，视为不可信，已丢弃');
+        return fb;
+      }
       return JSON.parse(raw) as T;
     } catch {
       return fb;
