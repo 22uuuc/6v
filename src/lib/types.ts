@@ -10,27 +10,38 @@ export type BookGenre =
   | '玄幻' | '都市' | '科幻' | '悬疑' | '古言' | '青春' | '武侠' | '奇幻'
   | '仙侠' | '历史' | '游戏' | '言情' | '轻小说' | '现实';
 export type BookStatus = 'draft' | 'pending' | 'published' | 'rejected' | 'offline';
+/** 封面视觉风格：日系漫感 / 清新治愈 / 暗夜玄幻 / 经典网文 */
 export type CoverStyle = 'anime' | 'fresh' | 'dark' | 'classic';
+/** 书名字体 key（COVER_FONTS.value） */
 export type CoverFont = 'default' | 'kai' | 'song' | 'hei' | 'li' | 'xing' | 'yuan';
 export type UserRole = 'reader' | 'creator' | 'admin';
 export type TxKind = 'recharge' | 'subscribe' | 'tip' | 'vip' | 'reward' | 'withdraw' | 'settle';
 export type WithdrawStatus = 'pending' | 'done' | 'rejected';
 export type SettleStatus = 'pending' | 'approved' | 'rejected';
+/** 提现渠道类型 */
 export type ChannelType = 'alipay' | 'wechat' | 'bank';
+/** 提现渠道审核状态 */
 export type ChannelStatus = 'pending' | 'approved' | 'rejected';
+/** 充值方式 */
 export type RechargeMethod = 'alipay' | 'wechat' | 'bank' | 'cloud';
+/** 创作者资质申请状态 */
 export type ApplicantStatus = 'pending' | 'approved' | 'rejected';
+/** 代付平台 id：微信支付商家转账 / 支付宝转账 / 银行卡代付 */
 export type PaymentProviderId = 'wxpay' | 'alipay' | 'bankpay';
+/** 代付状态 */
 export type PayTransferStatus = 'dispatched' | 'done' | 'failed';
 
+/** 支付/代付平台对接配置（真实资金划转需服务端 + 商户资质，前端为配置框架 + 模拟代付） */
 export interface IPaymentProvider {
   id: PaymentProviderId;
   label: string;
   enabled: boolean;
+  /** 商户参数（密钥等敏感项在展示层打码） */
   fields: Record<string, string>;
   updatedAt?: string;
 }
 
+/** 代付记录（模拟真实平台单号与请求摘要） */
 export interface IPayTransfer {
   id: string;
   withdrawalId: string;
@@ -41,15 +52,19 @@ export interface IPayTransfer {
   status: PayTransferStatus;
   tradeNo: string;
   payload: string;
+  /** 收款二维码内容（微信/支付宝收款码串，前端渲染为可扫码二维码） */
   qrContent?: string;
   createdAt: string;
 }
 
+/** 创作者资质申请：申请开通创作者时提交资质说明 + 首部作品初步发布 */
 export interface IApplicant {
   id: string;
   userId: string;
   nickname: string;
+  /** 资质说明（为何适合创作/过往经验等） */
   reason: string;
+  /** 首部作品信息 */
   workTitle: string;
   workType: BookType;
   workIntro: string;
@@ -59,18 +74,23 @@ export interface IApplicant {
   handledAt?: string;
 }
 
+/** 提现渠道：创作者绑定，需管理员审核通过后方可用于提现 */
 export interface IWithdrawChannel {
   id: string;
   userId: string;
   type: ChannelType;
+  /** 账号（支付宝/微信/银行卡号） */
   account: string;
+  /** 收款人姓名 */
   accountName: string;
+  /** 开户行（银行卡渠道） */
   bankName?: string;
   status: ChannelStatus;
   note?: string;
   createdAt: string;
 }
 
+/** 提现单渠道快照（提交时固化，管理员审核可见） */
 export interface IChannelSnapshot {
   type: ChannelType;
   account: string;
@@ -88,22 +108,33 @@ export interface IUser {
   vipUntil?: string;
   banned: boolean;
   coins: number;
+  /** 可提现余额（书币），收益审核通过后累加 */
   withdrawable: number;
+  /** 用户等级 1-6 */
   level: number;
+  /** 经验值 */
   exp: number;
   bio?: string;
+  /** 隐私设置（读者隐私化） */
   privacy?: IPrivacy;
   createdAt: string;
 }
 
+/** 读者隐私设置 */
 export interface IPrivacy {
+  /** 对外隐藏书币余额 */
   hideBalance: boolean;
+  /** 对外隐藏最近阅读 */
   hideRecent: boolean;
+  /** 对外隐藏书架 */
   hideShelf: boolean;
+  /** 对外隐藏收支记录 */
   hideRecords: boolean;
+  /** 隐身模式：不展示在线/活跃状态 */
   stealth: boolean;
 }
 
+/** 意见反馈（读者 → 平台），含退款工单（refund） */
 export interface IFeedback {
   id: string;
   userId: string;
@@ -116,8 +147,18 @@ export interface IFeedback {
   reply?: string;
   replyAt?: string;
   createdAt: string;
+  /** 退款工单结构化信息（type=refund 时携带） */
+  refund?: {
+    txId: string;
+    yuan: number;
+    coin: number;
+    status: 'none' | 'approved' | 'rejected';
+    handledAt?: string;
+    handledBy?: string;
+  };
 }
 
+/** 站内消息（读者 ↔ 管理员/客服） */
 export interface IMessage {
   id: string;
   userId: string;
@@ -140,6 +181,7 @@ export interface IChapter {
 export interface IVisualNode {
   id: string;
   scene: string;
+  /** 画面人物（person id，确定性生成） */
   char?: string;
   speaker?: string;
   text: string;
@@ -169,6 +211,7 @@ export interface IComicPage {
   chapterId: string;
   index: number;
   scene: string;
+  /** 用户上传图片在 IndexedDB 中的 key（存在时优先于 scene） */
   imageKey?: string;
   caption?: string;
   dialogue: string[];
@@ -183,8 +226,11 @@ export interface IBook {
   genre: BookGenre;
   status: BookStatus;
   coverSeed: string;
+  /** 封面视觉风格（未设置时按题材自动推断） */
   coverStyle?: CoverStyle;
+  /** 封面来源：svg 程序化封面 / image 本地上传封面 */
   coverType?: 'svg' | 'image';
+  /** 书名字体（COVER_FONTS.value，未设置时默认衬线） */
   coverFont?: CoverFont;
   description: string;
   tags: string[];
@@ -196,8 +242,11 @@ export interface IBook {
   createdAt: string;
   chapterPrice: number;
   chapterIds: string[];
+  /** 编辑推荐（管理员推送流量） */
   featured?: boolean;
+  /** 动漫视频文件在 IndexedDB 中的 key */
   animeKey?: string;
+  /** 是否被安全系统隔离 */
   quarantined?: boolean;
 }
 
@@ -224,8 +273,12 @@ export interface ITx {
   note: string;
   createdAt: string;
   bookId?: string;
+  /** 订阅的章节 id（小说/漫画章节粒度，互动/动漫为整本无此字段） */
   chapterId?: string;
+  /** 充值方式（recharge 时记录） */
   method?: string;
+  /** 充值/代付平台单号（收银台订单号） */
+  payNo?: string;
 }
 
 export interface IWithdrawal {
@@ -234,11 +287,17 @@ export interface IWithdrawal {
   amount: number;
   status: WithdrawStatus;
   note?: string;
+  /** 使用的提现渠道 id */
   channelId?: string;
+  /** 渠道快照（提交时固化） */
   channel?: IChannelSnapshot;
+  /** 代付平台（发起提现时选择，需平台已对接启用） */
   providerId?: PaymentProviderId;
+  /** 代付平台单号（管理员放款时模拟生成） */
   payTradeNo?: string;
+  /** 代付状态 */
   payStatus?: PayTransferStatus;
+  /** 收款二维码内容（实时下发，扫码收款） */
   payQrContent?: string;
   createdAt: string;
 }
@@ -256,6 +315,7 @@ export interface ISession {
   loginAt: string;
 }
 
+/** 收益结算单：订阅/打赏分成先进入待审核，管理员通过后才可提现 */
 export interface ISettlement {
   id: string;
   userId: string;
@@ -268,6 +328,7 @@ export interface ISettlement {
   decidedAt?: string;
 }
 
+/** 作品评论：读者互动（支持回复与点赞，作者与管理员可删除） */
 export interface IComment {
   id: string;
   bookId: string;
@@ -275,12 +336,16 @@ export interface IComment {
   userName: string;
   content: string;
   likes: number;
+  /** 点赞用户 id 列表（防重复赞） */
   likedBy: string[];
+  /** 回复的评论 id（为空表示顶层评论） */
   replyToId?: string;
+  /** 被回复人的昵称 */
   replyToName?: string;
   createdAt: string;
 }
 
+/** 安全日志：内容扫描 / 篡改检测 / 暴力破解 */
 export interface ISecurityLog {
   id: string;
   kind: 'xss' | 'suspicious' | 'tamper' | 'attack';
@@ -294,6 +359,7 @@ export interface ISecurityLog {
   createdAt: string;
 }
 
+/** 审计日志：管理员关键操作留痕 */
 export interface IAuditLog {
   id: string;
   userId: string;
@@ -304,6 +370,7 @@ export interface IAuditLog {
   createdAt: string;
 }
 
+/** 系统设置（管理员可改，影响全站） */
 export interface ISettings {
   siteName: string;
   announcement: string;
@@ -312,9 +379,13 @@ export interface ISettings {
   subShare: number;
   tipShare: number;
   openRegister: boolean;
+  /** 启用的充值方式（用户充值时可选择） */
   rechargeMethods: RechargeMethod[];
+  /** 管理安全码（哈希后存储） */
   adminCode: string;
+  /** 安全码错误锁定至（时间戳） */
   adminLockedUntil: number;
+  /** 安全码连续错误次数 */
   adminFailCount: number;
 }
 
@@ -338,6 +409,7 @@ export const GENRES: BookGenre[] = [
   '仙侠', '历史', '游戏', '言情', '轻小说', '现实',
 ];
 
+/** 封面风格选项（创作者选择用） */
 export const COVER_STYLES: { value: CoverStyle; label: string; desc: string }[] = [
   { value: 'anime', label: '日系漫感', desc: '柔彩渐变、星光点缀，轻小说与动漫风' },
   { value: 'fresh', label: '清新治愈', desc: '水彩浅调、明快通透，青春治愈系' },
@@ -345,6 +417,7 @@ export const COVER_STYLES: { value: CoverStyle; label: string; desc: string }[] 
   { value: 'classic', label: '经典网文', desc: '沉稳暖调、红金描边，经典小说质感' },
 ];
 
+/** 书名字体选项（创作者选择用）：系统内置中文字体栈，无需下载字体文件 */
 export const COVER_FONTS: { value: CoverFont; label: string; font: string; desc: string }[] = [
   { value: 'default', label: '默认衬线', font: 'Georgia, "Times New Roman", serif', desc: '常规书卷气' },
   { value: 'kai', label: '楷体', font: '"KaiTi", "STKaiti", "楷体", serif', desc: '手写温润，古典味' },
