@@ -1030,7 +1030,14 @@ export const api = {
     notify();
   },
 
-  recharge(userId: string, yuan: number, method: string = 'alipay', payNo?: string) {
+  /** 充值到账：金额必须为正数且不超过单笔上限，方式必须在白名单内（防控制台伪造负数/超大额充值刷币或"负充值套现"） */
+  recharge(userId: string, yuan: number, method: string = 'alipay', payNo?: string): { ok: boolean; msg?: string } {
+    const me = this.getUser(userId);
+    if (!me) return { ok: false, msg: '请先登录' };
+    if (me.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
+    if (!Number.isFinite(yuan) || yuan <= 0) return { ok: false, msg: '充值金额不合法' };
+    if (yuan > 10000) return { ok: false, msg: '单笔充值上限 10000 元，请分批充值' };
+    if (!['alipay', 'wechat', 'bank', 'cloud'].includes(method)) return { ok: false, msg: '充值方式不存在' };
     const rate = this.getSettings().rechargeRate;
     this.pushTx(
       userId,
@@ -1044,6 +1051,7 @@ export const api = {
       payNo,
     );
     notify();
+    return { ok: true, msg: `充值成功，到账 ${yuan * rate} 书币` };
   },
 
   /** 订阅普通小说章节（VIP 或免费章直接可读） */
@@ -1088,7 +1096,11 @@ export const api = {
 
   tip(userId: string, book: IBook, coins: number) {
     const me = this.getUser(userId);
-    if (!me || me.coins < coins) return;
+    if (!me) return;
+    if (me.banned) return;
+    // 打赏必须为正整数币，防负值/零值打赏反向刷币
+    if (!Number.isInteger(coins) || coins <= 0) return;
+    if (me.coins < coins) return;
     this.pushTx(userId, 'tip', -coins, `打赏《${book.title}》${coins}书币`, 0, book.id);
     this.creditAuthor(book.id, coins, '打赏');
   },
