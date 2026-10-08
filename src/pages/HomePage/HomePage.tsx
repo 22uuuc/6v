@@ -145,14 +145,23 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 分类入口 */}
+      {/* 分类入口（写意手绘描边 · 微旋错落 · 图标浮动） */}
       <section>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {TYPE_ENTRY.map((e) => (
-            <Link key={e.type} to={`/category/${e.type}`}>
-              <Card className="card-anime card-hover-glow h-full">
-                <CardContent className="flex items-start gap-4 p-5">
-                  <span className={`icon-tile ${e.tile} flex h-12 w-12 shrink-0 items-center justify-center rounded-xl`}>
+          {TYPE_ENTRY.map((e, i) => (
+            <Link
+              key={e.type}
+              to={`/category/${e.type}`}
+              className={`block ${i % 2 === 1 ? 'lg:translate-y-2' : ''}`}
+            >
+              <Card
+                className={`card-anime sketch-card h-full ${i % 2 === 1 ? 'rotate-[0.8deg]' : 'rotate-[-0.8deg]'}`}
+              >
+                <CardContent className="relative flex items-start gap-4 p-5">
+                  {/* 写意点缀：角落星点 */}
+                  <span className="absolute right-3 top-3 h-1.5 w-1.5 rounded-full bg-primary/30" />
+                  <span className="absolute right-7 top-5 h-1 w-1 rounded-full bg-accent/40" />
+                  <span className={`icon-tile ${e.tile} float-slow flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl`}>
                     <e.icon className="h-6 w-6" />
                   </span>
                   <div className="min-w-0">
