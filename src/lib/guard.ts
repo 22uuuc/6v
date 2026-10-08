@@ -6,7 +6,7 @@
 //       4) 提供守护状态（运行中 / 上次巡检 / 累计自动修复次数）给安全中心展示。
 
 import { store, notify } from '@/lib/store';
-import { security, deobfuscate, scanText } from '@/lib/security';
+import { security, deobfuscate, scanText, threatProfile, recordAutoAction, pushPendingRemedy, popPendingRemedy } from '@/lib/security';
 import { api } from '@/lib/api';
 
 /** 守护统计（持久化，跨刷新保留） */
@@ -19,6 +19,8 @@ export interface IGuardStats {
   lastDamage: string[];
   /** 深度查杀次数 */
   deepScans: number;
+  /** 反破解告警限频时间戳（devtools/url/tamper/crack 各自最近触发时刻） */
+  lastCrackAt?: Record<string, number>;
 }
 
 const DEFAULT_GUARD: IGuardStats = { repaired: 0, lastScanAt: '', lastDamage: [], deepScans: 0 };
@@ -112,12 +114,176 @@ export function deepScan(): { virusFlags: number; cleaned: number; tamperedRepai
     security.write({ kind: 'tamper', level: 'danger', message: '会话数据完整性校验失败，可能被外部改写，已触发登出保护', status: 'flagged' });
     store.remove('session');
   }
+  adaptiveResponse(); // 成长性修复：巡检同时评估威胁画像并生成处置方案
   stats.deepScans += 1;
   saveStats(stats);
   return { virusFlags: flaggedNow, cleaned, tamperedRepaired: patrol.repaired, sessionBroken };
 }
 
+/* ---------- 成长性修复方案（威胁画像 → 生成方案 → 管理员确认执行） ---------- */
+
+/** 清除单个风险节点的注入内容（章节正文 / 互动节点 / 漫画对白） */
+function clearTargetContent(l: { targetType?: string; targetId?: string }): boolean {
+  try {
+    if (!l.targetType || !l.targetId) return false;
+    if (l.targetType === 'chapter') {
+      const chs = store.get<any[]>('chapters', []);
+      const i = chs.findIndex((c) => c.id === l.targetId);
+      if (i < 0) return false;
+      chs[i] = { ...chs[i], content: '[内容已被安全系统清除]' };
+      store.set('chapters', chs);
+      return true;
+    }
+    if (l.targetType === 'visualNode') {
+      const vs = store.get<any[]>('visualScripts', []);
+      let hit = false;
+      vs.forEach((v) => {
+        v.nodes = v.nodes.map((n: any) => {
+          if (n.id !== l.targetId) return n;
+          hit = true;
+          return { ...n, text: '[内容已被安全系统清除]', choices: [] };
+        });
+      });
+      if (hit) store.set('visualScripts', vs);
+      return hit;
+    }
+    if (l.targetType === 'comicPage') {
+      const ps = store.get<any[]>('comicPages', []);
+      const i = ps.findIndex((p) => p.id === l.targetId);
+      if (i < 0) return false;
+      ps[i] = { ...ps[i], dialogue: ['[内容已被安全系统清除]'] };
+      store.set('comicPages', ps);
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+/** 成长性修复：遍历未处理告警，基于威胁画像识别「意外」与「故意入侵」，并为「故意入侵」生成处置方案（处置执行权归管理员）。返回新生成方案数 */
+export function adaptiveResponse(): number {
+  let generated = 0;
+  try {
+    const logs = security.logs();
+    const profile = threatProfile();
+    for (const l of logs) {
+      if (l.status !== 'flagged') continue;
+      // 内容类注入：同来源高频触发 = 故意入侵 → 生成处置方案（不自动执行）
+      if (l.kind === 'xss' && l.targetId) {
+        const cell = profile.cells[`${l.targetType}|${l.targetId}`];
+        if (cell && cell.verdict === 'attack') {
+          const action = l.targetType === 'book'
+            ? '隔离作品：下架 + 清除注入内容 + 封禁作者'
+            : '清除该节点的注入内容';
+          pushPendingRemedy({ logId: l.id, targetType: l.targetType ?? '', targetId: l.targetId, action, kind: 'xss' });
+          generated += 1;
+        }
+      }
+      // 系统级攻击：生成"强化监测"方案，交由管理员复核
+      if (l.kind === 'attack') {
+        const cell = profile.cells[`sys|attack`];
+        if (cell && cell.verdict === 'attack') {
+          pushPendingRemedy({ logId: l.id, targetType: 'system', targetId: 'sys', action: '系统级入侵：升级监测并复核账号安全（是否封禁由管理员决定）', kind: 'attack' });
+          generated += 1;
+        }
+      }
+    }
+  } catch {
+    /* 忽略 */
+  }
+  if (generated > 0) notify();
+  return generated;
+}
+
+/** 查杀/处置完成后清理红色显示：已被隔离或内容已清除的目标，对应告警标记为「已清理」，红色横幅与红卡随之消失。返回清理条数 */
+export function cleanupResolvedFlags(): number {
+  let n = 0;
+  try {
+    const logs = security.logs();
+    for (const l of logs) {
+      if (l.status !== 'flagged' || l.level !== 'danger' || l.kind !== 'xss' || !l.targetId) continue;
+      let safe = false;
+      if (l.targetType === 'book') {
+        const b = api.getBook(l.targetId);
+        safe = !b || !!b.quarantined || b.status === 'offline';
+      } else if (l.targetType === 'chapter') {
+        const chs = store.get<any[]>('chapters', []);
+        const c = chs.find((x) => x.id === l.targetId);
+        safe = !c || c.content === '[内容已被安全系统清除]';
+      } else if (l.targetType === 'visualNode') {
+        const vs = store.get<any[]>('visualScripts', []);
+        safe = !vs.some((v) => v.nodes.some((nn: any) => nn.id === l.targetId && nn.text !== '[内容已被安全系统清除]'));
+      } else if (l.targetType === 'comicPage') {
+        const ps = store.get<any[]>('comicPages', []);
+        const p = ps.find((x) => x.id === l.targetId);
+        safe = !p || ((p.dialogue ?? []) as string[]).join(' ') === '[内容已被安全系统清除]';
+      }
+      if (safe) {
+        security.setStatus(l.id, 'cleaned');
+        n += 1;
+      }
+    }
+  } catch {
+    /* 忽略 */
+  }
+  return n;
+}
+
+/** 管理员确认执行处置方案（处置权限仅管理员）：隔离/清除 + 留痕 + 关闭日志 */
+export function approveRemedy(logId: string, byUserId: string): { ok: boolean; msg?: string } {
+  const me = api.requireAdmin(byUserId);
+  if (!me) return { ok: false, msg: '仅管理员可执行处置' };
+  try {
+    const profile = threatProfile();
+    const r = profile.pendingRemedies.find((x) => x.logId === logId);
+    if (!r) return { ok: false, msg: '处置方案不存在或已被处理' };
+    if (r.targetType === 'book') {
+      api.quarantine(r.targetId, byUserId); // 隔离作品：下架 + 清除内容 + 封禁作者
+      security.audit(byUserId, me.nickname, '确认执行处置（隔离作品）', r.targetId, r.action);
+    } else if (r.targetType === 'chapter' || r.targetType === 'visualNode' || r.targetType === 'comicPage') {
+      if (clearTargetContent({ targetType: r.targetType, targetId: r.targetId })) {
+        security.audit(byUserId, me.nickname, '确认执行处置（清除注入内容）', r.targetId, r.action);
+      } else {
+        return { ok: false, msg: '目标内容不存在，可能已被处理' };
+      }
+    } else if (r.targetType === 'system') {
+      security.audit(byUserId, me.nickname, '确认处置系统级入侵', 'system', r.action);
+    }
+    security.setStatus(logId, 'resolved');
+    recordAutoAction(r.targetId, `管理员确认执行：${r.action}`);
+    popPendingRemedy(logId);
+    notify();
+    return { ok: true, msg: `已执行处置：${r.action}` };
+  } catch {
+    return { ok: false, msg: '执行失败，请重试' };
+  }
+}
+
 /* ---------- 反破解防卫（开发者模式 / 控制台篡改 / URL 注入 / 脚本篡改检测） ---------- */
+
+/** 开发权限判定：管理员或「开发者白名单」成员打开开发者工具属正常调试，不触发反破解告警 */
+function hasDevPrivilege(): boolean {
+  try {
+    const me = api.getSession();
+    if (!me) return false;
+    if (me.role === 'admin') return true;
+    const whitelist = api.getSettings().devWhitelist ?? [];
+    return whitelist.includes(me.username);
+  } catch {
+    return false;
+  }
+}
+
+/** 同类告警限频：距上次触发不足 10 分钟则跳过，防止巡检刷屏 */
+function crackFlagDue(kind: string): boolean {
+  const s = guardStats();
+  const last = (s.lastCrackAt ?? {})[kind] ?? 0;
+  if (Date.now() - last < 10 * 60 * 1000) return false;
+  s.lastCrackAt = { ...(s.lastCrackAt ?? {}), [kind]: Date.now() };
+  saveStats(s);
+  return true;
+}
 
 /** 是否疑似开发者工具打开：通过窗口尺寸差与定时器节流检测 */
 function devtoolsOpen(): boolean {
@@ -171,36 +337,58 @@ function globalTamper(): string | null {
 export function antiCrackPatrol(): number {
   let found = 0;
   try {
-    if (devtoolsOpen()) {
-      // 开发者模式：可能用于审查/篡改，仅记录（不误伤正常调试）
-      security.write({
-        kind: 'suspicious', level: 'warn',
-        message: '检测到开发者模式（DevTools 打开），已记录；如在调试请关闭后正常使用',
-        status: 'flagged',
-      });
-      found += 1;
-    }
+    const devOpen = devtoolsOpen();
     const inj = urlInjection();
-    if (inj) {
-      security.write({
-        kind: 'xss', level: 'danger',
-        message: `URL 参数含注入载荷（${inj}），已拦截访问痕迹`,
-        status: 'flagged',
-      });
-      found += 1;
-    }
     const g = globalTamper();
+    const hasPerm = hasDevPrivilege(); // 管理员/白名单开发者：打开 DevTools 属正常调试，豁免
+    if (devOpen && !hasPerm) {
+      // 无开发权限的账号打开开发者工具才触发：仅记录可疑（10 分钟限频，避免巡检刷屏）
+      if (crackFlagDue('devtools')) {
+        security.write({
+          kind: 'suspicious', level: 'warn',
+          message: '检测到非开发账号打开开发者工具（DevTools），已记录；疑似用于审查/篡改，正常调试请使用管理员或白名单账号',
+          status: 'flagged',
+        });
+        found += 1;
+      }
+    }
+    if (inj) {
+      // URL 注入是实际攻击行为，任何账号都拦截记录（限频）
+      if (crackFlagDue('url')) {
+        security.write({
+          kind: 'xss', level: 'danger',
+          message: `URL 参数含注入载荷（${inj}），已拦截访问痕迹`,
+          status: 'flagged',
+        });
+        found += 1;
+      }
+    }
     if (g) {
-      security.write({
-        kind: 'tamper', level: 'danger',
-        message: `检测到浏览器关键 API 被替换（${g}），可能为破解行为，已记录入侵警告`,
-        status: 'flagged',
-      });
-      found += 1;
+      // 全局 API 被替换 = 脚本破解行为，任何账号都记录（限频）
+      if (crackFlagDue('tamper')) {
+        security.write({
+          kind: 'tamper', level: 'danger',
+          message: `检测到浏览器关键 API 被替换（${g}），可能为破解行为，已记录入侵警告`,
+          status: 'flagged',
+        });
+        found += 1;
+      }
+    }
+    // DevTools + 注入/篡改迹象并存：高概率破解，升级为危险告警（限频）
+    if (devOpen && !hasPerm && (inj || g)) {
+      if (crackFlagDue('crack')) {
+        security.write({
+          kind: 'attack', level: 'danger',
+          message: '非开发账号开启开发者工具且检测到注入/篡改迹象，判定为疑似破解行为，已启动查杀防护',
+          status: 'flagged',
+        });
+        found += 1;
+      }
     }
   } catch {
     /* 忽略 */
   }
+  adaptiveResponse(); // 成长性修复：巡检同时评估威胁画像并自动处置升级
   if (found > 0) notify();
   return found;
 }
