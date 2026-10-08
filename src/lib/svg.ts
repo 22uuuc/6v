@@ -22,11 +22,21 @@ function wrapCJK(text: string, max: number): string[] {
   return out;
 }
 
+/** SVG/XML 文本转义：防止用户可控文本（昵称/书名/对话/旁白）注入 HTML/SVG（存储型 XSS） */
+function esc(s: string): string {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 /** 简易文本：返回 <text> 元素（font 内双引号自动转义，避免破坏属性） */
 function txt(x: number, y: number, s: string, size: number, fill: string, anchor = 'middle', weight = 400, opacity = 1, font = FONT): string {
   const lines = s.split('\n');
   const tspans = lines
-    .map((ln, i) => `<tspan x="${x}" dy="${i === 0 ? 0 : size * 1.3}">${ln}</tspan>`)
+    .map((ln, i) => `<tspan x="${x}" dy="${i === 0 ? 0 : size * 1.3}">${esc(ln)}</tspan>`)
     .join('');
   const fontAttr = String(font).replace(/"/g, '&quot;');
   return `<text x="${x}" y="${y}" font-family="${fontAttr}" font-size="${size}" font-weight="${weight}" fill="${fill}" text-anchor="${anchor}" opacity="${opacity}">${tspans}</text>`;
@@ -492,7 +502,7 @@ export function coverSVG(seed: string, title: string, author: string, genre: str
   const genreFill = style === 'fresh' ? '#5d7a70' : style === 'anime' ? '#e8cfe0' : '#8f9aa8';
   const authorFill = style === 'fresh' ? '#24403a' : style === 'anime' ? '#fff7e6' : P.accent;
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="100%" height="100%"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">${coverGradBody(seed, style)}</linearGradient></defs><rect x="0" y="0" width="${w}" height="${h}" fill="url(#${id})"/><g>${art.paint}</g>${art.glow ? `<g>${art.glow}</g>` : ''}<rect x="0" y="0" width="${w}" height="${h}" fill="${P.mask}"/>${deco}<rect x="0" y="${h * 0.42}" width="${w}" height="${h * 0.3}" fill="rgba(10,14,24,0.55)"/>${titleBlock}<text x="${w / 2}" y="${h * 0.7}" font-family="${FONT}" font-size="18" fill="${authorFill}" text-anchor="middle">${author}</text><text x="${w / 2}" y="${h * 0.755}" font-family="${FONT}" font-size="13" fill="${genreFill}" text-anchor="middle">${genre}</text><rect x="${size * 3}" y="${size * 3}" width="${w - size * 6}" height="${h - size * 6}" fill="none" stroke="${P.border}" stroke-width="1.2" opacity="0.6"/></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="100%" height="100%"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">${coverGradBody(seed, style)}</linearGradient></defs><rect x="0" y="0" width="${w}" height="${h}" fill="url(#${id})"/><g>${art.paint}</g>${art.glow ? `<g>${art.glow}</g>` : ''}<rect x="0" y="0" width="${w}" height="${h}" fill="${P.mask}"/>${deco}<rect x="0" y="${h * 0.42}" width="${w}" height="${h * 0.3}" fill="rgba(10,14,24,0.55)"/>${titleBlock}<text x="${w / 2}" y="${h * 0.7}" font-family="${FONT}" font-size="18" fill="${authorFill}" text-anchor="middle">${esc(author)}</text><text x="${w / 2}" y="${h * 0.755}" font-family="${FONT}" font-size="13" fill="${genreFill}" text-anchor="middle">${esc(genre)}</text><rect x="${size * 3}" y="${size * 3}" width="${w - size * 6}" height="${h - size * 6}" fill="none" stroke="${P.border}" stroke-width="1.2" opacity="0.6"/></svg>`;
 }
 
 /** 按封面风格返回渐变 stop 色 */
@@ -554,14 +564,14 @@ export function comicPageSVG(scene: string, seed: string, dialogue: string[], ca
     const actualX = isRight ? w - pad - 40 - btw : pad + 40;
     bubbles += `<ellipse cx="${actualX + btw / 2}" cy="${by + bh / 2}" rx="${btw / 2}" ry="${bh / 2}" fill="#f6ecd6" stroke="#cbb37a" stroke-width="1.5"/>`;
     bubbles += `<path d="M${actualX + btw / 2 - 10} ${by + bh} l-6 12 l14 -6 Z" fill="#f6ecd6"/>`;
-    bubbles += `<text x="${actualX + btw / 2}" y="${by + bh / 2 + 7}" font-family="${FONT}" font-size="${fontSize}" fill="#22242c" text-anchor="middle">${text}</text>`;
+    bubbles += `<text x="${actualX + btw / 2}" y="${by + bh / 2 + 7}" font-family="${FONT}" font-size="${fontSize}" fill="#22242c" text-anchor="middle">${esc(text)}</text>`;
     if (who) {
-      bubbles += `<text x="${actualX + (isRight ? btw - 26 : 26)}" y="${by + bh + 26}" font-family="${FONT}" font-size="17" fill="#cbb37a" text-anchor="${isRight ? 'end' : 'start'}">${who}</text>`;
+      bubbles += `<text x="${actualX + (isRight ? btw - 26 : 26)}" y="${by + bh + 26}" font-family="${FONT}" font-size="17" fill="#cbb37a" text-anchor="${isRight ? 'end' : 'start'}">${esc(who)}</text>`;
     }
     by += bh + 46;
   });
   const captionBox = caption
-    ? `<rect x="${pad}" y="16" width="${w - pad * 2}" height="42" rx="21" fill="rgba(12,16,26,0.72)" stroke="rgba(255,255,255,0.1)"/><text x="${w / 2}" y="43" font-family="${FONT}" font-size="20" fill="#e8dcc0" text-anchor="middle">${caption}</text>`
+    ? `<rect x="${pad}" y="16" width="${w - pad * 2}" height="42" rx="21" fill="rgba(12,16,26,0.72)" stroke="rgba(255,255,255,0.1)"/><text x="${w / 2}" y="43" font-family="${FONT}" font-size="20" fill="#e8dcc0" text-anchor="middle">${esc(caption)}</text>`
     : '';
   const pageMark = `<text x="${w - 24}" y="${h - 14}" font-family="${FONT}" font-size="15" fill="#6b7688" text-anchor="end">P.${pageNo}</text>`;
   const bg = `<rect x="0" y="0" width="${w}" height="${h}" fill="#0a0e16"/>`;
@@ -575,7 +585,7 @@ export function avatarSVG(seed: string, name: string): string {
   const c2 = ['#e0b276', '#6b7f92', '#8fa67a', '#b06a44', '#9483b8', '#4d7fa0'];
   const a = r.pick(c1);
   const b = r.pick(c2);
-  const ch = name.slice(0, 1);
+  const ch = esc(name.slice(0, 1));
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="100%" height="100%"><defs><linearGradient id="av-${seed.slice(0, 6)}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${a}"/><stop offset="100%" stop-color="${b}"/></linearGradient></defs><rect x="0" y="0" width="96" height="96" rx="48" fill="url(#av-${seed.slice(0, 6)})"/><text x="48" y="60" font-family="${FONT}" font-size="38" font-weight="700" fill="#fff" text-anchor="middle">${ch}</text></svg>`;
 }
 
@@ -619,6 +629,6 @@ ${hair}
 <circle cx="${hx(41)}" cy="${hy(48)}" r="${hz(2.6)}" fill="#26221f"/><circle cx="${hx(59)}" cy="${hy(48)}" r="${hz(2.6)}" fill="#26221f"/>
 <path d="M${hx(38)} ${hy(56)} Q${hx(50)} ${hy(60)} ${hx(62)} ${hy(56)}" stroke="#d9a06e" stroke-width="${hz(1.6)}" fill="none" stroke-linecap="round"/>
 ${mouth}
-<text x="${hx(50)}" y="${hy(18)}" font-family="${FONT}" font-size="${hz(11)}" font-weight="700" fill="#cbb37a" text-anchor="middle">${name}</text>
+<text x="${hx(50)}" y="${hy(18)}" font-family="${FONT}" font-size="${hz(11)}" font-weight="700" fill="#cbb37a" text-anchor="middle">${esc(name)}</text>
 </svg>`;
 }
