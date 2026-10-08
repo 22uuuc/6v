@@ -181,9 +181,10 @@ export default function HomePage() {
               全部作品 <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
-          <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
-            {featured.slice(0, 6).map((book, i) => (
-              <div key={book.id} className={i === 0 ? 'sm:col-span-2 sm:row-span-2' : ''}>
+          {/* 沉浸式横滑（B站漫画式竖版卡片滑动浏览） */}
+          <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3">
+            {featured.slice(0, 8).map((book) => (
+              <div key={book.id} className="w-36 shrink-0 snap-start sm:w-40">
                 <BookCard book={book} />
               </div>
             ))}
