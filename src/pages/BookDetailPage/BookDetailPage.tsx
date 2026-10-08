@@ -49,7 +49,7 @@ export default function BookDetailPage() {
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
           <ArrowLeft className="mr-1 h-4 w-4" /> 返回
         </Button>
-        <EmptyState text="作品不存在或未上架" />
+        <EmptyState text="作品不存在或未上架" mascot />
       </div>
     );
   }
