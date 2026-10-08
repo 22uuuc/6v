@@ -160,11 +160,14 @@ export const PLATFORM_STYLES: Record<LayoutStyle, IPlatformStyle> = {
   },
 };
 
-/** 阅读字体选项（平台默认与用户个性化共用） */
+/** 阅读字体选项（平台默认与用户个性化共用）：系统 / 衬线 / 圆体 / 楷体 / 仿宋 / 黑体 */
 export const FONT_STYLES: { key: string; label: string; stack: string }[] = [
   { key: 'system', label: '系统默认', stack: "'LarkHackSafariFont','PingFang SC','Microsoft Yahei','sans-serif'" },
   { key: 'serif', label: '衬线正文（国风宋体感）', stack: "'Noto Serif SC','Songti SC','SimSun','Georgia','serif'" },
   { key: 'rounded', label: '手写圆体（漫画感）', stack: "'Comic Sans MS','Yuanti SC','YouYuan','PingFang SC','sans-serif'" },
+  { key: 'kaiti', label: '楷体（手书韵味）', stack: "'KaiTi','楷体','STKaiti','Kaiti SC','serif'" },
+  { key: 'fangsong', label: '仿宋（文卷气质）', stack: "'FangSong','仿宋','STFangsong','FangSong_GB2312','serif'" },
+  { key: 'hei', label: '黑体（现代利落）', stack: "'Microsoft YaHei','微软雅黑','PingFang SC','Noto Sans SC','Heiti SC','sans-serif'" },
 ];
 
 export function fontStack(key?: string): string {
