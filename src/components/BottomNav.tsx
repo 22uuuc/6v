@@ -1,13 +1,14 @@
 // EXPORTS: BottomNav（组件文件）
 import { NavLink } from 'react-router-dom';
-import { Home, LibraryBig, BookMarked, UserRound } from 'lucide-react';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { Home01Icon, LibraryIcon, BookMarkedIcon, UserCircleIcon } from '@hugeicons/core-free-icons';
 import { cn } from '@/lib/utils';
 
 const ITEMS = [
-  { path: '/', label: '首页', icon: Home, end: true },
-  { path: '/category/all', label: '书城', icon: LibraryBig, end: false },
-  { path: '/shelf', label: '书架', icon: BookMarked, end: false },
-  { path: '/profile', label: '我的', icon: UserRound, end: false },
+  { path: '/', label: '首页', icon: Home01Icon, end: true },
+  { path: '/category/all', label: '书城', icon: LibraryIcon, end: false },
+  { path: '/shelf', label: '书架', icon: BookMarkedIcon, end: false },
+  { path: '/profile', label: '我的', icon: UserCircleIcon, end: false },
 ];
 
 export default function BottomNav() {
@@ -36,7 +37,7 @@ export default function BottomNav() {
                       : 'bg-transparent',
                   )}
                 >
-                  <item.icon className={cn('h-5 w-5 transition-transform duration-300', isActive && 'scale-110')} />
+                  <HugeiconsIcon icon={item.icon} className={cn('h-5 w-5 transition-transform duration-300', isActive && 'scale-110')} />
                 </span>
                 <span className={cn(isActive && 'font-medium')}>{item.label}</span>
               </>
