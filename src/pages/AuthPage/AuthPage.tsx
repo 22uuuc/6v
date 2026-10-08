@@ -35,6 +35,7 @@ const phoneSchema = z.object({
 
 const emailSchema = z.object({
   email: z.string().email('请输入正确的邮箱'),
+  code: z.string().regex(/^\d{6}$/, '请输入 6 位验证码'),
   nickname: z.string().min(1, '请输入昵称').max(12, '昵称最长 12 位'),
   password: z.string().min(6, '密码至少 6 位'),
 });
@@ -53,6 +54,8 @@ export default function AuthPage() {
   const [regMode, setRegMode] = useState<RegisterMode>('account');
   const [sentCode, setSentCode] = useState('');
   const [sending, setSending] = useState(false);
+  const [emailSentCode, setEmailSentCode] = useState('');
+  const [emailSending, setEmailSending] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [fAccount, setFAccount] = useState('');
   const [fCode, setFCode] = useState('');
@@ -179,18 +182,41 @@ export default function AuthPage() {
       toast.error(res.msg === '账号已存在' ? '该手机号已注册，可直接登录' : res.msg ?? '注册失败');
       return;
     }
+    api.verifyPhone(res.user!.id); // 验证码注册通过 → 手机认证打标（认证等级提升）
     toast.success('注册成功，赠送 100 书币');
     navigate('/profile');
   };
 
   const onEmailRegister = (v: z.infer<typeof emailSchema>) => {
+    if (!emailSentCode) {
+      toast.error('请先获取邮箱验证码');
+      return;
+    }
+    if (v.code !== emailSentCode) {
+      toast.error('验证码错误');
+      return;
+    }
     const res = api.register(v.email, v.password, v.nickname);
     if (!res.ok) {
       toast.error(res.msg === '账号已存在' ? '该邮箱已注册，可直接登录' : res.msg ?? '注册失败');
       return;
     }
+    api.verifyEmail(res.user!.id); // 邮箱验证码注册通过 → 邮箱认证打标
     toast.success('注册成功，赠送 100 书币');
     navigate('/profile');
+  };
+
+  const sendEmailCode = () => {
+    const email = emailForm.getValues('email');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error('请先输入正确的邮箱地址');
+      return;
+    }
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    setEmailSentCode(code);
+    setEmailSending(true);
+    toast.success(`验证码已发送至 ${email}（演示：${code}）`, { duration: 30000 });
+    window.setTimeout(() => setEmailSending(false), 60000);
   };
 
   const thirdParty = (provider: 'wechat' | 'qq') => {
@@ -413,6 +439,24 @@ export default function AuthPage() {
                         <FormLabel>邮箱</FormLabel>
                         <FormControl>
                           <Input placeholder="example@mail.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={emailForm.control}
+                    name="code"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>邮箱验证码</FormLabel>
+                        <FormControl>
+                          <div className="flex gap-2">
+                            <Input placeholder="6 位验证码" inputMode="numeric" maxLength={6} {...field} className="flex-1" />
+                            <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={sendEmailCode} disabled={emailSending}>
+                              {emailSending ? '已发送(60s)' : '获取验证码'}
+                            </Button>
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
