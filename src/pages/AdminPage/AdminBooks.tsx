@@ -29,8 +29,8 @@ export default function AdminBooks() {
   const [quarantineBook, setQuarantineBook] = useState<{ id: string; title: string } | null>(null);
 
   const doReject = () => {
-    if (rejectBook) {
-      api.setBookStatus(rejectBook.id, 'rejected', reason.trim() || '内容待修改');
+    if (rejectBook && user) {
+      api.setBookStatus(rejectBook.id, 'rejected', reason.trim() || '内容待修改', user.id);
       toast.success(`已驳回《${rejectBook.title}》`);
     }
     setRejectBook(null);
@@ -77,7 +77,7 @@ export default function AdminBooks() {
                   <Button size="sm" variant="outline" className="gap-1 text-destructive" onClick={() => setRejectBook({ id: b.id, title: b.title })}>
                     <X className="h-3.5 w-3.5" /> 驳回
                   </Button>
-                  <Button size="sm" className="gap-1" onClick={() => { api.setBookStatus(b.id, 'published'); toast.success(`《${b.title}》已上架`); }}>
+                  <Button size="sm" className="gap-1" onClick={() => { if (user) { api.setBookStatus(b.id, 'published', '', user.id); toast.success(`《${b.title}》已上架`); } }}>
                     <Check className="h-3.5 w-3.5" /> 通过
                   </Button>
                 </div>
@@ -132,11 +132,12 @@ export default function AdminBooks() {
                   variant="outline"
                   className="shrink-0 gap-1"
                   onClick={() => {
+                    if (!user) return;
                     if (b.status === 'published') {
-                      api.setBookStatus(b.id, 'offline');
+                      api.setBookStatus(b.id, 'offline', '', user.id);
                       toast.success(`《${b.title}》已下架`);
                     } else {
-                      api.setBookStatus(b.id, 'pending');
+                      api.setBookStatus(b.id, 'pending', '', user.id);
                       toast.success(`《${b.title}》已重新提交审核`);
                     }
                   }}
