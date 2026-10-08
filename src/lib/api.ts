@@ -11,6 +11,7 @@ import type {
   BookStatus, UserRole, TxKind, ISettings, ISettlement, IAuditLog,
   IWithdrawChannel, ChannelType, IApplicant, IPrivacy, IFeedback, IMessage,
   CoverStyle, CoverFont, IComment,
+  PaymentProviderId, IPaymentProvider, IPayTransfer,
 } from '@/lib/types';
 import { LEVELS } from '@/lib/types';
 
@@ -148,6 +149,14 @@ export function maskAccount(account: string): string {
   const a = account.trim();
   if (a.length <= 7) return `${a.slice(0, 1)}****${a.slice(-1)}`;
   return `${a.slice(0, 3)}****${a.slice(-3)}`;
+}
+
+/** 密钥类字段打码：保留首尾，中间星号（用于审计与展示） */
+export function maskSecret(secret: string): string {
+  const s = secret.trim();
+  if (!s) return '';
+  if (s.length <= 6) return '****';
+  return `${s.slice(0, 3)}****${s.slice(-3)}`;
 }
 
 export function todayLabel(d: Date): string {
@@ -860,9 +869,9 @@ export const api = {
       .sort((a, b) => (b.createdAt < a.createdAt ? -1 : 1));
   },
 
-  pushTx(userId: string, kind: TxKind, coin: number, note: string, amount = 0, bookId?: string, method?: string, chapterId?: string) {
+  pushTx(userId: string, kind: TxKind, coin: number, note: string, amount = 0, bookId?: string, method?: string, chapterId?: string, payNo?: string) {
     const txs = read<ITx[]>('txs', []);
-    txs.unshift({ id: uid('tx'), userId, kind, amount, coin, note, createdAt: new Date().toISOString(), bookId, method, chapterId });
+    txs.unshift({ id: uid('tx'), userId, kind, amount, coin, note, createdAt: new Date().toISOString(), bookId, method, chapterId, payNo });
     write('txs', txs);
     const users = read<IUser[]>('users', []);
     const i = users.findIndex((u) => u.id === userId);
@@ -873,9 +882,19 @@ export const api = {
     notify();
   },
 
-  recharge(userId: string, yuan: number, method: string = 'alipay') {
+  recharge(userId: string, yuan: number, method: string = 'alipay', payNo?: string) {
     const rate = this.getSettings().rechargeRate;
-    this.pushTx(userId, 'recharge', yuan * rate, `充值 ${yuan} 元（${rechargeMethodLabel(method)} · 1元=${rate}币）`, yuan, undefined, method);
+    this.pushTx(
+      userId,
+      'recharge',
+      yuan * rate,
+      `充值 ${yuan} 元（${rechargeMethodLabel(method)} · 1元=${rate}币${payNo ? ` · 支付单号 ${payNo}` : ''}）`,
+      yuan,
+      undefined,
+      method,
+      undefined,
+      payNo,
+    );
     notify();
   },
 
@@ -1268,7 +1287,7 @@ export const api = {
   },
 
   /* ---- 钱包与付费 ---- */
-  requestWithdraw(userId: string, amount: number, channelId?: string, confirmPwd?: string): { ok: boolean; msg?: string } {
+  requestWithdraw(userId: string, amount: number, channelId?: string, confirmPwd?: string, providerId?: PaymentProviderId): { ok: boolean; msg?: string } {
     const me = this.getUser(userId);
     if (!me) return { ok: false, msg: '请先登录' };
     if (me.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
@@ -1290,6 +1309,14 @@ export const api = {
     }
     if (!channel) return { ok: false, msg: '请先绑定提现渠道，并通过管理员审核后再提现' };
     if (channel.status !== 'approved') return { ok: false, msg: '提现渠道尚未通过管理员审核，暂不能提现' };
+    // 代付平台对接校验：提现必须走已启用的代付通道（管理员在后台「支付对接」配置）
+    let provider: IPaymentProvider | undefined;
+    if (providerId) {
+      provider = read<IPaymentProvider[]>('payProviders', []).find((p) => p.id === providerId);
+    } else {
+      provider = read<IPaymentProvider[]>('payProviders', []).find((p) => p.enabled);
+    }
+    if (!provider || !provider.enabled) return { ok: false, msg: '平台未启用代付通道，请联系管理员在「支付对接」中完成配置' };
     // 冻结资金：立即从可提现余额扣除，待管理员审核
     const users = readUsers();
     const ui = users.findIndex((u) => u.id === userId);
@@ -1303,10 +1330,11 @@ export const api = {
       status: 'pending',
       channelId: channel.id,
       channel: { type: channel.type, account: channel.account, accountName: channel.accountName, bankName: channel.bankName },
+      providerId: provider.id,
       createdAt: new Date().toISOString(),
     });
     write('withdrawals', all);
-    this.pushTx(userId, 'withdraw', -needCoins, `申请提现 ${amount} 元（${channelLabel(channel.type)} · ${maskAccount(channel.account)}）`, amount);
+    this.pushTx(userId, 'withdraw', -needCoins, `申请提现 ${amount} 元（${channelLabel(channel.type)} · ${maskAccount(channel.account)} · ${provider.label}代付）`, amount);
     notify();
     return { ok: true };
   },
@@ -1398,11 +1426,159 @@ export const api = {
         }
         this.pushTx(all[i].userId, 'withdraw', Math.round(all[i].amount * 100), `提现被驳回，资金退回`, all[i].amount);
       }
+      if (status === 'done' && all[i].providerId) {
+        // 放款即模拟调用代付平台：生成平台单号与代付记录（真实对接由服务端替换此处实现）
+        this.simulateTransfer(all[i], byUserId);
+      }
       const me = this.getUser(byUserId);
       const w = all[i];
       security.audit(byUserId, me?.nickname ?? '', status === 'done' ? '确认提现到账' : '驳回提现', `${w.amount} 元`, w.id);
       notify();
     }
+  },
+
+  /* ---- 支付平台对接（微信支付 / 支付宝 / 银行卡代付） ---- */
+  /* 说明：资金安全走支付平台直连（收款链接 / 收款二维码），不维护任何商户密钥与资质。
+     管理员只需填写平台收款链接或收款二维码，付款方扫码/点链接后资金直接进入平台商户账户，
+     平台侧完成清算与风控；退款由管理员审核认可后原路实时退回。 */
+
+  /** 平台默认配置模板：仅收款链接 + 收款二维码，无任何密钥字段 */
+  paymentProviders(): IPaymentProvider[] {
+    const saved = read<IPaymentProvider[]>('payProviders', []);
+    const tpl: IPaymentProvider[] = [
+      {
+        id: 'wxpay',
+        label: '微信支付（收款码直连）',
+        enabled: false,
+        fields: { receiveLink: '', receiveQr: '' },
+      },
+      {
+        id: 'alipay',
+        label: '支付宝（收款码直连）',
+        enabled: false,
+        fields: { receiveLink: '', receiveQr: '' },
+      },
+      {
+        id: 'bankpay',
+        label: '银行卡代付（收款码直连）',
+        enabled: false,
+        fields: { receiveLink: '', receiveQr: '' },
+      },
+    ];
+    return tpl.map((t) => {
+      const s = saved.find((x) => x.id === t.id);
+      if (!s) return t;
+      // 只保留新模板字段（收款码/收款链接），丢弃历史遗留的密钥字段（商户号/私钥/证书等），避免敏感数据残留
+      const clean: Record<string, string> = {};
+      for (const k of Object.keys(t.fields)) {
+        clean[k] = (s.fields && typeof s.fields[k] === 'string' ? s.fields[k] : '') as string;
+      }
+      // 若历史配置里存在模板之外的字段（旧密钥），写回清理版本，彻底移除敏感数据
+      const hasLegacy = Object.keys(s.fields ?? {}).some((k) => !(k in t.fields));
+      if (hasLegacy) {
+        const cleaned = saved.map((x) => (x.id === t.id ? { ...x, fields: clean } : x));
+        write('payProviders', cleaned);
+      }
+      return { ...t, ...s, fields: clean };
+    });
+  },
+
+  /** 保存平台收款配置：只存收款链接 / 收款二维码，全程不接触密钥与商户资质 */
+  savePaymentProvider(id: PaymentProviderId, fields: Record<string, string>, enabled: boolean): { ok: boolean; msg?: string } {
+    const all = this.paymentProviders();
+    const i = all.findIndex((p) => p.id === id);
+    if (i < 0) return { ok: false, msg: '未知平台' };
+    const tpl = all[i];
+    const merged: Record<string, string> = {};
+    for (const k of Object.keys(tpl.fields)) {
+      const v = (fields[k] ?? '').trim();
+      merged[k] = v;
+    }
+    // 校验收款链接必须是安全协议（http/https），防 javascript: 注入；收款码允许平台自有协议（wxp:// 等）
+    for (const [k, v] of Object.entries(merged)) {
+      if (!v) continue;
+      if (k === 'receiveLink' && !/^https?:\/\//i.test(v)) {
+        return { ok: false, msg: '收款链接必须是 http(s):// 开头的安全地址' };
+      }
+      if (k === 'receiveQr' && /^javascript:|^data:\s*text\/html/i.test(v)) {
+        return { ok: false, msg: '收款码含注入载荷，已被安全拦截' };
+      }
+    }
+    const cfg: IPaymentProvider = { ...tpl, fields: merged, enabled, updatedAt: new Date().toISOString() };
+    const saved = read<IPaymentProvider[]>('payProviders', []).filter((p) => p.id !== id);
+    saved.push(cfg);
+    write('payProviders', saved);
+    // 收款配置打码后写审计（不含任何密钥）
+    const masked: Record<string, string> = {};
+    for (const [k, v] of Object.entries(merged)) {
+      masked[k] = v ? maskSecret(v) : '';
+    }
+    security.audit('admin', '管理员', `${enabled ? '启用' : '停用'}收款通道`, `${cfg.label}`, JSON.stringify(masked));
+    notify();
+    return { ok: true };
+  },
+
+  /** 代付记录（管理员可见） */
+  payTransfers(): IPayTransfer[] {
+    return read<IPayTransfer[]>('payTransfers', []);
+  },
+
+  /** 模拟代付：按真实平台接口形态生成请求摘要、平台单号与收款二维码（实时下发） */
+  simulateTransfer(w: IWithdrawal, byUserId: string) {
+    const providers = this.paymentProviders();
+    const p = providers.find((x) => x.id === w.providerId);
+    if (!p) return;
+    const all = read<IPayTransfer[]>('payTransfers', []);
+    const prefix = w.providerId === 'wxpay' ? 'wx' : w.providerId === 'alipay' ? 'alipay' : 'bank';
+    const tradeNo = `${prefix}${Date.now().toString(36)}${Math.floor(Math.random() * 900 + 100)}`;
+    // 收款码：优先使用管理员配置的平台收款二维码/收款链接（资金直连平台，无密钥）；
+    // 未配置时生成演示收款码形态（微信面对面收款码 / 支付宝收款码 / 银行转账码）
+    const cfgQr = (p.fields?.receiveQr ?? '').trim();
+    const cfgLink = (p.fields?.receiveLink ?? '').trim();
+    const rand = Math.random().toString(36).slice(2, 12).toUpperCase();
+    const qrContent = cfgQr
+      ? cfgQr
+      : cfgLink
+        ? cfgLink
+        : w.providerId === 'wxpay'
+          ? `wxp://f2f0/${rand}`
+          : w.providerId === 'alipay'
+            ? `https://qr.alipay.com/${rand}`
+            : `https://pay.bank.example/transfer?out=${w.id}&amt=${Math.round(w.amount * 100)}&no=${rand}`;
+    const payload = JSON.stringify({
+      out_biz_no: w.id,
+      amount: Math.round(w.amount * 100),
+      account: w.channel ? `${channelLabel(w.channel.type)} ${maskAccount(w.channel.account)}` : '',
+      remark: `墨影书城创作者收益结算 ${w.amount} 元`,
+      channel: p.label,
+      pay: cfgQr ? '平台收款二维码直连' : cfgLink ? '平台收款链接直连' : '演示收款码（未配置平台收款码）',
+      qr: qrContent,
+    });
+    all.unshift({
+      id: uid('pt'),
+      withdrawalId: w.id,
+      userId: w.userId,
+      provider: w.providerId as PaymentProviderId,
+      amount: w.amount,
+      channelLabel: w.channel ? `${channelLabel(w.channel.type)} ${maskAccount(w.channel.account)}` : '',
+      status: 'done',
+      tradeNo,
+      payload,
+      qrContent,
+      createdAt: new Date().toISOString(),
+    });
+    write('payTransfers', all);
+    // 回写提现单代付状态与收款二维码（实时下发，扫码收款）
+    const wds = read<IWithdrawal[]>('withdrawals', []);
+    const wi = wds.findIndex((x) => x.id === w.id);
+    if (wi >= 0) {
+      wds[wi].payTradeNo = tradeNo;
+      wds[wi].payStatus = 'done';
+      wds[wi].payQrContent = qrContent;
+      write('withdrawals', wds);
+    }
+    security.audit(byUserId, '管理员', '代付平台模拟回调·实时下发', `${p.label}`, `${tradeNo} · ${w.amount} 元`);
+    notify();
   },
 
   /* ---- 管理后台统计 ---- */
@@ -1432,7 +1608,10 @@ export const api = {
   },
 
   /* ---- 意见反馈 ---- */
-  submitFeedback(userId: string, payload: { type: IFeedback['type']; title: string; content: string; contact?: string }) {
+  submitFeedback(
+    userId: string,
+    payload: { type: IFeedback['type']; title: string; content: string; contact?: string; refund?: { txId: string; yuan: number; coin: number } },
+  ) {
     const me = this.getUser(userId);
     if (!me) return { ok: false, msg: '请先登录' };
     if (me.banned) return { ok: false, msg: '账号已被封禁，无法提交反馈' };
@@ -1448,6 +1627,7 @@ export const api = {
       title: payload.title.trim(), content: payload.content.trim(),
       contact: payload.contact?.trim() || undefined,
       status: 'pending', createdAt: new Date().toISOString(),
+      refund: payload.refund ? { ...payload.refund, status: 'none' } : undefined,
     });
     write('feedback', list);
     security.audit(userId, me.nickname, '提交意见反馈', payload.title, userId);
@@ -1477,6 +1657,60 @@ export const api = {
     security.audit(byUserId, me.nickname, '回复反馈工单', `${f.userName}·${f.title}`, feedbackId);
     notify();
     return { ok: true };
+  },
+
+  /* ---- 退款审核（管理员审核通过 → 原路退回书币） ---- */
+
+  /** 管理员审核退款工单：通过 → 原路退回充值对应的书币；驳回 → 关闭工单 */
+  decideRefund(feedbackId: string, ok: boolean, byUserId: string): { ok: boolean; msg?: string } {
+    const me = this.getUser(byUserId);
+    if (!me) return { ok: false, msg: '请先登录' };
+    if (me.role !== 'admin') return { ok: false, msg: '仅管理员可审核退款' };
+    const list = read<IFeedback[]>('feedback', []);
+    const f = list.find((x) => x.id === feedbackId);
+    if (!f) return { ok: false, msg: '退款工单不存在' };
+    if (f.type !== 'refund' || !f.refund) return { ok: false, msg: '该工单不是退款申请' };
+    if (f.refund.status !== 'none') return { ok: false, msg: '该退款工单已处理，请勿重复操作' };
+    const target = this.getUser(f.userId);
+    if (!target) return { ok: false, msg: '申请退款用户不存在' };
+    const now = new Date().toISOString();
+    if (ok) {
+      // 校验流水真实存在且属于该用户（防止伪造工单盗刷）
+      const txs = read<ITx[]>('txs', []);
+      const tx = txs.find((t) => t.id === f.refund!.txId && t.userId === f.userId && t.kind === 'recharge');
+      if (!tx) return { ok: false, msg: '关联充值流水不存在或不属于该用户，已拒绝退款并留痕' };
+      const coin = Math.max(0, f.refund!.coin);
+      if (coin > 0) {
+        // 原路退回：退还充值对应的书币到余额，同时写入退款流水
+        this.pushTx(f.userId, 'settle', coin, `退款到账：${f.refund!.yuan} 元（原充值单 ${f.refund!.txId}）`, 0, undefined, undefined, undefined, tx.payNo);
+      }
+      f.refund = { ...f.refund, status: 'approved', handledAt: now, handledBy: byUserId };
+      f.status = 'resolved';
+      f.reply = f.reply ?? `管理员已审核通过，原路退回 ${f.refund!.yuan} 元对应的 ${coin} 书币。`;
+      f.replyAt = now;
+      write('feedback', list);
+      this.addExp(f.userId, 2, '退款到账');
+      security.audit(byUserId, me.nickname, '审核通过退款', `${target.nickname}·${f.refund!.yuan} 元`, `${coin} 币已退回`);
+      notify();
+      return { ok: true, msg: `已通过，原路退回 ${coin} 书币` };
+    }
+    f.refund = { ...f.refund, status: 'rejected', handledAt: now, handledBy: byUserId };
+    f.status = 'resolved';
+    f.reply = f.reply ?? '管理员驳回本次退款申请。';
+    f.replyAt = now;
+    write('feedback', list);
+    security.audit(byUserId, me.nickname, '驳回退款申请', `${target.nickname}·${f.refund!.yuan} 元`, feedbackId);
+    notify();
+    return { ok: true, msg: '已驳回退款申请' };
+  },
+
+  /** 实时收款订单（管理员可见）：最近充值订单，含单号/金额/方式/时间/到账状态 */
+  realtimeRecharges(limit = 12): { tx: ITx; user: IUser | null }[] {
+    return read<ITx[]>('txs', [])
+      .filter((t) => t.kind === 'recharge')
+      .sort((a, b) => (b.createdAt < a.createdAt ? -1 : 1))
+      .slice(0, limit)
+      .map((t) => ({ tx: t, user: this.getUser(t.userId) }));
   },
 
   /* ---- 客服站内信 ---- */
