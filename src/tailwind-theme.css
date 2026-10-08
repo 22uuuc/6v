@@ -382,6 +382,15 @@
   }
   .float-slow { animation: float-slow 4s ease-in-out infinite; }
 
+  /* ===== 写意装饰漂移（首页墨点/云纹缓慢游动） ===== */
+  @keyframes drift {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    33% { transform: translate(9px, -11px) rotate(9deg); }
+    66% { transform: translate(-7px, -5px) rotate(-7deg); }
+  }
+  .drift-slow { animation: drift 9s ease-in-out infinite; }
+  .drift-slower { animation: drift 13s ease-in-out infinite; }
+
   /* 墨影书灵 IP 动效：漂浮 / 弹跳 */
   @keyframes mascot-float {
     0%, 100% { transform: translateY(0) rotate(-1.5deg); }
