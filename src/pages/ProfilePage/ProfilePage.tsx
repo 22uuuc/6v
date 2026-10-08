@@ -7,10 +7,11 @@ import {
   Crown, Wallet, PenLine, ShieldCheck, LogOut, Coins, PencilLine,
   ArrowRight, BadgeCheck, Landmark, MessageCircle, CreditCard, Zap,
   MessageSquareText, Headset, EyeOff, Lock, Trash2, BookOpenText, KeyRound,
-  RotateCcw,
+  RotateCcw, Palette, MonitorSmartphone,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { api, isVip, fmtCoins, rechargeMethodLabel } from '@/lib/api';
+import { FONT_STYLES } from '@/lib/platform-style';
 import { useDataVersion } from '@/hooks/use-data';
 import { useAuth } from '@/lib/auth-context';
 import { avatarSVG } from '@/lib/svg';
@@ -23,7 +24,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { ITx, IPrivacy } from '@/lib/types';
+import type { ITx, IPrivacy, IUserPrefs } from '@/lib/types';
 import { LEVELS } from '@/lib/types';
 
 const RECHARGE_AMOUNTS = [
@@ -101,6 +102,16 @@ export default function ProfilePage() {
   const [oldPwd, setOldPwd] = useState('');
   const [newPwd, setNewPwd] = useState('');
   const [newPwd2, setNewPwd2] = useState('');
+  // 个性化偏好（字体/字号/行距）
+  const [prefsOpen, setPrefsOpen] = useState(false);
+  const myPrefs = user ? api.getPrefs(user.id) : {};
+  const [pfFont, setPfFont] = useState(myPrefs.fontFamily ?? 'system');
+  const [pfSize, setPfSize] = useState(String(myPrefs.fontSize ?? 18));
+  const [pfLine, setPfLine] = useState(String(myPrefs.lineHeight ?? 1.9));
+  // 账号安全（认证状态 + 登录设备）
+  const [secOpen, setSecOpen] = useState(false);
+  const sessions = user ? api.mySessions(user.id) : [];
+  const authLevel = user?.authLevel ?? (user ? api.authLevelOf(user) : 0);
 
   const checkinInfo = useMemo(
     () => (user ? api.checkinInfo(user.id) : { today: false, streak: 0, readDone: false, checkinReward: 10, readReward: 5 }),
@@ -191,6 +202,24 @@ export default function ProfilePage() {
     setNewPwd('');
     setNewPwd2('');
     toast.success('密码已修改，请牢记新密码');
+  };
+
+  const doSavePrefs = () => {
+    if (!user) return;
+    const size = Number(pfSize);
+    const line = Number(pfLine);
+    if (Number.isNaN(size) || size < 14 || size > 26) {
+      toast.error('字号需在 14-26 之间');
+      return;
+    }
+    if (Number.isNaN(line) || line < 1.2 || line > 2.6) {
+      toast.error('行距需在 1.2-2.6 之间');
+      return;
+    }
+    const prefs: IUserPrefs = { fontFamily: pfFont, fontSize: size, lineHeight: line };
+    api.setPrefs(user.id, prefs);
+    setPrefsOpen(false);
+    toast.success('个性化已保存，阅读页立即生效');
   };
 
   return (
@@ -403,6 +432,22 @@ export default function ProfilePage() {
             <KeyRound className="h-5 w-5 text-primary" />
             <span className="text-sm font-medium">修改密码</span>
             <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground" />
+          </CardContent>
+        </Card>
+        <Card className="cursor-pointer transition-colors hover:border-primary/60" onClick={() => { setPfFont(myPrefs.fontFamily ?? 'system'); setPfSize(String(myPrefs.fontSize ?? 18)); setPfLine(String(myPrefs.lineHeight ?? 1.9)); setPrefsOpen(true); }}>
+          <CardContent className="flex items-center gap-3 p-4">
+            <Palette className="h-5 w-5 text-primary" />
+            <span className="text-sm font-medium">个性化排版</span>
+            <Badge className="ml-auto" variant="outline">字体·字号·行距</Badge>
+          </CardContent>
+        </Card>
+        <Card className="cursor-pointer transition-colors hover:border-primary/60" onClick={() => setSecOpen(true)}>
+          <CardContent className="flex items-center gap-3 p-4">
+            <MonitorSmartphone className="h-5 w-5 text-primary" />
+            <span className="text-sm font-medium">账号安全</span>
+            <Badge className="ml-auto" variant={authLevel >= 2 ? 'default' : 'outline'}>
+              {authLevel === 0 ? '未认证' : authLevel === 1 ? '基础认证' : '完整认证'}
+            </Badge>
           </CardContent>
         </Card>
         <Card className="cursor-pointer transition-colors hover:border-primary/60" onClick={() => { api.logout(); navigate('/'); }}>
@@ -694,6 +739,116 @@ export default function ProfilePage() {
             <Button variant="outline" onClick={() => setPwdOpen(false)}>取消</Button>
             <Button onClick={doChangePwd} disabled={!oldPwd || !newPwd || !newPwd2}>
               <KeyRound className="mr-1 h-4 w-4" /> 确认修改
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 个性化排版弹窗：字体/字号/行距（阅读页即时生效） */}
+      <Dialog open={prefsOpen} onOpenChange={setPrefsOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>个性化排版</DialogTitle>
+            <DialogDescription>选择你习惯的阅读字体、字号与行距，仅对本人生效</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>阅读字体</Label>
+              <select
+                value={pfFont}
+                onChange={(e) => setPfFont(e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none"
+              >
+                {FONT_STYLES.map((f) => (
+                  <option key={f.key} value={f.key}>{f.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1.5">
+                <Label>字号（14-26px）</Label>
+                <Input type="number" min={14} max={26} value={pfSize} onChange={(e) => setPfSize(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>行距（1.2-2.6）</Label>
+                <Input type="number" min={1.2} max={2.6} step={0.1} value={pfLine} onChange={(e) => setPfLine(e.target.value)} />
+              </div>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              阅读页右上角可快速切换墨夜 / 纸感 / 深夜主题，同样会记住你的选择。
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPrefsOpen(false)}>取消</Button>
+            <Button onClick={doSavePrefs}>
+              <Palette className="mr-1 h-4 w-4" /> 保存偏好
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 账号安全弹窗：认证状态 + 登录设备管理 */}
+      <Dialog open={secOpen} onOpenChange={setSecOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>账号安全</DialogTitle>
+            <DialogDescription>身份认证等级与登录设备管理（仅本人可见）</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="rounded-xl border border-border bg-muted/40 p-3">
+              <p className="mb-2 flex items-center gap-1.5 text-sm font-medium">
+                <ShieldCheck className="h-4 w-4 text-primary" /> 身份认证等级
+              </p>
+              <div className="flex items-center gap-2">
+                <Badge variant={authLevel >= 2 ? 'default' : 'outline'}>
+                  {authLevel === 0 ? '未认证' : authLevel === 1 ? '基础认证' : '完整认证'}
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  {authLevel === 2
+                    ? '邮箱 + 手机均已验证'
+                    : authLevel === 1
+                      ? '已完成一项验证（邮箱/手机）'
+                      : '尚未完成任何验证'}
+                </span>
+              </div>
+              <p className="mt-2 text-[11px] leading-4 text-muted-foreground">
+                注册与找回密码均需邮箱验证码校验；认证等级越高，账号可信度与资金操作保护越强。
+              </p>
+            </div>
+            <div>
+              <p className="mb-2 flex items-center gap-1.5 text-sm font-medium">
+                <MonitorSmartphone className="h-4 w-4 text-primary" /> 登录设备（{sessions.length}）
+              </p>
+              {sessions.length === 0 ? (
+                <p className="text-xs text-muted-foreground">暂无设备记录</p>
+              ) : (
+                <div className="max-h-44 space-y-1.5 overflow-y-auto pr-1">
+                  {sessions.map((s) => (
+                    <div key={s.id} className="flex items-start justify-between gap-2 rounded-lg border border-border px-3 py-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-xs text-foreground">{s.device}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          最近登录 {format(new Date(s.lastAt), 'MM-dd HH:mm')}
+                        </p>
+                      </div>
+                      {s.id === sessions[0]?.id && <Badge variant="default" className="shrink-0 text-[10px]">当前</Badge>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
+            <Button variant="outline" onClick={() => setSecOpen(false)}>关闭</Button>
+            <Button
+              onClick={() => {
+                if (!user || sessions.length === 0) return;
+                api.killOtherSessions(user.id, sessions[0].id, user.id);
+                toast.success('已退出其他登录设备（当前设备保留）');
+              }}
+              disabled={sessions.length <= 1}
+            >
+              <MonitorSmartphone className="mr-1 h-4 w-4" /> 退出其他设备
             </Button>
           </DialogFooter>
         </DialogContent>
