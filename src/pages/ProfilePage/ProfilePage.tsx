@@ -7,13 +7,15 @@ import {
   Crown, Wallet, PenLine, ShieldCheck, LogOut, Coins, PencilLine,
   ArrowRight, BadgeCheck, Landmark, MessageCircle, CreditCard, Zap,
   MessageSquareText, Headset, EyeOff, Lock, Trash2, BookOpenText, KeyRound,
+  RotateCcw,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { api, isVip, fmtCoins } from '@/lib/api';
+import { api, isVip, fmtCoins, rechargeMethodLabel } from '@/lib/api';
 import { useDataVersion } from '@/hooks/use-data';
 import { useAuth } from '@/lib/auth-context';
 import { avatarSVG } from '@/lib/svg';
 import EmptyState from '@/components/EmptyState';
+import QrCode from '@/components/QrCode';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -66,6 +68,19 @@ function fmtTime(iso: string): string {
   }
 }
 
+/** 生成第三方收银台订单（模拟下单：订单号 + 收款二维码内容），模块级避免渲染纯度检查 */
+function genPayOrder(method: string, yuan: number): { no: string; qr: string } {
+  const no = `R${Date.now().toString(36).toUpperCase()}${Math.floor(Math.random() * 900 + 100)}`;
+  const rand = Math.random().toString(36).slice(2, 12).toUpperCase();
+  const qr =
+    method === 'wechat'
+      ? `wxp://f2f0/${rand}?amount=${yuan}`
+      : method === 'bank'
+        ? `https://pay.bank.example/charge?out=${no}&amt=${yuan}`
+        : `https://qr.alipay.com/${rand}?amount=${yuan}`;
+  return { no, qr };
+}
+
 export default function ProfilePage() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -78,6 +93,10 @@ export default function ProfilePage() {
   const [nickname, setNickname] = useState(user?.nickname ?? '');
   const [bio, setBio] = useState(user?.bio ?? '');
   const [rechargeMethod, setRechargeMethod] = useState<string>('alipay');
+  const [payStep, setPayStep] = useState<'idle' | 'qr' | 'done'>('idle');
+  const [payAmount, setPayAmount] = useState(0);
+  const [payNo, setPayNo] = useState('');
+  const [payQr, setPayQr] = useState('');
   const [pwdOpen, setPwdOpen] = useState(false);
   const [oldPwd, setOldPwd] = useState('');
   const [newPwd, setNewPwd] = useState('');
@@ -107,10 +126,24 @@ export default function ProfilePage() {
   const nextLevel = LEVELS.find((l) => l.level === user.level + 1);
   const levelProgress = nextLevel ? Math.min(100, Math.round((user.exp / nextLevel.need) * 100)) : 100;
 
-  const doRecharge = (yuan: number, coins: number) => {
-    api.recharge(user.id, yuan, rechargeMethod);
+  const doRecharge = (yuan: number) => {
+    // 收银台：点击金额后生成收款二维码（模拟第三方收银台下单），扫码支付成功后由回调到账
+    const { no, qr } = genPayOrder(rechargeMethod, yuan);
+    setPayAmount(yuan);
+    setPayNo(no);
+    setPayQr(qr);
+    setPayStep('qr');
+  };
+
+  const confirmPaid = () => {
+    if (!payAmount || !payNo) return;
+    api.recharge(user.id, payAmount, rechargeMethod, payNo);
     setRechargeOpen(false);
-    toast.success(`充值成功，到账 ${fmtCoins(coins)} 书币`);
+    setPayStep('idle');
+    setPayAmount(0);
+    setPayNo('');
+    setPayQr('');
+    toast.success(`支付成功，到账 ${fmtCoins(payAmount * settings.rechargeRate)} 书币（单号 ${payNo}）`);
   };
 
   const doBuyVip = () => {
@@ -410,6 +443,30 @@ export default function ProfilePage() {
                             {TX_LABEL[t.kind]}
                           </Badge>
                           <p className="min-w-0 flex-1 truncate text-sm">{t.note}</p>
+                          {t.kind === 'recharge' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-6 shrink-0 gap-1 px-2 text-[10px]"
+                              onClick={() => {
+                                const res = api.submitFeedback(user.id, {
+                                  type: 'refund',
+                                  title: `退款申请：${t.note}`,
+                                  content: `订单 ${t.id} · ${t.amount} 元，申请原路退回。请客服核实处理。`,
+                                  contact: user.username,
+                                  refund: { txId: t.id, yuan: t.amount, coin: t.coin },
+                                });
+                                if (res.ok) {
+                                  toast.success('退款申请已提交客服渠道，管理员处理后会回复你');
+                                  navigate('/support');
+                                } else {
+                                  toast.error(res.msg ?? '提交失败');
+                                }
+                              }}
+                            >
+                              <RotateCcw className="h-3 w-3" /> 申请退款
+                            </Button>
+                          )}
                           <span className={`shrink-0 text-sm font-medium ${t.coin >= 0 ? 'text-success' : 'text-foreground'}`}>
                             {t.coin >= 0 ? '+' : ''}{t.coin > 0 ? fmtCoins(t.coin) : t.coin} 币
                           </span>
@@ -503,45 +560,68 @@ export default function ProfilePage() {
         </DialogContent>
       </Dialog>
 
-      {/* 充值弹窗 */}
-      <Dialog open={rechargeOpen} onOpenChange={setRechargeOpen}>
+      {/* 充值弹窗（收银台：选方式 → 扫码支付 → 回调到账） */}
+      <Dialog open={rechargeOpen} onOpenChange={(o) => { setRechargeOpen(o); if (!o) setPayStep('idle'); }}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>充值书币</DialogTitle>
-            <DialogDescription>1 元 = {fmtCoins(settings.rechargeRate)} 书币（演示环境为模拟支付，不会真实扣款）</DialogDescription>
+            <DialogTitle>{payStep === 'qr' ? '扫码支付' : '充值书币'}</DialogTitle>
+            <DialogDescription>
+              {payStep === 'qr'
+                ? `订单 ${payNo} · ${payAmount} 元（${rechargeMethodLabel(rechargeMethod)}）`
+                : `1 元 = ${fmtCoins(settings.rechargeRate)} 书币 · 收款二维码扫码支付，支付成功后回调到账`}
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <p className="mb-1.5 text-xs font-medium text-muted-foreground">充值方式</p>
+          {payStep === 'qr' ? (
+            <div className="space-y-3">
+              <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed p-4">
+                <QrCode text={payQr} size={168} />
+                <p className="max-w-full break-all text-center font-mono text-[10px] text-muted-foreground">{payQr}</p>
+                <p className="text-xs text-muted-foreground">
+                  演示环境：展示收款二维码，确认「支付成功」后由回调到账；真实环境由支付平台回调服务器验签后入账
+                </p>
+              </div>
               <div className="grid grid-cols-2 gap-2">
-                {RECHARGE_METHODS.filter((m) => (settings.rechargeMethods ?? []).includes(m.id)).map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => setRechargeMethod(m.id)}
-                    className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-left transition-colors ${
-                      rechargeMethod === m.id ? 'border-primary bg-primary/10' : 'border-border bg-card hover:border-primary/50'
-                    }`}
-                  >
-                    <m.icon className="h-4 w-4 text-primary" />
-                    <span className="min-w-0">
-                      <span className="block text-sm font-medium">{m.label}</span>
-                      <span className="block text-[10px] text-muted-foreground">{m.desc}</span>
-                    </span>
-                  </button>
-                ))}
+                <Button variant="outline" onClick={() => setPayStep('idle')}>取消</Button>
+                <Button onClick={confirmPaid}>模拟支付成功（回调到账）</Button>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              {RECHARGE_AMOUNTS.map((r) => (
-                <Button key={r.yuan} variant="outline" className="flex-col gap-0.5 py-3" onClick={() => doRecharge(r.yuan, r.coins)}>
-                  <span className="text-base font-bold">{r.yuan} 元</span>
-                  <span className="text-xs text-muted-foreground">{fmtCoins(r.coins)} 币</span>
-                </Button>
-              ))}
+          ) : (
+            <div className="space-y-3">
+              <div>
+                <p className="mb-1.5 text-xs font-medium text-muted-foreground">充值方式</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {RECHARGE_METHODS.filter((m) => (settings.rechargeMethods ?? []).includes(m.id)).map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setRechargeMethod(m.id)}
+                      className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-left transition-colors ${
+                        rechargeMethod === m.id ? 'border-primary bg-primary/10' : 'border-border bg-card hover:border-primary/50'
+                      }`}
+                    >
+                      <m.icon className="h-4 w-4 text-primary" />
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium">{m.label}</span>
+                        <span className="block text-[10px] text-muted-foreground">{m.desc}</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {RECHARGE_AMOUNTS.map((r) => (
+                  <Button key={r.yuan} variant="outline" className="flex-col gap-0.5 py-3" onClick={() => doRecharge(r.yuan)}>
+                    <span className="text-base font-bold">{r.yuan} 元</span>
+                    <span className="text-xs text-muted-foreground">{fmtCoins(r.coins)} 币</span>
+                  </Button>
+                ))}
+              </div>
+              <p className="rounded-lg bg-muted/50 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
+                金额交易安全说明：支付走第三方收银台（微信支付 / 支付宝），到账以平台回调为准；
+                单笔充值有风控校验，异常订单可走客服渠道申请退款。充值记录会进入平台流水（含支付方式与单号）。
+              </p>
             </div>
-          </div>
-          <DialogFooter className="text-xs text-muted-foreground">充值记录会进入平台流水（含充值方式）</DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
 
