@@ -67,7 +67,8 @@ export default function ShelfPage() {
           ) : recent.length === 0 ? (
             <EmptyState text="还没有阅读记录，去书城逛逛吧" />
           ) : (
-            <div className="space-y-2">
+            // 最近阅读：B站式横滑封面大卡（竖版书封 + 底部渐变信息条 + 继续角标）
+            <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3">
               {recent.map((r) => {
                 const prog = api.getProgress(user.id, r.book.id);
                 const to =
@@ -77,24 +78,22 @@ export default function ShelfPage() {
                       ? `/visual/${r.book.id}`
                       : `/comic/${r.book.id}/${prog?.chapterId ?? ''}`;
                 return (
-                  <Link
-                    key={r.book.id}
-                    to={to}
-                    className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/60"
-                  >
-                    <div className="w-12 shrink-0">
+                  <Link key={r.book.id} to={to} className="group w-40 shrink-0 snap-start">
+                    <div className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-border shadow-[0_12px_28px_-18px_hsl(0_0%_0%/0.55)] transition-transform duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_18px_34px_-18px_hsl(0_0%_0%/0.6)]">
                       <BookCover seed={r.book.coverSeed} title={r.book.title} author={r.book.authorName} genre={r.book.genre} style={r.book.coverStyle} bookId={r.book.id} coverType={r.book.coverType} font={r.book.coverFont} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{r.book.title}</p>
-                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                        {r.chapterTitle ? `读到：${r.chapterTitle}` : r.book.type === 'visual' ? '互动剧情中' : '已加入阅读'}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1">
-                      <span className="text-[11px] text-muted-foreground">{fmtTime(r.updatedAt)}</span>
-                      <span className="flex items-center gap-1 text-xs text-primary">
-                        继续 <ArrowRight className="h-3 w-3" />
+                      {/* 底部渐变信息条 */}
+                      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/40 to-transparent p-2.5 pb-3 pt-8">
+                        <p className="truncate text-xs font-medium text-white">{r.book.title}</p>
+                        <p className="mt-0.5 truncate text-[10px] text-white/75">
+                          {r.chapterTitle ? `读到：${r.chapterTitle}` : r.book.type === 'visual' ? '互动剧情中' : '已加入阅读'}
+                        </p>
+                      </div>
+                      {/* 继续角标 */}
+                      <span className="absolute right-2 top-2 flex items-center gap-0.5 rounded-full bg-primary/95 px-2 py-0.5 text-[10px] font-medium text-primary-foreground shadow">
+                        继续 <ArrowRight className="h-2.5 w-2.5" />
+                      </span>
+                      <span className="absolute bottom-1.5 right-2 rounded-full bg-black/50 px-1.5 py-0.5 text-[9px] text-white/85 backdrop-blur">
+                        {fmtTime(r.updatedAt)}
                       </span>
                     </div>
                   </Link>
