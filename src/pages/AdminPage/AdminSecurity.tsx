@@ -106,7 +106,7 @@ export default function AdminSecurity() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm">{l.message}</p>
                     <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
-                      {l.kind === 'tamper' ? '数据篡改' : l.kind === 'attack' ? '入侵攻击' : '内容注入'} · {l.targetType}/{l.field}
+                      {l.kind === 'tamper' ? '数据篡改' : l.kind === 'attack' ? '入侵攻击' : l.kind === 'suspicious' ? '破解行为·开发者模式' : '内容注入'} · {l.targetType}/{l.field}
                       {l.snippet ? ` · "${l.snippet}"` : ''} · {fmtTime(l.createdAt)}
                     </p>
                   </div>
