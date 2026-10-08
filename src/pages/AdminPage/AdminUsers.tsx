@@ -86,7 +86,7 @@ export default function AdminUsers() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Select value={u.role} onValueChange={(v) => { api.setRole(u.id, v as UserRole); toast.success(`已将 ${u.nickname} 设为${ROLE_LABEL[v]}`); }}>
+                    <Select value={u.role} onValueChange={(v) => { if (user) { api.setRole(u.id, v as UserRole, user.id); toast.success(`已将 ${u.nickname} 设为${ROLE_LABEL[v]}`); } }}>
                       <SelectTrigger className="h-8 w-24 text-xs">
                         <SelectValue />
                       </SelectTrigger>
@@ -107,7 +107,7 @@ export default function AdminUsers() {
                   <TableCell>
                     <div className="flex items-center gap-1.5">
                       <Medal className="h-3.5 w-3.5 shrink-0 text-primary" />
-                      <Select value={String(u.level ?? 1)} onValueChange={(v) => { api.setLevel(u.id, Number(v)); toast.success(`已将 ${u.nickname} 设为 Lv.${v}（${api.levelTitle(Number(v))}）`); }}>
+                      <Select value={String(u.level ?? 1)} onValueChange={(v) => { if (user) { api.setLevel(u.id, Number(v), user.id); toast.success(`已将 ${u.nickname} 设为 Lv.${v}（${api.levelTitle(Number(v))}）`); } }}>
                         <SelectTrigger className="h-8 w-24 text-xs">
                           <SelectValue />
                         </SelectTrigger>
@@ -138,11 +138,11 @@ export default function AdminUsers() {
                   <TableCell className="whitespace-nowrap text-xs text-muted-foreground">{u.createdAt.slice(0, 10)}</TableCell>
                   <TableCell>
                     {isVip(u) ? (
-                      <Button size="sm" variant="outline" className="gap-1" onClick={() => { api.setVip(u.id, false); toast.success(`已取消 ${u.nickname} 的 VIP`); }}>
+                      <Button size="sm" variant="outline" className="gap-1" onClick={() => { if (user) { api.setVip(u.id, false, 30, user.id); toast.success(`已取消 ${u.nickname} 的 VIP`); } }}>
                         <ShieldOff className="h-3.5 w-3.5" /> 取消 VIP
                       </Button>
                     ) : (
-                      <Button size="sm" className="gap-1" onClick={() => { api.setVip(u.id, true); toast.success(`已为 ${u.nickname} 开通 30 天 VIP`); }}>
+                      <Button size="sm" className="gap-1" onClick={() => { if (user) { api.setVip(u.id, true, 30, user.id); toast.success(`已为 ${u.nickname} 开通 30 天 VIP`); } }}>
                         <Crown className="h-3.5 w-3.5" /> 授权 VIP
                       </Button>
                     )}
