@@ -31,12 +31,12 @@ export type PaymentProviderId = 'wxpay' | 'alipay' | 'bankpay';
 /** 代付状态 */
 export type PayTransferStatus = 'dispatched' | 'done' | 'failed';
 
-/** 支付/代付平台对接配置（真实资金划转需服务端 + 商户资质，前端为配置框架 + 模拟代付） */
+/** 支付/代付平台对接配置（零密钥设计：收款直连支付平台链接/二维码，无需商户密钥；真实资金划转需服务端，前端为配置框架 + 模拟代付） */
 export interface IPaymentProvider {
   id: PaymentProviderId;
   label: string;
   enabled: boolean;
-  /** 商户参数（密钥等敏感项在展示层打码） */
+  /** 收款接入字段：receiveLink（收款链接）/ receiveQr（收款二维码内容），不再存储商户密钥 */
   fields: Record<string, string>;
   updatedAt?: string;
 }
@@ -117,7 +117,38 @@ export interface IUser {
   bio?: string;
   /** 隐私设置（读者隐私化） */
   privacy?: IPrivacy;
+  /** 账号认证状态：已验证的手机/邮箱（注册/找回密码时完成验证） */
+  verified?: { email?: boolean; phone?: boolean };
+  /** 认证等级：0 未认证 / 1 基础（邮箱或手机已验）/ 2 完整（邮箱+手机已验） */
+  authLevel?: number;
+  /** 个性化偏好（字体/字号/行距/阅读主题） */
+  prefs?: IUserPrefs;
   createdAt: string;
+}
+
+/** 用户个性化偏好（阅读与排版，仅本人可见） */
+export interface IUserPrefs {
+  /** 阅读字体：system 系统默认 / serif 衬线正文 / rounded 圆润漫画感 */
+  fontFamily?: string;
+  /** 阅读字号（px） */
+  fontSize?: number;
+  /** 行距 */
+  lineHeight?: number;
+  /** 阅读主题：墨夜/纸感/深夜 */
+  readerTheme?: 'ink' | 'paper' | 'night';
+}
+
+/** 平台排版风格预设（管理员后台可替换，全站生效） */
+export type LayoutStyle = 'anime' | 'guofeng' | 'kawaii' | 'fresh' | 'night' | 'warm';
+
+/** 登录会话记录（设备安全：展示登录设备、支持退出其他设备） */
+export interface ILoginSession {
+  id: string;
+  userId: string;
+  /** 设备标识（UA 摘要） */
+  device: string;
+  at: string;
+  lastAt: string;
 }
 
 /** 读者隐私设置 */
@@ -355,7 +386,7 @@ export interface ISecurityLog {
   field?: string;
   snippet?: string;
   message: string;
-  status: 'flagged' | 'cleaned' | 'ignored';
+  status: 'flagged' | 'cleaned' | 'ignored' | 'resolved';
   createdAt: string;
 }
 
@@ -387,6 +418,16 @@ export interface ISettings {
   adminLockedUntil: number;
   /** 安全码连续错误次数 */
   adminFailCount: number;
+  /** 开发者白名单（用户名列表）：白名单成员/管理员打开开发者工具不触发反破解告警（正常调试豁免） */
+  devWhitelist?: string[];
+  /** 平台排版风格（管理员后台可替换，全站生效） */
+  layoutStyle?: LayoutStyle;
+  /** 平台默认阅读字体 */
+  fontFamily?: string;
+  /** 平台默认阅读字号（px） */
+  fontSize?: number;
+  /** 平台默认行距 */
+  lineHeight?: number;
 }
 
 export interface ILevel {
