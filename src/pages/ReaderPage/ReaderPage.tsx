@@ -171,10 +171,11 @@ export default function ReaderPage() {
         />
       </div>
 
-      {/* 正文 */}
+      {/* 正文（章节/分页切换时淡入上浮） */}
       <article
+        key={`${chapterId}-${mode}-${pageIdx}`}
         onClick={tapToggleBars}
-        className={`min-h-[60vh] cursor-default select-text px-2 pb-10 transition-colors duration-300 ${
+        className={`reader-fade-in min-h-[60vh] cursor-default select-text px-2 pb-10 transition-colors duration-300 ${
           theme === 'paper'
             ? 'reading-article mt-4 rounded-2xl border border-[hsl(40_30%_72%)] bg-[#f5ecd9] p-5 text-[#33302a] shadow-[0_12px_30px_-14px_hsl(0_0%_0%/0.5)] sm:p-7'
             : theme === 'night'
