@@ -106,7 +106,7 @@ export default function ShelfPage() {
 
         <TabsContent value="shelf" className="pt-3">
           {shelf.length === 0 ? (
-            <EmptyState text="书架还空着，看到喜欢的点『加入书架』" />
+            <EmptyState text="书架还空着，看到喜欢的点『加入书架』" mascot />
           ) : (
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-5 sm:gap-4">
               {shelf.map((book) => {
