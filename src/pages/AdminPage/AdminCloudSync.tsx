@@ -3,7 +3,7 @@
 //  - 拉取：配置令牌走 API（支持私有仓库）；未配置令牌匿名拉取公开仓库
 //  - 推送：管理员配置 GitHub 令牌 + 加密口令，AES-GCM 加密 + HMAC 签名后落库
 import { useState } from 'react';
-import { Cloud, Download, Upload, KeyRound, Database, ShieldCheck, GitBranch, ExternalLink, Lock, Unlock } from 'lucide-react';
+import { Cloud, Download, Upload, KeyRound, Database, ShieldCheck, GitBranch, ExternalLink, Lock, Unlock, Palette } from 'lucide-react';
 import { toast } from 'sonner';
 import { cloud } from '@/lib/cloud';
 import { useDataVersion } from '@/hooks/use-data';
@@ -21,6 +21,11 @@ export default function AdminCloudSync() {
   const [uTokenInput, setUTokenInput] = useState('');
   const [uPassInput, setUPassInput] = useState('');
   const [uBusy, setUBusy] = useState<'pull' | 'push' | null>(null);
+  // 平台设置仓（第三库）
+  const [sBusy, setSBusy] = useState<'pull' | 'push' | null>(null);
+  const sRepo = cloud.settingsRepo();
+  const sFiles = cloud.settingsFiles();
+  const sTokenSaved = cloud.settingsTokenSaved();
   const meta = cloud.meta();
   const tokenSaved = cloud.tokenSaved();
   const passSaved = cloud.passSaved();
@@ -122,6 +127,32 @@ export default function AdminCloudSync() {
     cloud.saveUserPass(uPassInput.trim());
     setUPassInput('');
     toast.success('用户数据仓库加密口令已保存（推送将加密落库，明文用户数据拒收）');
+  };
+
+  /* ---- 平台设置仓（第三库：全站设置/排版风格 + 认证会话） ---- */
+
+  const handleSettingsPull = async () => {
+    setSBusy('pull');
+    const r = await cloud.pullSettings();
+    setSBusy(null);
+    if (r.ok) {
+      toast.success(r.msg ?? '设置仓拉取成功');
+    } else {
+      toast.error(r.msg ?? '拉取失败');
+    }
+    if (r.failed && r.failed.length > 0) toast.info(`未拉取：${r.failed.join('、')}`);
+  };
+
+  const handleSettingsPush = async () => {
+    setSBusy('push');
+    const r = await cloud.pushSettings();
+    setSBusy(null);
+    if (r.ok) {
+      toast.success(r.msg ?? '设置仓推送成功');
+    } else {
+      toast.error(r.msg ?? '推送失败');
+    }
+    if (r.failed && r.failed.length > 0) toast.info(`未推送：${r.failed.join('、')}`);
   };
 
   const handleSavePass = () => {
@@ -361,6 +392,58 @@ export default function AdminCloudSync() {
             </Button>
             <Button onClick={handleUserPush} disabled={uBusy !== null}>
               <Upload className="mr-1 h-4 w-4" /> {uBusy === 'push' ? '推送中…' : '加密推送用户数据'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Palette className="h-4 w-4 text-primary" /> GitHub 平台设置仓（第三库：排版风格 + 认证会话）
+            {sTokenSaved ? <Badge className="bg-emerald-500/15 text-emerald-600">凭证已配置</Badge> : <Badge variant="outline">共用用户库凭证</Badge>}
+            {uPassSaved ? (
+              <Badge className="bg-emerald-500/15 text-emerald-600">
+                <Lock className="mr-0.5 h-3 w-3" /> 加密已启用
+              </Badge>
+            ) : (
+              <Badge variant="outline">
+                <Unlock className="mr-0.5 h-3 w-3" /> 未设加密口令
+              </Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-2 text-sm sm:grid-cols-2">
+            <div className="rounded-lg bg-muted/50 p-3">
+              <div className="flex items-center gap-1.5 text-muted-foreground"><Palette className="h-3.5 w-3.5" /> 平台设置仓</div>
+              <div className="mt-1 font-medium">
+                {sRepo.owner}/{sRepo.name}
+                <span className="ml-1.5 text-xs text-muted-foreground">分支 {sRepo.branch}</span>
+              </div>
+              <div className="mt-0.5 text-xs text-muted-foreground">数据目录 db/ · 共 {sFiles.length} 个设置文件（settings + authSessions）</div>
+            </div>
+            <div className="rounded-lg bg-muted/50 p-3">
+              <div className="flex items-center gap-1.5 text-muted-foreground"><ShieldCheck className="h-3.5 w-3.5" /> 存储内容</div>
+              <div className="mt-1 text-xs leading-5">
+                · 全站设置 / 排版风格 / 字体字号行距（管理员后台替换后同步）
+                <br />· 登录设备会话（身份认证，退出其他设备后同步）
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-dashed p-3 text-xs leading-relaxed text-muted-foreground">
+            <div className="flex items-center gap-1.5 font-medium text-foreground"><GitBranch className="h-3.5 w-3.5" /> 三仓分离存储</div>
+            <b>内容/代码仓库</b>（{repo.owner}/{repo.name}）存作品与代码、<b>用户数据仓库</b>（{uRepo.owner}/{uRepo.name}）存用户资金与隐私、<b>本设置仓</b>（{sRepo.owner}/{sRepo.name}）存平台配置与认证会话，三者物理隔离、独立加密盐。<br />
+            <b>凭证：</b>设置仓复用用户数据仓库的令牌与加密口令（同一管理员账号），但使用<b>独立派生盐</b>（{sRepo.owner}/{sRepo.name}），口令相同密文也不互通，进一步防止跨库破解。
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={handleSettingsPull} disabled={sBusy !== null}>
+              <Download className="mr-1 h-4 w-4" /> {sBusy === 'pull' ? '拉取中…' : '拉取平台设置'}
+            </Button>
+            <Button onClick={handleSettingsPush} disabled={sBusy !== null}>
+              <Upload className="mr-1 h-4 w-4" /> {sBusy === 'push' ? '推送中…' : '加密推送平台设置'}
             </Button>
           </div>
         </CardContent>
