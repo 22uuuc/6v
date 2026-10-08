@@ -3,12 +3,13 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { ArrowLeft, Landmark, Coins, Wallet, CheckCircle2, Plus, CreditCard } from 'lucide-react';
+import { ArrowLeft, Landmark, Coins, Wallet, CheckCircle2, Plus, CreditCard, QrCode as QrIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { api, fmtYuan, channelLabel, maskAccount } from '@/lib/api';
 import { useDataVersion } from '@/hooks/use-data';
 import { useAuth } from '@/lib/auth-context';
 import EmptyState from '@/components/EmptyState';
+import QrCode from '@/components/QrCode';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,7 +17,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { ChannelType } from '@/lib/types';
+import type { ChannelType, PaymentProviderId, IWithdrawal } from '@/lib/types';
 
 function fmtTime(iso: string): string {
   try {
@@ -51,6 +52,8 @@ export default function EarningsPage() {
   const [chName, setChName] = useState('');
   const [chBank, setChBank] = useState('');
   const [confirmPwd, setConfirmPwd] = useState('');
+  const [selectedProvider, setSelectedProvider] = useState<PaymentProviderId | ''>('');
+  const [qrWd, setQrWd] = useState<IWithdrawal | null>(null);
 
   const stats = useMemo(
     () => (user ? api.creatorStats(user.id) : { income: 0, pending: 0, books: 0, fans: 0 }),
@@ -61,6 +64,8 @@ export default function EarningsPage() {
   const settlements = useMemo(() => (user ? api.settlementsOf(user.id) : []), [user]);
   const channels = useMemo(() => (user ? api.myChannels(user.id) : []), [user]);
   const approvedChannel = channels.find((c) => c.status === 'approved');
+  const payProviders = useMemo(() => (user ? api.paymentProviders() : []), [user]);
+  const enabledProviders = payProviders.filter((p) => p.enabled);
 
   if (!user || (user.role !== 'creator' && user.role !== 'admin')) {
     return <p className="py-20 text-center text-sm text-muted-foreground">收益中心仅对创作者开放</p>;
@@ -82,6 +87,12 @@ export default function EarningsPage() {
       return;
     }
     setSelectedChannel(approvedChannel.id);
+    const first = enabledProviders[0];
+    setSelectedProvider(first ? first.id : '');
+    if (!first) {
+      toast.error('平台尚未启用代付通道，请联系管理员在后台「支付对接」中配置');
+      return;
+    }
     setWdOpen(true);
   };
 
@@ -91,7 +102,11 @@ export default function EarningsPage() {
       toast.error('请输入正确的提现金额');
       return;
     }
-    const res = api.requestWithdraw(user.id, n, selectedChannel, confirmPwd);
+    if (!selectedProvider) {
+      toast.error('请选择代付通道（需管理员已启用）');
+      return;
+    }
+    const res = api.requestWithdraw(user.id, n, selectedChannel, confirmPwd, selectedProvider);
     if (!res.ok) {
       toast.error(res.msg ?? '提现失败');
       return;
@@ -99,6 +114,7 @@ export default function EarningsPage() {
     setWdOpen(false);
     setAmount('');
     setConfirmPwd('');
+    setSelectedProvider('');
     toast.success('提现申请已提交，等待管理员审核');
   };
 
@@ -205,8 +221,11 @@ export default function EarningsPage() {
           <div>
             <p className="font-medium">提现</p>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              当前可提现 {fmtYuan(stats.pending)} 元，满 1 元即可申请，管理员审核后到账
+              当前可提现 {fmtYuan(stats.pending)} 元，满 1 元即可申请，管理员审核后由代付平台到账
               {approvedChannel ? ` · 到账渠道：${channelLabel(approvedChannel.type)}（${maskAccount(approvedChannel.account)}）` : ' · 请先绑定提现渠道'}
+              {enabledProviders.length > 0
+                ? ` · 代付通道：${enabledProviders.map((p) => p.label).join(' / ')}`
+                : ' · 代付通道未启用（需管理员后台配置）'}
             </p>
           </div>
           <Button onClick={openWdDialog} disabled={stats.pending < 100}>
@@ -271,14 +290,28 @@ export default function EarningsPage() {
             <div className="divide-y divide-border">
               {withdrawals.map((w) => {
                 const meta = WD_META[w.status] ?? WD_META.pending;
+                const provider = payProviders.find((p) => p.id === w.providerId);
                 return (
                   <div key={w.id} className="flex items-center gap-3 py-2.5">
                     <Badge variant={meta.variant} className="w-16 justify-center text-[10px]">{meta.label}</Badge>
-                    <p className="flex-1 text-sm">{w.amount.toFixed(2)} 元</p>
+                    <p className="flex-1 text-sm">
+                      {w.amount.toFixed(2)} 元
+                      {provider && (
+                        <span className="ml-2 text-[11px] text-muted-foreground">{provider.label}</span>
+                      )}
+                      {w.payTradeNo && (
+                        <span className="ml-2 font-mono text-[11px] text-emerald-600 dark:text-emerald-400">单号 {w.payTradeNo}</span>
+                      )}
+                    </p>
                     {w.channel && (
                       <span className="hidden text-[11px] text-muted-foreground sm:inline">
                         {channelLabel(w.channel.type)} · {maskAccount(w.channel.account)}
                       </span>
+                    )}
+                    {w.payQrContent && w.status === 'done' && (
+                      <Button size="sm" variant="outline" className="h-7 gap-1 px-2 text-[11px]" onClick={() => setQrWd(w)}>
+                        <QrIcon className="h-3.5 w-3.5 text-primary" /> 收款码
+                      </Button>
                     )}
                     <span className="text-[11px] text-muted-foreground">{fmtTime(w.createdAt)}</span>
                   </div>
@@ -318,6 +351,31 @@ export default function EarningsPage() {
               </div>
             </div>
             <div className="space-y-1.5">
+              <Label>代付通道（由管理员后台配置对接）</Label>
+              {enabledProviders.length === 0 ? (
+                <p className="rounded-lg border border-dashed px-3 py-2 text-xs text-muted-foreground">
+                  暂无可用的代付通道，请联系管理员在「支付对接」中配置并启用
+                </p>
+              ) : (
+                <div className="space-y-1.5">
+                  {enabledProviders.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setSelectedProvider(p.id)}
+                      className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
+                        selectedProvider === p.id ? 'border-primary bg-primary/10' : 'border-border bg-card hover:border-primary/50'
+                      }`}
+                    >
+                      <Wallet className="h-4 w-4 text-primary" />
+                      <span className="flex-1">{p.label}</span>
+                      <span className="text-xs text-emerald-600 dark:text-emerald-400">已启用</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="space-y-1.5">
               <Label>提现金额（元）</Label>
               <Input
                 type="number"
@@ -343,6 +401,31 @@ export default function EarningsPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setWdOpen(false)}>取消</Button>
             <Button onClick={requestWd} disabled={!confirmPwd}>提交申请</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={qrWd !== null} onOpenChange={(o) => { if (!o) setQrWd(null); }}>
+        <DialogContent className="sm:max-w-xs">
+          <DialogHeader>
+            <DialogTitle>收款二维码</DialogTitle>
+            <DialogDescription>
+              {qrWd ? `${qrWd.amount.toFixed(2)} 元 · ${qrWd.payTradeNo ?? ''}（实时下发，扫码收款）` : ''}
+            </DialogDescription>
+          </DialogHeader>
+          {qrWd?.payQrContent && (
+            <div className="flex flex-col items-center gap-2 py-2">
+              <QrCode text={qrWd.payQrContent} size={168} />
+              <p className="max-w-full break-all text-center font-mono text-[10px] text-muted-foreground">
+                {qrWd.payQrContent}
+              </p>
+              <p className="text-center text-[11px] text-muted-foreground">
+                演示环境模拟平台收款码 · 真实下发由服务端调用支付平台 API 生成
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" className="w-full" onClick={() => setQrWd(null)}>关闭</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
