@@ -79,11 +79,11 @@ export default function VisualPage() {
       </div>
 
       {/* 画面人物（互动角色） */}
-      {node.char && (
+      {(node.char || node.speaker) && (
         <div className="pointer-events-none absolute inset-x-0 bottom-24 z-[5] flex justify-center">
           <div
             className="w-52 aspect-[2/3] float-slow opacity-95 drop-shadow-2xl"
-            dangerouslySetInnerHTML={{ __html: personSVG(node.char, node.speaker ?? '角色', { poster: true }) }}
+            dangerouslySetInnerHTML={{ __html: personSVG(node.char ?? `${bookId}-${node.speaker ?? '角色'}`, node.speaker ?? '角色', { poster: true }) }}
           />
         </div>
       )}

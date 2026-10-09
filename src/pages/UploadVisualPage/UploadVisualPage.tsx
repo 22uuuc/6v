@@ -340,11 +340,11 @@ export default function UploadVisualPage() {
                   <p className="line-clamp-3 text-xs leading-5 text-foreground/90">{currentNode.text || '（这段还没有剧情文字）'}</p>
                   {currentNode.ending && <p className="mt-1 text-[10px] text-primary">结局：{currentNode.endingTitle || '未命名'}</p>}
                 </div>
-                {currentNode.char && (
+                {(currentNode.char || currentNode.speaker) && (
                   <div className="pointer-events-none absolute inset-x-0 bottom-16 flex justify-center">
                     <div
                       className="w-28 aspect-[2/3]"
-                      dangerouslySetInnerHTML={{ __html: personSVG(currentNode.char, currentNode.speaker || currentNode.char, { poster: true }) }}
+                      dangerouslySetInnerHTML={{ __html: personSVG(currentNode.char || currentNode.speaker || '角色', currentNode.speaker || currentNode.char || '角色', { poster: true }) }}
                     />
                   </div>
                 )}
