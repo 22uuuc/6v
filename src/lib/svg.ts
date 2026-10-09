@@ -643,7 +643,7 @@ export function avatarSVG(seed: string, name: string): string {
 /* ---------------- 画面人物（互动小说角色） ---------------- */
 
 /** 程序化人物半身像：按 seed 确定性生成发型/发色/衣服/表情 */
-export function personSVG(seed: string, name: string, opts: Opts = {}): string {
+export function personSVG(seed: string, name: string, opts: Opts & { dress?: string; hairStyle?: string } = {}): string {
   const { width = 200, height = 250 } = opts;
   const r = makeRand(seed);
   const skin = r.pick(['#ffe9d2', '#ffdcbc', '#f7cba6', '#efc095', '#e6b287']);
@@ -653,8 +653,10 @@ export function personSVG(seed: string, name: string, opts: Opts = {}): string {
   const eyeColor = r.pick(['#c96a4a', '#5a6a9a', '#8a4a7a', '#4a7a5a', '#7a5a9a', '#4a5a8a']);
   const cloth = r.pick(['#b5453a', '#3f5a7a', '#7a4a6a', '#4a7a6a', '#8a5a2c', '#5a3a7a', '#2e5a7c', '#a06a3a']);
   const cloth2 = r.pick(['#f0d6b0', '#c9d6e0', '#e0c9d6', '#c9e0d6', '#e0c9a0', '#d0c9e0', '#b0c9e0']);
-  const hairStyle = r.pick(['short', 'long', 'twin', 'bun', 'wave']);
+  const hairStyle = opts.hairStyle ?? r.pick(['short', 'long', 'twin', 'bun', 'wave', 'hime', 'pony', 'spiky']);
   const happy = r.next() < 0.35;
+  /* 服饰风格（角色 IP 多元化 · 参考画风）：gufeng 古风交领（狐妖小红娘）/ xiuxian 道袍（从前有座灵剑山）/ modern 现代衬衫（夏目友人帐）/ school 制服外套（灵契）/ yaoxian 妖仙披帛（涂山狐妖）；置于随机序列末位以保持旧 seed 角色完全不变 */
+  const dress = opts.dress ?? r.pick(['gufeng', 'xiuxian', 'modern', 'school', 'yaoxian']);
   const hx = (x: number) => Math.round((x / 100) * width);
   const hy = (y: number) => Math.round((y / 125) * height);
   const hz = (z: number) => Math.round(z * (width / 100));
@@ -667,7 +669,7 @@ export function personSVG(seed: string, name: string, opts: Opts = {}): string {
   const earL = `<path d="M29 46 Q24 52 26 58 Q28 62 32 62 Q33 56 32 50 Z" fill="${skin}"/>`;
   const earR = `<path d="M71 46 Q76 52 74 58 Q72 62 68 62 Q67 56 68 50 Z" fill="${skin}"/>`;
 
-  // 发型：分层刘海 + 侧发 + 高光挑染（五种发型自带高光）
+  // 发型：分层刘海 + 侧发 + 高光挑染 + 呆毛/发饰（八种发型，角色 IP 多元化）
   let hair = '';
   if (hairStyle === 'short') {
     hair = `<path d="M50 20 Q24 20 20 40 Q18 50 24 48 L24 36 Q30 26 50 26 Q70 26 76 36 L76 48 Q82 50 80 40 Q76 20 50 20 Z" fill="${hairColor}"/>` +
@@ -682,19 +684,43 @@ export function personSVG(seed: string, name: string, opts: Opts = {}): string {
       `<circle cx="20" cy="50" r="13" fill="${hairColor}"/><circle cx="80" cy="50" r="13" fill="${hairColor}"/>` +
       `<path d="M20 42 Q18 50 20 58 Q24 60 26 54 Q27 46 26 42 Z" fill="${hairLight}" opacity="0.55"/>` +
       `<path d="M80 42 Q82 50 80 58 Q76 60 74 54 Q73 46 74 42 Z" fill="${hairLight}" opacity="0.55"/>` +
+      `<circle cx="20" cy="36" r="4" fill="#f29aa8"/><circle cx="80" cy="36" r="4" fill="#f29aa8"/>` +
       `<path d="M32 36 Q38 30 48 30 M52 30 Q62 30 68 36" stroke="${hairLight}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.7"/>`;
   } else if (hairStyle === 'bun') {
     hair = `<path d="M50 18 Q22 20 18 40 L18 46 Q24 48 28 42 L28 32 Q36 24 50 24 Q64 24 72 32 L72 42 Q76 48 82 46 L82 40 Q78 20 50 18 Z" fill="${hairColor}"/>` +
       `<circle cx="50" cy="12" r="9" fill="${hairColor}"/><circle cx="50" cy="12" r="6" fill="${hairLight}" opacity="0.6"/>` +
       `<path d="M30 34 Q36 28 48 28 M52 28 Q64 28 70 34" stroke="${hairLight}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.7"/>` +
       `<path d="M45 12 L52 6 L55 12" fill="${cloth}"/>`;
+  } else if (hairStyle === 'hime') {
+    // 姬发式（狐妖/日漫公主头）：齐刘海 + 鬓角 + 呆毛，古风/道袍配发簪
+    hair = `<path d="M50 16 Q20 18 16 40 L16 72 Q22 76 28 70 L28 46 Q34 32 50 30 Q66 32 72 46 L72 70 Q78 76 84 72 L84 40 Q80 18 50 16 Z" fill="${hairColor}"/>` +
+      `<path d="M18 38 Q22 26 50 24 Q78 26 82 38 L82 44 Q78 32 50 32 Q22 32 18 44 Z" fill="${hairColor}"/>` +
+      `<path d="M24 40 Q28 30 50 30 Q72 30 76 40 L76 46 Q72 38 50 38 Q28 38 24 46 Z" fill="${hairLight}" opacity="0.45"/>` +
+      `<path d="M50 12 Q55 16 50 21" stroke="${hairColor}" stroke-width="2.5" fill="none" stroke-linecap="round"/>` +
+      `<path d="M34 34 Q40 28 50 28 M58 28 Q64 32 68 38" stroke="${hairLight}" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.6"/>` +
+      (dress === 'gufeng' || dress === 'xiuxian' ? `<path d="M64 24 L74 15" stroke="#cbb37a" stroke-width="2.5" stroke-linecap="round"/>` : '');
+  } else if (hairStyle === 'pony') {
+    // 侧马尾（现代元气）：右马尾 + 蝴蝶结 + 呆毛
+    hair = `<path d="M50 18 Q24 20 20 42 L20 48 Q26 50 30 44 L30 34 Q36 26 50 26 Q64 26 72 34 L74 52 Q78 52 80 48 L78 42 Q76 20 50 18 Z" fill="${hairColor}"/>` +
+      `<path d="M74 40 Q80 50 76 62 Q84 58 84 68 L78 72 Q76 60 70 56 Q78 50 74 40 Z" fill="${hairColor}"/>` +
+      `<path d="M78 54 Q82 62 79 68" stroke="${hairLight}" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.55"/>` +
+      `<circle cx="78" cy="47" r="4.5" fill="#f29aa8"/><circle cx="78" cy="47" r="1.8" fill="#fff" opacity="0.7"/>` +
+      `<path d="M50 14 Q54 17 50 21" stroke="${hairColor}" stroke-width="2.5" fill="none" stroke-linecap="round"/>` +
+      `<path d="M32 34 Q40 28 50 28 M60 28 Q66 32 68 38" stroke="${hairLight}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.7"/>`;
+  } else if (hairStyle === 'spiky') {
+    // 短发刺猬（少年感）：刺尖 + 前额碎发
+    hair = `<path d="M50 18 Q28 18 24 34 L20 46 Q24 48 28 44 L30 34 Q38 24 50 24 Q62 24 70 34 L72 44 Q76 48 80 46 L76 34 Q72 18 50 18 Z" fill="${hairColor}"/>` +
+      `<path d="M36 22 L33 12 L42 19 M50 20 L50 10 L58 19 M64 21 L67 11 L72 22" stroke="${hairColor}" stroke-width="3" fill="none" stroke-linecap="round"/>` +
+      `<path d="M34 34 Q40 28 50 28 Q60 28 66 34 L66 42 Q58 36 50 36 Q42 36 34 42 Z" fill="${hairLight}" opacity="0.45"/>` +
+      `<path d="M30 36 Q36 30 44 30 M58 30 Q64 32 68 38" stroke="${hairLight}" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.7"/>`;
   } else {
-    // wave 波浪长发
+    // wave 波浪长发 + 呆毛
     hair = `<path d="M50 18 Q16 24 16 46 Q18 50 22 46 Q24 30 50 30 Q76 30 78 46 Q82 50 84 46 Q84 24 50 18 Z" fill="${hairColor}"/>` +
       `<path d="M28 34 Q24 42 26 50 Q30 44 34 46 Q36 38 34 34 Z" fill="${hairColor}" opacity="0.9"/>` +
       `<path d="M72 34 Q76 42 74 50 Q70 44 66 46 Q64 38 66 34 Z" fill="${hairColor}" opacity="0.9"/>` +
       `<path d="M50 28 Q56 36 54 44 Q62 40 66 50 Q58 48 56 56 Q52 48 50 54 Z" fill="${hairLight}" opacity="0.7"/>` +
-      `<path d="M36 32 Q32 40 34 48" stroke="${hairLight}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.6"/>`;
+      `<path d="M36 32 Q32 40 34 48" stroke="${hairLight}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.6"/>` +
+      `<path d="M50 12 Q54 16 50 20" stroke="${hairColor}" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
   }
 
   // 日系大眼：白底 + 虹膜 + 瞳孔 + 双层高光 + 上眼线 + 下眼线
@@ -720,18 +746,54 @@ export function personSVG(seed: string, name: string, opts: Opts = {}): string {
     ? `<path d="M${hx(42)} ${hy(76)} Q${hx(50)} ${hy(82)} ${hx(58)} ${hy(76)}" stroke="#a54a3a" stroke-width="${hz(2.4)}" fill="none" stroke-linecap="round"/><path d="M${hx(47)} ${hy(77)} Q${hx(50)} ${hy(79.5)} ${hx(53)} ${hy(77)}" stroke="#e06a5a" stroke-width="${hz(1.4)}" fill="none"/>`
     : `<path d="M${hx(43)} ${hy(78)} Q${hx(50)} ${hy(75.5)} ${hx(57)} ${hy(78)}" stroke="#a54a3a" stroke-width="${hz(2.4)}" fill="none" stroke-linecap="round"/>`;
 
-  // 古风交领服饰
+  // 服饰：五套画风（gufeng 古风交领·狐妖 / xiuxian 道袍·灵剑山 / modern 现代衬衫·夏目 / school 制服外套·灵契 / yaoxian 妖仙披帛·涂山狐妖）
   const id = `p-${seed.slice(0, 6)}`;
   const neck = `<path d="M${hx(44)} ${hy(84)} Q${hx(50)} ${hy(88)} ${hx(56)} ${hy(84)} L${hx(56)} ${hy(94)} Q${hx(50)} ${hy(97)} ${hx(44)} ${hy(94)} Z" fill="${skinShadow}"/>`;
-  const clothBody = `<path d="M${hx(22)} ${hy(92)} Q${hx(50)} ${hy(86)} ${hx(78)} ${hy(92)} L${hx(86)} ${hy(124)} L${hx(14)} ${hy(124)} Z" fill="url(#${id})"/>`;
-  const collar = `<path d="M${hx(50)} ${hy(90)} L${hx(30)} ${hy(118)} L${hx(50)} ${hy(112)} Z" fill="${cloth2}" opacity="0.85"/>` +
-    `<path d="M${hx(50)} ${hy(90)} L${hx(70)} ${hy(118)} L${hx(50)} ${hy(112)} Z" fill="${cloth2}" opacity="0.65"/>`;
-  const belt = `<path d="M${hx(26)} ${hy(112)} Q${hx(50)} ${hy(108)} ${hx(74)} ${hy(112)} L${hx(74)} ${hy(118)} Q${hx(50)} ${hy(114)} ${hx(26)} ${hy(118)} Z" fill="${cloth2}"/>`;
+  let clothBody = '';
+  let collar = '';
+  let belt = '';
+  let accessory = '';
+  if (dress === 'gufeng' || dress === 'yaoxian') {
+    // 古风交领（狐妖小红娘基础款）
+    clothBody = `<path d="M${hx(22)} ${hy(92)} Q${hx(50)} ${hy(86)} ${hx(78)} ${hy(92)} L${hx(86)} ${hy(124)} L${hx(14)} ${hy(124)} Z" fill="url(#${id})"/>`;
+    collar = `<path d="M${hx(50)} ${hy(90)} L${hx(30)} ${hy(118)} L${hx(50)} ${hy(112)} Z" fill="${cloth2}" opacity="0.85"/>` +
+      `<path d="M${hx(50)} ${hy(90)} L${hx(70)} ${hy(118)} L${hx(50)} ${hy(112)} Z" fill="${cloth2}" opacity="0.65"/>`;
+    belt = `<path d="M${hx(26)} ${hy(112)} Q${hx(50)} ${hy(108)} ${hx(74)} ${hy(112)} L${hx(74)} ${hy(118)} Q${hx(50)} ${hy(114)} ${hx(26)} ${hy(118)} Z" fill="${cloth2}"/>`;
+    if (dress === 'yaoxian') {
+      // 妖仙披帛 + 铃铛（涂山狐妖仙气感）
+      accessory = `<path d="M${hx(14)} ${hy(98)} Q${hx(26)} ${hy(90)} ${hx(36)} ${hy(96)} L${hx(32)} ${hy(124)} L${hx(12)} ${hy(122)} Z" fill="${cloth2}" opacity="0.85"/>` +
+        `<path d="M${hx(86)} ${hy(98)} Q${hx(74)} ${hy(90)} ${hx(64)} ${hy(96)} L${hx(68)} ${hy(124)} L${hx(88)} ${hy(122)} Z" fill="${cloth2}" opacity="0.85"/>` +
+        `<circle cx="${hx(30)}" cy="${hy(123)}" r="${hz(2.2)}" fill="#cbb37a"/>` +
+        `<circle cx="${hx(70)}" cy="${hy(123)}" r="${hz(2.2)}" fill="#cbb37a"/>`;
+    }
+  } else if (dress === 'xiuxian') {
+    // 道袍：大袖 + 斜襟 + 腰带 + 飘带（从前有座灵剑山）
+    clothBody = `<path d="M${hx(16)} ${hy(92)} Q${hx(50)} ${hy(84)} ${hx(84)} ${hy(92)} L${hx(92)} ${hy(124)} L${hx(8)} ${hy(124)} Z" fill="url(#${id})"/>` +
+      `<path d="M${hx(10)} ${hy(96)} L${hx(16)} ${hy(124)}" stroke="${cloth2}" stroke-width="2" opacity="0.4"/>` +
+      `<path d="M${hx(90)} ${hy(96)} L${hx(84)} ${hy(124)}" stroke="${cloth2}" stroke-width="2" opacity="0.4"/>`;
+    collar = `<path d="M${hx(50)} ${hy(88)} L${hx(28)} ${hy(120)} L${hx(50)} ${hy(112)} Z" fill="${cloth2}" opacity="0.9"/>`;
+    belt = `<path d="M${hx(24)} ${hy(110)} Q${hx(50)} ${hy(106)} ${hx(76)} ${hy(110)} L${hx(76)} ${hy(116)} Q${hx(50)} ${hy(112)} ${hx(24)} ${hy(116)} Z" fill="${cloth2}"/>`;
+    accessory = `<path d="M${hx(64)} ${hy(112)} Q${hx(78)} ${hy(122)} ${hx(72)} ${hy(124)} Q${hx(62)} ${hy(116)} ${hx(54)} ${hy(114)} Z" fill="${cloth}" opacity="0.85"/>`;
+  } else if (dress === 'modern') {
+    // 现代衬衫：圆领 + 门襟 + 扣子（夏目友人帐治愈感）
+    clothBody = `<path d="M${hx(22)} ${hy(92)} Q${hx(50)} ${hy(86)} ${hx(78)} ${hy(92)} L${hx(86)} ${hy(124)} L${hx(14)} ${hy(124)} Z" fill="url(#${id})"/>`;
+    collar = `<path d="M${hx(50)} ${hy(87)} Q${hx(43)} ${hy(94)} ${hx(43)} ${hy(101)} L${hx(57)} ${hy(101)} Q${hx(57)} ${hy(94)} ${hx(50)} ${hy(87)} Z" fill="${cloth2}"/>` +
+      `<path d="M${hx(50)} ${hy(101)} L${hx(50)} ${hy(113)}" stroke="${cloth2}" stroke-width="1.8"/>` +
+      `<circle cx="${hx(50)}" cy="${hy(105)}" r="${hz(1.6)}" fill="${cloth2}"/><circle cx="${hx(50)}" cy="${hy(110)}" r="${hz(1.6)}" fill="${cloth2}"/>`;
+    belt = '';
+  } else {
+    // school 制服外套：西装领 + 领带（灵契现代都市感）
+    clothBody = `<path d="M${hx(22)} ${hy(92)} Q${hx(50)} ${hy(86)} ${hx(78)} ${hy(92)} L${hx(86)} ${hy(124)} L${hx(14)} ${hy(124)} Z" fill="url(#${id})"/>`;
+    collar = `<path d="M${hx(50)} ${hy(89)} L${hx(36)} ${hy(103)} L${hx(50)} ${hy(99)} L${hx(64)} ${hy(103)} Z" fill="${cloth2}" opacity="0.9"/>` +
+      `<path d="M${hx(46)} ${hy(100)} L${hx(54)} ${hy(100)} L${hx(50)} ${hy(112)} Z" fill="#c96a4a"/>`;
+    belt = `<path d="M${hx(26)} ${hy(112)} Q${hx(50)} ${hy(108)} ${hx(74)} ${hy(112)} L${hx(74)} ${hy(118)} Q${hx(50)} ${hy(114)} ${hx(26)} ${hy(118)} Z" fill="${cloth2}"/>`;
+  }
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" height="100%">
 <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${cloth}"/><stop offset="100%" stop-color="${cloth2}"/></linearGradient></defs>
 ${clothBody}
 ${collar}
 ${belt}
+${accessory}
 ${neck}
 ${earL}${earR}
 ${face}
