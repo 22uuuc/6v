@@ -341,10 +341,12 @@ export default function UploadVisualPage() {
                   {currentNode.ending && <p className="mt-1 text-[10px] text-primary">结局：{currentNode.endingTitle || '未命名'}</p>}
                 </div>
                 {currentNode.char && (
-                  <div
-                    className="pointer-events-none absolute inset-x-0 bottom-16 flex justify-center"
-                    dangerouslySetInnerHTML={{ __html: personSVG(currentNode.char, currentNode.speaker || currentNode.char, { width: 120, height: 150 }) }}
-                  />
+                  <div className="pointer-events-none absolute inset-x-0 bottom-16 flex justify-center">
+                    <div
+                      className="w-28 aspect-[2/3]"
+                      dangerouslySetInnerHTML={{ __html: personSVG(currentNode.char, currentNode.speaker || currentNode.char, { poster: true }) }}
+                    />
+                  </div>
                 )}
               </div>
             </div>

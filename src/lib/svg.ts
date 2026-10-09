@@ -643,8 +643,9 @@ export function avatarSVG(seed: string, name: string): string {
 /* ---------------- 画面人物（互动小说角色） ---------------- */
 
 /** 程序化人物半身像：按 seed 确定性生成发型/发色/衣服/表情 */
-export function personSVG(seed: string, name: string, opts: Opts & { dress?: string; hairStyle?: string } = {}): string {
+export function personSVG(seed: string, name: string, opts: Opts & { dress?: string; hairStyle?: string; poster?: boolean } = {}): string {
   const { width = 200, height = 250 } = opts;
+  const poster = opts.poster === true;
   const r = makeRand(seed);
   const skin = r.pick(['#ffe9d2', '#ffdcbc', '#f7cba6', '#efc095', '#e6b287']);
   const skinShadow = '#d9a06e';
@@ -787,6 +788,29 @@ export function personSVG(seed: string, name: string, opts: Opts & { dress?: str
     collar = `<path d="M${hx(50)} ${hy(89)} L${hx(36)} ${hy(103)} L${hx(50)} ${hy(99)} L${hx(64)} ${hy(103)} Z" fill="${cloth2}" opacity="0.9"/>` +
       `<path d="M${hx(46)} ${hy(100)} L${hx(54)} ${hy(100)} L${hx(50)} ${hy(112)} Z" fill="#c96a4a"/>`;
     belt = `<path d="M${hx(26)} ${hy(112)} Q${hx(50)} ${hy(108)} ${hx(74)} ${hy(112)} L${hx(74)} ${hy(118)} Q${hx(50)} ${hy(114)} ${hx(26)} ${hy(118)} Z" fill="${cloth2}"/>`;
+  }
+  if (poster) {
+    // 立绘模式（漫画平台式）：透明底 + 居中上移 + 底部融入渐变 + 地面阴影 + 和风名牌 + 浮空光点
+    const fadeId = `${id}-fade`;
+    const pr = makeRand(`${seed}:poster`);
+    let dots = '';
+    for (let i = 0; i < 5; i++) {
+      const dx = pr.range(24, 196);
+      const dy = pr.range(30, 170);
+      const dr = pr.range(1.4, 3.2);
+      const dc = pr.pick(['#ffd98a', '#f29aa8', '#9ad8c0', '#fff7e6']);
+      dots += `<circle cx="${dx.toFixed(1)}" cy="${dy.toFixed(1)}" r="${dr.toFixed(1)}" fill="${dc}" opacity="${pr.range(0.35, 0.85).toFixed(2)}"/>`;
+    }
+    const tx = Math.round((220 - width) / 2);
+    const body = `<g transform="translate(${tx} 20)">${clothBody}${collar}${belt}${accessory}${neck}${earL}${earR}${face}${hair}${eyes}${brow}${blush}${mouth}</g>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 330" width="100%" height="100%">
+<defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${cloth}"/><stop offset="100%" stop-color="${cloth2}"/></linearGradient><linearGradient id="${fadeId}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(30,20,40,0)"/><stop offset="100%" stop-color="rgba(30,20,40,0.4)"/></linearGradient></defs>
+${dots}
+${body}
+<rect x="0" y="196" width="220" height="134" fill="url(#${fadeId})"/>
+<ellipse cx="110" cy="302" rx="56" ry="7" fill="rgba(40,30,45,0.18)"/>
+<g><rect x="58" y="276" width="104" height="28" rx="14" fill="#f14627" opacity="0.94" stroke="#ffd9a0" stroke-width="1.2"/><text x="110" y="295" font-family="${FONT}" font-size="15" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="2">${esc(name)}</text></g>
+</svg>`;
   }
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" height="100%">
 <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${cloth}"/><stop offset="100%" stop-color="${cloth2}"/></linearGradient></defs>

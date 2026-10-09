@@ -82,8 +82,8 @@ export default function VisualPage() {
       {node.char && (
         <div className="pointer-events-none absolute inset-x-0 bottom-24 z-[5] flex justify-center">
           <div
-            className="w-36 opacity-95 drop-shadow-2xl"
-            dangerouslySetInnerHTML={{ __html: personSVG(node.char, node.speaker ?? '角色', { width: 180, height: 220 }) }}
+            className="w-52 aspect-[2/3] float-slow opacity-95 drop-shadow-2xl"
+            dangerouslySetInnerHTML={{ __html: personSVG(node.char, node.speaker ?? '角色', { poster: true }) }}
           />
         </div>
       )}
