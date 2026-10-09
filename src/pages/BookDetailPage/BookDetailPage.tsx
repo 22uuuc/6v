@@ -112,7 +112,7 @@ export default function BookDetailPage() {
 
       <section className="flex flex-col gap-5 sm:flex-row">
         <div className="cover-lift relative w-36 shrink-0 self-center overflow-hidden rounded-xl sm:w-44">
-          <BookCover seed={book.coverSeed} title={book.title} author={book.authorName} genre={book.genre} style={book.coverStyle} bookId={book.id} coverType={book.coverType} font={book.coverFont}  charArt={book.type === 'visual'} />
+          <BookCover seed={book.coverSeed} title={book.title} author={book.authorName} genre={book.genre} style={book.coverStyle} bookId={book.id} coverType={book.coverType} font={book.coverFont}  type={book.type} />
         </div>
         <div className="min-w-0 flex-1 space-y-3">
           <div className="flex items-center gap-2">
@@ -251,7 +251,7 @@ export default function BookDetailPage() {
           <div className="grid grid-cols-5 gap-3 sm:gap-4">
             {related.map((b) => (
               <Link key={b.id} to={`/book/${b.id}`} className="cover-lift relative block overflow-hidden rounded-xl">
-                <BookCover seed={b.coverSeed} title={b.title} author={b.authorName} genre={b.genre} style={b.coverStyle} bookId={b.id} coverType={b.coverType} font={b.coverFont}  charArt={b.type === 'visual'} />
+                <BookCover seed={b.coverSeed} title={b.title} author={b.authorName} genre={b.genre} style={b.coverStyle} bookId={b.id} coverType={b.coverType} font={b.coverFont}  type={b.type} />
               </Link>
             ))}
           </div>

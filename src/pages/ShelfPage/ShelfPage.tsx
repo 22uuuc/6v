@@ -80,7 +80,7 @@ export default function ShelfPage() {
                 return (
                   <Link key={r.book.id} to={to} className="group w-40 shrink-0 snap-start">
                     <div className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-border shadow-[0_12px_28px_-18px_hsl(0_0%_0%/0.55)] transition-transform duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_18px_34px_-18px_hsl(0_0%_0%/0.6)]">
-                      <BookCover seed={r.book.coverSeed} title={r.book.title} author={r.book.authorName} genre={r.book.genre} style={r.book.coverStyle} bookId={r.book.id} coverType={r.book.coverType} font={r.book.coverFont}  charArt={r.book.type === 'visual'} />
+                      <BookCover seed={r.book.coverSeed} title={r.book.title} author={r.book.authorName} genre={r.book.genre} style={r.book.coverStyle} bookId={r.book.id} coverType={r.book.coverType} font={r.book.coverFont}  type={r.book.type} />
                       {/* 底部渐变信息条 */}
                       <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/40 to-transparent p-2.5 pb-3 pt-8">
                         <p className="truncate text-xs font-medium text-white">{r.book.title}</p>
@@ -113,7 +113,7 @@ export default function ShelfPage() {
                 return (
                   <Link key={book.id} to={`/book/${book.id}`} className="group relative block">
                     <div className="relative">
-                      <BookCover seed={book.coverSeed} title={book.title} author={book.authorName} genre={book.genre} style={book.coverStyle} bookId={book.id} coverType={book.coverType} font={book.coverFont}  charArt={book.type === 'visual'} />
+                      <BookCover seed={book.coverSeed} title={book.title} author={book.authorName} genre={book.genre} style={book.coverStyle} bookId={book.id} coverType={book.coverType} font={book.coverFont}  type={book.type} />
                       {updated && (
                         <span className="absolute -right-1.5 -top-1.5 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white shadow">
                           更新

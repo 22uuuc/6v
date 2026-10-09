@@ -167,7 +167,7 @@ function BannerCarousel({ books, label }: { books: IBook[]; label: string }) {
               bookId={b.id}
               coverType={b.coverType}
               font={b.coverFont}
-             charArt={b.type === 'visual'} />
+             type={b.type} />
           </div>
         </div>
         {/* 左侧文案（书名 / 作者行 / 简介，参考《溯雨三日》排版） */}
@@ -424,7 +424,7 @@ export default function HomePage() {
                     bookId={book.id}
                     coverType={book.coverType}
                     font={book.coverFont}
-                   charArt={book.type === 'visual'} />
+                   type={book.type} />
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5">
                   <h3 className="truncate font-serif text-base font-bold sm:text-lg">{book.title}</h3>

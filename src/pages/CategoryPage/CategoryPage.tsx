@@ -124,7 +124,7 @@ export default function CategoryPage() {
                     bookId={book.id}
                     coverType={book.coverType}
                     font={book.coverFont}
-                   charArt={book.type === 'visual'} />
+                   type={book.type} />
                 </div>
                 {/* 渐变信息条：标题 + 小类标签 */}
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent p-3 pt-12">

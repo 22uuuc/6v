@@ -1,9 +1,20 @@
 /**
- * 角色立绘位图映射：seed → 确定性选择一张 AI 动漫立绘位图（对标参考图质感）。
- * 位图位于 public/chars/（构建后 /<base>/chars/char-N.jpg），N ∈ 1..CHAR_COUNT。
- * 无位图场景（seed 超出图库仍确定性映射，无需回退条件）。
+ * 位图映射：seed + 题材 → 确定性选择一张 AI 动漫位图（对标参考图质感）。
+ * - 角色立绘：public/chars/char-N.jpg，N ∈ 1..18（1..6 通用 IP 角色，7..18 按题材分组）
+ * - 场景封面：public/scenes/scene-N.jpg，N ∈ 1..12（按题材分组）
+ * 无匹配题材时回退全局 hash，无需额外兜底。
  */
 export const CHAR_COUNT = 6;
+
+/** 题材 → 角色位图（2 张/组）与场景位图（2 张/组）分组 */
+const GENRE_GROUPS: { keys: string[]; chars: [number, number]; scenes: [number, number] }[] = [
+  { keys: ['玄幻', '仙侠', '奇幻', '神话', '修真'], chars: [7, 8], scenes: [1, 2] },
+  { keys: ['都市', '现代', '职场', '豪门', '娱乐'], chars: [9, 10], scenes: [3, 4] },
+  { keys: ['悬疑', '推理', '惊悚', '刑侦', '侦探'], chars: [11, 12], scenes: [5, 6] },
+  { keys: ['治愈', '日常', '轻小说', '青春', '甜宠', '校园'], chars: [13, 14], scenes: [7, 8] },
+  { keys: ['科幻', '末世', '星际', '未来', '机甲', '游戏'], chars: [15, 16], scenes: [9, 10] },
+  { keys: ['武侠', '古风', '历史', '宫廷', '江湖'], chars: [17, 18], scenes: [11, 12] },
+];
 
 function hashSeed(seed: string): number {
   let h = 0;
@@ -14,10 +25,38 @@ function hashSeed(seed: string): number {
   return h;
 }
 
-/** 返回角色位图 URL（相对 base path，GitHub Pages /6v/ 与本地 dev / 均可用） */
-export function charArtUrl(seed: string): string {
+function baseUrl(): string {
   const base = import.meta.env.MIAODA_CLIENT_BASE_PATH || '/';
-  const b = base.endsWith('/') ? base : `${base}/`;
+  return base.endsWith('/') ? base : `${base}/`;
+}
+
+/** 在 [lo, hi] 区间按 seed 确定性选一个编号 */
+function pickIn(seed: string, lo: number, hi: number): number {
+  return lo + (hashSeed(seed) % (hi - lo + 1));
+}
+
+/** 题材命中：返回分组；否则 null */
+function groupOf(genre?: string) {
+  const g = String(genre ?? '');
+  return GENRE_GROUPS.find((gr) => gr.keys.some((k) => g.includes(k))) ?? null;
+}
+
+/** 互动 IP 角色位图（通用 6 张，按 seed 全局确定性映射） */
+export function charArtUrl(seed: string): string {
   const idx = (hashSeed(seed) % CHAR_COUNT) + 1;
-  return `${b}chars/char-${idx}.jpg`;
+  return `${baseUrl()}chars/char-${idx}.jpg`;
+}
+
+/** 漫画/动漫频道角色位图（按题材分组，组内 2 张确定性映射） */
+export function charArtByGenre(seed: string, genre?: string): string {
+  const g = groupOf(genre);
+  const idx = g ? pickIn(seed, g.chars[0], g.chars[1]) : (hashSeed(seed) % 18) + 1;
+  return `${baseUrl()}chars/char-${idx}.jpg`;
+}
+
+/** 小说/视频/游戏场景位图（按题材分组，组内 2 张确定性映射） */
+export function sceneArtUrl(seed: string, genre?: string): string {
+  const g = groupOf(genre);
+  const idx = g ? pickIn(seed, g.scenes[0], g.scenes[1]) : (hashSeed(seed) % 12) + 1;
+  return `${baseUrl()}scenes/scene-${idx}.jpg`;
 }

@@ -1,9 +1,9 @@
 // EXPORTS: BookCover（组件文件）
 // 封面组件：优先渲染本地上传封面（coverType='image' 时从 IndexedDB 读取），否则渲染程序化 SVG 封面。
 // 书名字体跟随 book.coverFont（COVER_FONTS 中的字体栈）。
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { coverSVG } from '@/lib/svg';
-import { charArtUrl } from '@/lib/charArt';
+import { charArtByGenre, charArtUrl, sceneArtUrl } from '@/lib/charArt';
 import { cn, coverFontStack, inferCoverStyle } from '@/lib/utils';
 import { idbGet } from '@/lib/idb';
 import type { CoverFont, CoverStyle } from '@/lib/types';
@@ -18,7 +18,7 @@ export default function BookCover({
   coverType,
   font,
   className,
-  charArt,
+  type,
 }: {
   seed: string;
   title: string;
@@ -32,8 +32,8 @@ export default function BookCover({
   /** 书名字体（COVER_FONTS.value） */
   font?: CoverFont | string;
   className?: string;
-  /** 位图角色封面（互动小说等角色类书籍） */
-  charArt?: boolean;
+  /** 书籍类型：visual→互动 IP 角色位图；comic/anime→题材角色位图；novel/video/game/dialogue→题材场景位图 */
+  type?: string;
 }) {
   const [url, setUrl] = useState<string | null>(null);
   const useImage = coverType === 'image' && !!bookId;
@@ -54,6 +54,14 @@ export default function BookCover({
 
   const fontStack = coverFontStack(font);
 
+  const artSrc = useMemo(() => {
+    if (!type || coverType === 'image') return null;
+    if (type === 'visual') return charArtUrl(bookId || seed || 'role');
+    if (type === 'comic' || type === 'anime') return charArtByGenre(seed, genre);
+    if (type === 'novel' || type === 'dialogue' || type === 'video' || type === 'game') return sceneArtUrl(seed, genre);
+    return null;
+  }, [type, bookId, seed, genre, coverType]);
+
   if (useImage && url) {
     return (
       <div className={cn('relative aspect-[5/7] w-full overflow-hidden rounded-lg shadow-md shadow-black/40', className)}>
@@ -73,11 +81,11 @@ export default function BookCover({
   }
 
 
-  if (charArt) {
+  if (artSrc) {
     return (
       <div className={cn('relative aspect-[5/7] w-full overflow-hidden rounded-lg shadow-md shadow-black/40', className)}>
         <img
-          src={charArtUrl(bookId || seed || 'role')}
+          src={artSrc}
           alt={title}
           loading="lazy"
           onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
@@ -93,7 +101,9 @@ export default function BookCover({
           </p>
           <p className="text-[10px] text-white/75">{author}</p>
         </div>
-        <div className="absolute right-1.5 top-1.5 rounded-full bg-[#f14627]/95 px-2 py-px text-[9px] font-bold text-white ring-1 ring-[#ffd9a0]">互动</div>
+        {type === 'visual' && (
+          <div className="absolute right-1.5 top-1.5 rounded-full bg-[#f14627]/95 px-2 py-px text-[9px] font-bold text-white ring-1 ring-[#ffd9a0]">互动</div>
+        )}
       </div>
     );
   }
