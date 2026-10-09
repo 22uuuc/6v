@@ -1,0 +1,6 @@
+[submodule "submodules/moying-users"]
+	path = submodules/moying-users
+	url = https://github.com/22uuuc/moying-users.git
+[submodule "submodules/moying-settings"]
+	path = submodules/moying-settings
+	url = https://github.com/22uuuc/moying-settings.git
