@@ -237,7 +237,7 @@ export default function AuthPage() {
         <div className="mascot-float drop-shadow-[0_0_16px_rgba(168,130,255,0.4)]">
           <MoyingMascot mood={tab === 'login' ? 'reading' : 'happy'} size={88} />
         </div>
-        <h1 className="font-serif text-xl font-bold">墨影书城</h1>
+        <h1 className="text-gradient-anime font-serif text-2xl font-bold">墨影书城</h1>
         <p className="text-sm text-muted-foreground">
           {tab === 'login'
             ? '欢迎回来，书灵给你留了灯 · 收藏订阅打赏都在老地方'
@@ -246,7 +246,7 @@ export default function AuthPage() {
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as 'login' | 'register')}>
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-2 rounded-full border border-border/60 bg-muted/50 p-1">
           <TabsTrigger value="login">登录</TabsTrigger>
           <TabsTrigger value="register">注册</TabsTrigger>
         </TabsList>
@@ -280,7 +280,7 @@ export default function AuthPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={loginForm.formState.isSubmitting}>
+              <Button type="submit" className="btn-anime w-full" disabled={loginForm.formState.isSubmitting}>
                 登录
               </Button>
               <div className="flex justify-end">
@@ -306,7 +306,7 @@ export default function AuthPage() {
 
         <TabsContent value="register">
           <Tabs value={regMode} onValueChange={(v) => setRegMode(v as RegisterMode)}>
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-3 rounded-full border border-border/60 bg-muted/50 p-1">
               <TabsTrigger value="account" className="gap-1">
                 <KeyRound className="h-3.5 w-3.5" /> 账号
               </TabsTrigger>
@@ -360,7 +360,7 @@ export default function AuthPage() {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full" disabled={accountForm.formState.isSubmitting}>
+                  <Button type="submit" className="btn-anime w-full" disabled={accountForm.formState.isSubmitting}>
                     注册并赠送 100 书币
                   </Button>
                 </form>
@@ -427,7 +427,7 @@ export default function AuthPage() {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full" disabled={phoneForm.formState.isSubmitting}>
+                  <Button type="submit" className="btn-anime w-full" disabled={phoneForm.formState.isSubmitting}>
                     手机号注册并赠送 100 书币
                   </Button>
                 </form>
@@ -494,7 +494,7 @@ export default function AuthPage() {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full" disabled={emailForm.formState.isSubmitting}>
+                  <Button type="submit" className="btn-anime w-full" disabled={emailForm.formState.isSubmitting}>
                     邮箱注册并赠送 100 书币
                   </Button>
                 </form>

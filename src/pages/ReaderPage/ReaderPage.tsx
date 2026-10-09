@@ -194,7 +194,7 @@ export default function ReaderPage() {
       >
         <h1
           className={`mb-1 font-serif text-xl font-bold ${
-            theme === 'paper' ? 'text-[#2c2720]' : theme === 'night' ? 'text-foreground' : ''
+            theme === 'paper' ? 'text-[#2c2720]' : theme === 'night' ? 'text-foreground' : 'text-gradient-anime'
           }`}
         >
           {chapter.title}
@@ -210,14 +210,14 @@ export default function ReaderPage() {
         ))}
         {mode === 'page' && pageIdx < pageCount - 1 && (
           <p className={`mt-8 text-center text-xs ${theme === 'paper' ? 'text-[#a89472]' : 'text-muted-foreground'}`}>
-            — 本页完 · 继续向下 —
+            ✦ · 本页完 · 继续向下 · ✦
           </p>
         )}
       </article>
 
       {/* 章末书灵彩蛋：读完本章时出现（最后一页 / 滚动模式本章完整） */}
       {(mode === 'page' ? pageIdx >= pageCount - 1 : true) && (
-        <div className="anim-fade-up my-2 flex items-center justify-center gap-3 rounded-2xl border border-border bg-card/60 px-4 py-3">
+        <div className="anim-fade-up my-2 flex items-center justify-center gap-3 card-anime rounded-2xl border border-border/70 bg-card/60 px-4 py-3 shadow-[0_12px_32px_-20px_hsl(333_92%_66%/0.45)]">
           <div className="mascot-bounce shrink-0">
             <MoyingMascot mood="happy" size={48} />
           </div>
@@ -242,14 +242,14 @@ export default function ReaderPage() {
             <button
               type="button"
               onClick={() => switchMode('scroll')}
-              className={`rounded-full px-3 py-1 transition-colors ${mode === 'scroll' ? 'bg-primary font-medium text-primary-foreground' : 'text-muted-foreground'}`}
+              className={`rounded-full px-3 py-1 transition-colors ${mode === 'scroll' ? 'bg-gradient-to-r from-[hsl(275_84%_62%)] to-[hsl(333_92%_66%)] font-medium text-white' : 'text-muted-foreground'}`}
             >
               连续滚动
             </button>
             <button
               type="button"
               onClick={() => switchMode('page')}
-              className={`rounded-full px-3 py-1 transition-colors ${mode === 'page' ? 'bg-primary font-medium text-primary-foreground' : 'text-muted-foreground'}`}
+              className={`rounded-full px-3 py-1 transition-colors ${mode === 'page' ? 'bg-gradient-to-r from-[hsl(275_84%_62%)] to-[hsl(333_92%_66%)] font-medium text-white' : 'text-muted-foreground'}`}
             >
               分页翻读
             </button>
@@ -273,7 +273,7 @@ export default function ReaderPage() {
               第 {pageIdx + 1} / {pageCount} 页 · 章 {index + 1}/{chapters.length}
             </span>
             <Button
-              size="sm"
+              size="sm" className="btn-anime"
               disabled={pageIdx >= pageCount - 1}
               onClick={() => {
                 setPageIdx((p) => Math.min(pageCount - 1, p + 1));
@@ -296,6 +296,7 @@ export default function ReaderPage() {
             <span className="text-xs text-muted-foreground">{index + 1} / {chapters.length}</span>
             <Button
               size="sm"
+              className="btn-anime"
               disabled={index >= chapters.length - 1}
               onClick={() => navigate(`/read/${bookId}/${chapters[index + 1].id}`)}
             >
