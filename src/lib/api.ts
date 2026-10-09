@@ -760,10 +760,14 @@ export const api = {
   },
 
   /* ---- 书籍 ---- */
-  publishedBooks(type?: BookType, genre?: BookGenre): IBook[] {
+  publishedBooks(type?: BookType | BookType[], genre?: BookGenre, subcategory?: string): IBook[] {
     let list = read<IBook[]>('books', []).filter((b) => b.status === 'published');
-    if (type) list = list.filter((b) => b.type === type);
+    if (type) {
+      const types = Array.isArray(type) ? type : [type];
+      list = list.filter((b) => types.includes(b.type));
+    }
     if (genre) list = list.filter((b) => b.genre === genre);
+    if (subcategory) list = list.filter((b) => b.subcategory === subcategory);
     return list;
   },
 

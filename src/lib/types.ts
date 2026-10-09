@@ -12,6 +12,24 @@ export type GameKind = 'memory';
 export type BookGenre =
   | '玄幻' | '都市' | '科幻' | '悬疑' | '古言' | '青春' | '武侠' | '奇幻'
   | '仙侠' | '历史' | '游戏' | '言情' | '轻小说' | '现实';
+
+/** 书城五大频道（UI 分类导航）：小说 / 漫画 / 动漫 / 视频 / 游戏，每频道映射若干作品类型 */
+export const CHANNELS: { key: string; label: string; desc: string; types: BookType[] }[] = [
+  { key: 'novel', label: '小说', desc: '沉浸式文字阅读，章节连载，随心追更', types: ['novel'] },
+  { key: 'comic', label: '漫画', desc: '分镜与气泡，一话一话追下去', types: ['comic'] },
+  { key: 'anime', label: '动漫', desc: '动画番剧，管理员独家上传', types: ['anime'] },
+  { key: 'video', label: '视频', desc: '画面互动与对话剧情，像追剧一样追下去', types: ['visual', 'dialogue'] },
+  { key: 'game', label: '游戏', desc: '可直接试玩的游戏作品，挑战最好成绩', types: ['game'] },
+];
+
+/** 各频道小类（二级分类） */
+export const SUBCATEGORIES: Record<string, string[]> = {
+  novel: ['玄幻', '都市', '科幻', '悬疑', '古言', '青春', '武侠', '奇幻', '仙侠', '历史', '言情', '轻小说', '现实'],
+  comic: ['热血', '恋爱', '搞笑', '悬疑', '玄幻', '奇幻', '治愈', '校园', '冒险'],
+  anime: ['热血', '搞笑', '恋爱', '奇幻', '冒险', '治愈', '日常', '悬疑'],
+  video: ['剧情', '悬疑', '科幻', '恋爱', '日常', '冒险'],
+  game: ['休闲', '益智', '剧情', '动作', '策略', '模拟'],
+};
 export type BookStatus = 'draft' | 'pending' | 'published' | 'rejected' | 'offline';
 /** 封面视觉风格：日系漫感 / 清新治愈 / 暗夜玄幻 / 经典网文 */
 export type CoverStyle = 'anime' | 'fresh' | 'dark' | 'classic';
@@ -259,6 +277,8 @@ export interface IBook {
   authorId: string;
   authorName: string;
   genre: BookGenre;
+  /** 频道小类（二级分类，见 SUBCATEGORIES，存量数据可缺省） */
+  subcategory?: string;
   status: BookStatus;
   coverSeed: string;
   /** 封面视觉风格（未设置时按题材自动推断） */

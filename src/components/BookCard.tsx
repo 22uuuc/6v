@@ -28,6 +28,10 @@ export default function BookCard({ book }: { book: IBook }) {
       <h3 className="mt-2 truncate text-sm font-medium text-foreground group-hover:text-primary">
         {book.title}
       </h3>
+      <p className="mt-1 flex items-center gap-1 text-[10px]">
+        <span className="chip-grad chip-gold rounded-full px-1.5 py-0.5 font-medium">{book.subcategory || book.genre}</span>
+        <span className="text-muted-foreground/60">{TYPE_LABEL[book.type]}</span>
+      </p>
       <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
         <span className="truncate">{book.authorName}</span>
         <span className="flex shrink-0 items-center gap-0.5">

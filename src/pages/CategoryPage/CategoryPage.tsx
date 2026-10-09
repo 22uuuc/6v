@@ -1,4 +1,5 @@
 // EXPORTS: CategoryPage（组件文件）
+// 书城分类页：五大频道（小说/漫画/动漫/视频/游戏）→ 频道内小类（subcategory）两级筛选
 import { useMemo, useState } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { api } from '@/lib/api';
@@ -8,22 +9,12 @@ import BookCover from '@/components/BookCover';
 import EmptyState from '@/components/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { BookGenre, BookType } from '@/lib/types';
-import { GENRES } from '@/lib/types';
-
-const TYPE_META: Record<string, { label: string; desc: string }> = {
-  all: { label: '全部作品', desc: '小说、互动、对话、动漫、游戏，一座城都在这' },
-  novel: { label: '小说', desc: '沉浸式文字阅读，章节连载' },
-  visual: { label: '互动IP', desc: '插画场景 + 剧情分支，你的选择决定结局' },
-  comic: { label: '动漫', desc: '漫画分镜与动画番剧，一话一话追下去' },
-  dialogue: { label: '对话小说', desc: '聊天气泡推进剧情，每条消息都可能是转折' },
-  game: { label: '游戏上架', desc: '可直接试玩的游戏作品，开一局就停不下来' },
-  anime: { label: '动漫视频', desc: '动画番剧，管理员独家上传' },
-};
+import type { BookType } from '@/lib/types';
+import { CHANNELS, SUBCATEGORIES } from '@/lib/types';
 
 type SortKey = 'hot' | 'new' | 'rating';
 
-/** 题材筛选胶囊色组（与首页 HOT_GENRES 同体系，循环分配） */
+/** 小类筛选胶囊色组（与首页 HOT_GENRES 同体系，循环分配） */
 const CHIP_CYCLE = ['chip-violet', 'chip-pink', 'chip-teal', 'chip-blue', 'chip-gold'];
 
 export default function CategoryPage() {
@@ -31,33 +22,40 @@ export default function CategoryPage() {
   const [params] = useSearchParams();
   const qGenre = params.get('genre');
   const qSerial = params.get('serial');
-  const [genre, setGenre] = useState<BookGenre | 'all'>(qGenre && (GENRES as readonly string[]).includes(qGenre) ? (qGenre as BookGenre) : 'all');
+  const [sub, setSub] = useState<string>(qGenre ?? 'all');
   const [sort, setSort] = useState<SortKey>('hot');
-  const [sub, setSub] = useState<'manga' | 'anime'>('manga');
   useDataVersion();
 
-  const effectiveType = type === 'comic' ? (sub === 'anime' ? 'anime' : 'comic') : type === 'all' ? undefined : (type as BookType);
+  const channel = type === 'all' ? null : (CHANNELS.find((c) => c.key === type) ?? null);
+  const types = channel ? (channel.types as BookType[]) : undefined;
 
   const books = useMemo(() => {
-    let list = api.publishedBooks(effectiveType, genre === 'all' ? undefined : genre);
-    // 完本过滤（首页「完本精品」快捷入口经 ?serial=finished 进入）
+    let list = api.publishedBooks(types);
+    if (sub !== 'all' && subs.includes(sub)) list = list.filter((b) => b.subcategory === sub);
     if (qSerial === 'finished') list = list.filter((b) => b.serial === 'finished');
     if (sort === 'new') return [...list].sort((a, b) => (b.createdAt < a.createdAt ? -1 : 1));
     if (sort === 'rating') return [...list].sort((a, b) => b.rating - a.rating);
     return [...list].sort((a, b) => b.views - a.views);
-  }, [effectiveType, genre, sort, qSerial]);
+  }, [types, sub, sort, qSerial]);
 
-  const meta = type === 'comic' && sub === 'anime' ? TYPE_META.anime : TYPE_META[type] ?? TYPE_META.all;
-  const genres = useMemo(() => {
-    const all = api.publishedBooks(effectiveType);
-    return Array.from(new Set(all.map((b) => b.genre)));
-  }, [effectiveType]);
+  const label = channel ? channel.label : '全部作品';
+  const desc = channel ? channel.desc : '小说、漫画、动漫、视频、游戏，一座城都在这';
+  const subs = channel ? (SUBCATEGORIES[channel.key] ?? []) : [];
+  const isWall = !!channel && (channel.key === 'comic' || channel.key === 'anime');
+
+  /** 各小类作品计数（静态表 + 实时库存） */
+  const subCounts = useMemo(() => {
+    const map: Record<string, number> = {};
+    const all = api.publishedBooks(types);
+    for (const s of subs) map[s] = all.filter((b) => b.subcategory === s).length;
+    return map;
+  }, [types, subs]);
 
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="section-title text-gradient-anime font-serif text-2xl font-bold">{meta.label}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{meta.desc}</p>
+        <h1 className="section-title text-gradient-anime font-serif text-2xl font-bold">{label}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{desc}</p>
         {qSerial === 'finished' && (
           <Button asChild size="sm" className="btn-anime mt-2 gap-1.5">
             <Link to="/category/all">
@@ -67,61 +65,49 @@ export default function CategoryPage() {
         )}
       </div>
 
-      {type === 'comic' && (
-        <div className="flex gap-2">
-          <Button size="sm" variant={sub === 'manga' ? 'default' : 'outline'} onClick={() => setSub('manga')}>
-            漫画
-          </Button>
-          <Button size="sm" variant={sub === 'anime' ? 'default' : 'outline'} onClick={() => setSub('anime')}>
-            动漫视频
-          </Button>
+      {subs.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setSub('all')}
+            className={`chip-grad chip-gold rounded-full px-3.5 py-1.5 text-xs font-medium ${sub === 'all' ? 'ring-2 ring-primary/60' : ''}`}
+          >
+            全部
+          </button>
+          {subs.map((s, gi) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setSub(s)}
+              className={`chip-grad ${CHIP_CYCLE[gi % CHIP_CYCLE.length]} rounded-full px-3.5 py-1.5 text-xs font-medium ${sub === s ? 'ring-2 ring-primary/60' : ''}`}
+            >
+              {s}
+              {subCounts[s] > 0 && <span className="ml-1 text-[10px] opacity-60">{subCounts[s]}</span>}
+            </button>
+          ))}
+          <div className="ml-auto w-32">
+            <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+              <SelectTrigger className="h-8 w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="hot">按热度</SelectItem>
+                <SelectItem value="new">按最新</SelectItem>
+                <SelectItem value="rating">按评分</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setGenre('all')}
-          className={`chip-grad chip-gold rounded-full px-3.5 py-1.5 text-xs font-medium ${genre === 'all' ? 'ring-2 ring-primary/60' : ''}`}
-        >
-          全部
-        </button>
-        {genres.map((g, gi) => (
-          <button
-            key={g}
-            type="button"
-            onClick={() => setGenre(g)}
-            className={`chip-grad ${CHIP_CYCLE[gi % CHIP_CYCLE.length]} rounded-full px-3.5 py-1.5 text-xs font-medium ${genre === g ? 'ring-2 ring-primary/60' : ''}`}
-          >
-            {g}
-          </button>
-        ))}
-        <div className="ml-auto w-32">
-          <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
-            <SelectTrigger className="h-8 w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="hot">按热度</SelectItem>
-              <SelectItem value="new">按最新</SelectItem>
-              <SelectItem value="rating">按评分</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
       {books.length === 0 ? (
-        <EmptyState text={effectiveType === 'anime' ? '动漫视频区还没有内容，仅管理员可上传' : '这个分类还没有作品，去创作中心上传第一本吧'} />
-      ) : effectiveType === 'comic' || effectiveType === 'anime' ? (
+        <EmptyState text={channel?.key === 'anime' ? '动漫区还没有内容，仅管理员可上传' : '这个分类还没有作品，去创作中心上传第一本吧'} />
+      ) : isWall ? (
         /* 漫画 / 动漫：番剧墙海报流（大封面 + 渐变信息条 + 角标） */
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {books.map((book) => {
-            const isAnime = effectiveType === 'anime' || (book.type === 'anime');
-            const to = isAnime
-              ? `/anime/${book.id}`
-              : book.type === 'comic'
-                ? `/comic/${book.id}`
-                : `/book/${book.id}`;
+            const isAnime = book.type === 'anime';
+            const to = isAnime ? `/anime/${book.id}` : book.type === 'comic' ? `/comic/${book.id}` : `/book/${book.id}`;
             return (
               <Link
                 key={book.id}
@@ -140,11 +126,11 @@ export default function CategoryPage() {
                     font={book.coverFont}
                   />
                 </div>
-                {/* 渐变信息条：标题 + 标签 */}
+                {/* 渐变信息条：标题 + 小类标签 */}
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent p-3 pt-12">
                   <p className="truncate text-sm font-bold text-white drop-shadow">{book.title}</p>
                   <p className="mt-1 flex items-center gap-1.5 text-[10px] text-white/80">
-                    <span className="rounded bg-white/20 px-1.5 py-0.5 backdrop-blur">{book.genre}</span>
+                    <span className="rounded bg-white/20 px-1.5 py-0.5 backdrop-blur">{book.subcategory || book.genre}</span>
                     <span>{isAnime ? '动漫' : '漫画'}</span>
                     <span className="ml-auto">{book.views.toLocaleString()} 追</span>
                   </p>

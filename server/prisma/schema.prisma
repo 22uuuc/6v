@@ -1,0 +1,396 @@
+// 墨影书城服务端数据模型 —— 与 src/lib/types.ts 一一对应。
+// SQLite 无枚举，所有联合类型字段用 String；数组/对象字段用 String 存 JSON
+// （Prisma 对 SQLite 的 Json 支持不稳定，统一 String + JSON.stringify）。
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ── 用户与会话 ────────────────────────────────────────────────
+
+model User {
+  id         String   @id
+  username   String   @unique
+  password   String // bcrypt 哈希
+  nickname   String
+  role       String   @default("reader") // reader | creator | admin
+  vip        Boolean  @default(false)
+  vipUntil   String?
+  banned     Boolean  @default(false)
+  coins      Int      @default(0)
+  withdrawable Int    @default(0)
+  level      Int      @default(1)
+  exp        Int      @default(0)
+  bio        String?
+  privacy    String? // JSON: IPrivacy
+  verified   String? // JSON: { email?, phone? }
+  authLevel  Int      @default(0)
+  prefs      String? // JSON: IUserPrefs
+  createdAt  DateTime @default(now())
+
+  refreshTokens RefreshToken[]
+  loginSessions LoginSession[]
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique // sha256(refresh token)
+  userId    String
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model LoginSession {
+  id     String   @id @default(cuid())
+  userId String
+  device String // UA 摘要
+  at     DateTime @default(now())
+  lastAt DateTime @default(now())
+  user   User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+// 演示用找回密码验证码（真实部署换 SMTP 下发）
+model ResetCode {
+  username  String   @id
+  code      String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+}
+
+// ── 内容：书目 / 章节 / 互动IP / 漫画 ─────────────────────────
+
+model Book {
+  id           String   @id
+  type         String // novel | visual | comic | anime | dialogue | game
+  title        String
+  authorId     String
+  authorName   String
+  genre        String
+  status       String   @default("draft") // draft | pending | published | rejected | offline
+  coverSeed    String
+  coverStyle   String?
+  coverType    String?
+  coverFont    String?
+  description  String
+  tags         String   @default("[]") // JSON: string[]
+  serial       String   @default("serial") // serial | finished
+  words        Int      @default(0)
+  views        Int      @default(0)
+  likes        Int      @default(0)
+  rating       Float    @default(0)
+  createdAt    DateTime @default(now())
+  chapterPrice Int      @default(0)
+  chapterIds   String   @default("[]") // JSON: string[]（与 Chapter 表冗余，前端兼容）
+  featured     Boolean  @default(false)
+  animeKey     String?
+  gameKind     String?
+  quarantined  Boolean  @default(false)
+
+  chapters Chapter[]
+
+  @@index([status])
+  @@index([authorId])
+}
+
+model Chapter {
+  id      String @id
+  bookId  String
+  index   Int
+  title   String
+  content String
+  price   Int    @default(0)
+  book    Book   @relation(fields: [bookId], references: [id])
+
+  @@index([bookId])
+}
+
+model VisualScript {
+  bookId    String @id
+  startNode String
+  nodes     String // JSON: IVisualNode[]
+}
+
+model ComicChapter {
+  id      String @id
+  bookId  String
+  index   Int
+  title   String
+  pageIds String @default("[]") // JSON: string[]
+  price   Int    @default(0)
+
+  @@index([bookId])
+}
+
+model ComicPage {
+  id        String  @id
+  bookId    String
+  chapterId String
+  index     Int
+  scene     String
+  imageKey  String?
+  caption   String?
+  dialogue  String  @default("[]") // JSON: string[]
+
+  @@index([chapterId])
+}
+
+// 解锁关系：服务端权威判定 isUnlocked
+model Unlock {
+  id        String   @id @default(cuid())
+  userId    String
+  bookId    String
+  kind      String // chapter | comic | visual
+  targetId  String // 章节id / 漫画话id / 书id（全本）
+  createdAt DateTime @default(now())
+
+  @@unique([userId, kind, targetId])
+  @@index([userId])
+}
+
+// ── 钱包与订单 ────────────────────────────────────────────────
+
+model Tx {
+  id        String   @id
+  userId    String
+  kind      String // recharge | subscribe | tip | vip | reward | withdraw | settle
+  amount    Int      @default(0)
+  coin      Int      @default(0)
+  note      String
+  createdAt DateTime @default(now())
+  bookId    String?
+  chapterId String?
+  method    String?
+  payNo     String?
+
+  @@index([userId, createdAt])
+}
+
+// 充值订单（回调幂等：payNo 唯一，status 只允许 pending→paid 一次）
+model RechargeOrder {
+  id          String    @id // payNo
+  userId      String
+  method      String
+  yuan        Int
+  coin        Int
+  status      String    @default("pending") // pending | paid | failed
+  createdAt   DateTime  @default(now())
+  paidAt      DateTime?
+  callbackAt  DateTime?
+}
+
+// ── 收益 / 提现 / 代付 ────────────────────────────────────────
+
+model Settlement {
+  id        String   @id
+  userId    String
+  bookId    String?
+  kind      String // subscribe | tip
+  amount    Int
+  note      String
+  status    String   @default("pending") // pending | approved | rejected
+  createdAt DateTime @default(now())
+  decidedAt DateTime?
+}
+
+model Withdrawal {
+  id           String   @id
+  userId       String
+  amount       Int
+  status       String   @default("pending") // pending | done | rejected
+  note         String?
+  channelId    String?
+  channel      String? // JSON: IChannelSnapshot（提交时固化）
+  providerId   String?
+  payTradeNo   String?
+  payStatus    String?
+  payQrContent String?
+  createdAt    DateTime @default(now())
+}
+
+model WithdrawChannel {
+  id          String   @id
+  userId      String
+  type        String // alipay | wechat | bank
+  account     String
+  accountName String
+  bankName    String?
+  status      String   @default("pending") // pending | approved | rejected
+  note        String?
+  createdAt   DateTime @default(now())
+}
+
+model Applicant {
+  id        String   @id
+  userId    String
+  nickname  String
+  reason    String
+  workTitle String
+  workType  String
+  workIntro String
+  status    String   @default("pending") // pending | approved | rejected
+  note      String?
+  createdAt DateTime @default(now())
+  handledAt DateTime?
+}
+
+model PaymentProvider {
+  id        String   @id // wxpay | alipay | bankpay
+  label     String
+  enabled   Boolean  @default(false)
+  fields    String   @default("{}") // JSON: Record<string,string>
+  updatedAt DateTime?
+}
+
+model PayTransfer {
+  id           String   @id
+  withdrawalId String
+  userId       String
+  provider     String
+  amount       Int
+  channelLabel String
+  status       String   @default("dispatched") // dispatched | done | failed
+  tradeNo      String
+  payload      String
+  qrContent    String?
+  createdAt    DateTime @default(now())
+}
+
+// ── 互动：书架 / 进度 / 任务 / 评论 ───────────────────────────
+
+model ShelfEntry {
+  userId  String
+  bookId  String
+  addedAt DateTime @default(now())
+
+  @@id([userId, bookId])
+}
+
+model Progress {
+  userId    String
+  bookId    String
+  chapterId String?
+  nodeId    String?
+  updatedAt DateTime @default(now())
+
+  @@id([userId, bookId])
+}
+
+// 签到/阅读任务（按天一条）
+model DailyTask {
+  id        String    @id @default(cuid())
+  userId    String
+  date      String // yyyy-MM-dd
+  checkinAt DateTime?
+  payload   String? // JSON: 阅读任务进度等
+  streak    Int       @default(0)
+
+  @@unique([userId, date])
+}
+
+model Comment {
+  id          String   @id
+  bookId      String
+  userId      String
+  userName    String
+  content     String
+  likes       Int      @default(0)
+  likedBy     String   @default("[]") // JSON: string[]
+  replyToId   String?
+  replyToName String?
+  createdAt   DateTime @default(now())
+
+  @@index([bookId])
+}
+
+// ── 审核与安全 ────────────────────────────────────────────────
+
+model Review {
+  id        String   @id
+  bookId    String
+  action    String // approve | reject
+  note      String?
+  createdAt DateTime @default(now())
+}
+
+model SecurityLog {
+  id         String   @id
+  kind       String // xss | suspicious | tamper | attack
+  level      String // warn | danger
+  targetType String?
+  targetId   String?
+  field      String?
+  snippet    String?
+  message    String
+  status     String   @default("flagged") // flagged | cleaned | ignored | resolved
+  createdAt  DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id
+  userId    String
+  userName  String
+  action    String
+  target    String?
+  detail    String?
+  createdAt DateTime @default(now())
+}
+
+// ── 系统设置（单行） ──────────────────────────────────────────
+
+model Settings {
+  id              String  @id @default("main")
+  siteName        String  @default("墨影书城")
+  announcement    String  @default("")
+  vipPrice        Int     @default(500)
+  rechargeRate    Int     @default(100) // 1元 = rechargeRate 书币
+  subShare        Float   @default(0.7) // 订阅作者分成比例（0..1 小数，与前端一致）
+  tipShare        Float   @default(1) // 打赏作者分成比例（0..1 小数）
+  openRegister    Boolean @default(true)
+  rechargeMethods String  @default("[\"alipay\",\"wechat\",\"bank\",\"cloud\"]") // JSON: RechargeMethod[]
+  adminCode       String  @default("") // 管理安全码 bcrypt 哈希
+  adminLockedUntil Int    @default(0)
+  adminFailCount  Int     @default(0)
+  devWhitelist    String? // JSON: string[]
+  layoutStyle     String?
+  fontFamily      String?
+  fontSize        Int?
+  lineHeight      Float?
+}
+
+// ── 反馈 / 客服消息 ───────────────────────────────────────────
+
+model Feedback {
+  id        String   @id
+  userId    String
+  userName  String
+  type      String // suggest | bug | report | refund | other
+  title     String
+  content   String
+  contact   String?
+  status    String   @default("pending") // pending | resolved
+  reply     String?
+  replyAt   DateTime?
+  createdAt DateTime @default(now())
+  refund    String? // JSON: 退款工单结构化信息
+}
+
+model Message {
+  id        String   @id
+  userId    String
+  userName  String
+  sender    String // user | admin
+  text      String
+  createdAt DateTime @default(now())
+  read      Boolean  @default(false)
+
+  @@index([userId])
+}

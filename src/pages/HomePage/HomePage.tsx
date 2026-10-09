@@ -1,7 +1,7 @@
 // EXPORTS: HomePage（组件文件）
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, MessageSquareText, BookOpenText, Images, Flame, Megaphone, LibraryBig, BadgeCheck, LayoutGrid, MessagesSquare, Gamepad2 } from 'lucide-react';
+import { ArrowRight, MessageSquareText, BookOpenText, Images, Flame, Megaphone, LibraryBig, BadgeCheck, LayoutGrid, MessagesSquare, Gamepad2, Clapperboard, Video } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useDataVersion } from '@/hooks/use-data';
 import SceneArt from '@/components/SceneArt';
@@ -13,39 +13,40 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { BookType, IBook } from '@/lib/types';
+import { CHANNELS } from '@/lib/types';
 
 const TYPE_ENTRY = [
   {
-    type: 'novel' as BookType,
+    key: 'novel',
     title: '小说',
     desc: '沉浸式文字阅读，章节连载，随心追更',
     icon: BookOpenText,
     tile: 'icon-tile-gold',
   },
   {
-    type: 'visual' as BookType,
-    title: '互动IP',
-    desc: '插画场景 + 剧情分支，你的选择决定结局',
-    icon: MessageSquareText,
-    tile: 'icon-tile-violet',
-  },
-  {
-    type: 'dialogue' as BookType,
-    title: '对话小说',
-    desc: '聊天气泡推进剧情，像追剧一样追消息',
-    icon: MessagesSquare,
+    key: 'comic',
+    title: '漫画',
+    desc: '分镜与气泡，一话一话追下去',
+    icon: Images,
     tile: 'icon-tile-pink',
   },
   {
-    type: 'comic' as BookType,
+    key: 'anime',
     title: '动漫',
-    desc: '漫画分镜与动画番剧，一话一话追下去',
-    icon: Images,
+    desc: '动画番剧，管理员独家上传',
+    icon: Clapperboard,
+    tile: 'icon-tile-violet',
+  },
+  {
+    key: 'video',
+    title: '视频',
+    desc: '画面互动与对话剧情，像追剧一样追下去',
+    icon: Video,
     tile: 'icon-tile-blue',
   },
   {
-    type: 'game' as BookType,
-    title: '游戏上架',
+    key: 'game',
+    title: '游戏',
     desc: '可直接开玩的游戏作品，挑战最好成绩',
     icon: Gamepad2,
     tile: 'icon-tile-teal',
@@ -217,7 +218,10 @@ export default function HomePage() {
   const fresh = [...published].sort((a, b) => (b.createdAt < a.createdAt ? -1 : 1)).slice(0, 6);
   const best = [...published].sort((a, b) => b.rating - a.rating).slice(0, 4);
   const bannerBooks = featured.length > 0 ? featured.slice(0, 5) : hot;
-  const entryCount = (t: BookType) => published.filter((b) => b.type === t).length;
+  const entryCount = (key: string) => {
+    const ch = CHANNELS.find((c) => c.key === key);
+    return ch ? published.filter((b) => ch.types.includes(b.type)).length : 0;
+  };
   const gotoAnchor = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   return (
@@ -311,7 +315,7 @@ export default function HomePage() {
             <button
               key={g.label}
               type="button"
-              onClick={() => navigate(`/category/all?genre=${encodeURIComponent(g.label)}`)}
+              onClick={() => navigate(`/category/novel?genre=${encodeURIComponent(g.label)}`)}
               className={`chip-grad ${g.chip} rounded-full px-3.5 py-1.5 text-xs font-medium`}
             >
               {g.label}
@@ -328,8 +332,8 @@ export default function HomePage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {TYPE_ENTRY.map((e, i) => (
             <Link
-              key={e.type}
-              to={`/category/${e.type}`}
+              key={e.key}
+              to={`/category/${e.key}`}
               className={`block ${i % 2 === 1 ? 'lg:translate-y-2' : ''}`}
             >
               <Card
@@ -345,7 +349,7 @@ export default function HomePage() {
                   <div className="min-w-0">
                     <h3 className="flex items-center gap-2 font-medium">
                       {e.title}
-                      <span className="text-xs text-muted-foreground">{entryCount(e.type)} 部</span>
+                      <span className="text-xs text-muted-foreground">{entryCount(e.key)} 部</span>
                     </h3>
                     <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{e.desc}</p>
                   </div>

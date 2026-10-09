@@ -84,7 +84,7 @@ function MemoryGame({ onWin }: { onWin: (steps: number) => void }) {
         })}
       </div>
       {done && (
-        <div className="anim-fade-up flex items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm font-medium text-primary">
+        <div className="anim-fade-up flex scale-in items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm font-medium text-primary">
           <Trophy className="h-4 w-4" /> 通关！共用 {Math.max(1, Math.round(steps / 2))} 步配对全部卡牌
         </div>
       )}
@@ -152,7 +152,7 @@ export default function GamePage() {
       <Card>
         <CardContent className="p-4">
           <div className="mb-3 flex items-center justify-between gap-2">
-            <h2 className="flex items-center gap-2 font-medium">
+            <h2 className="section-title flex items-center gap-2 font-medium">
               <Gamepad2 className="h-4 w-4 text-primary" /> 开始试玩
             </h2>
             {playing && (
@@ -167,7 +167,7 @@ export default function GamePage() {
             ) : (
               <div className="flex flex-col items-center gap-3 py-8">
                 <p className="text-sm text-muted-foreground">{book.description.split('：')[0]}</p>
-                <Button size="lg" className="gap-2" onClick={() => { setPlaying(true); setRound((r) => r + 1); }}>
+                <Button size="lg" className="btn-anime gap-2" onClick={() => { setPlaying(true); setRound((r) => r + 1); }}>
                   <Gamepad2 className="h-4.5 w-4.5" /> 开始游戏
                 </Button>
               </div>
@@ -180,7 +180,7 @@ export default function GamePage() {
 
       <Card>
         <CardContent className="p-4">
-          <h2 className="mb-2 font-medium">游戏介绍</h2>
+          <h2 className="section-title mb-2 font-medium">游戏介绍</h2>
           <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{book.description}</p>
         </CardContent>
       </Card>

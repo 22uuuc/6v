@@ -646,39 +646,99 @@ export function avatarSVG(seed: string, name: string): string {
 export function personSVG(seed: string, name: string, opts: Opts = {}): string {
   const { width = 200, height = 250 } = opts;
   const r = makeRand(seed);
-  const skin = r.pick(['#f2c9a0', '#eab98a', '#d9a06e', '#c98a5b', '#b57a4e']);
-  const hairColor = r.pick(['#3a2e26', '#5b4632', '#7a5a3a', '#2e2a33', '#8a6a4a', '#4a3a55']);
-  const cloth = r.pick(['#7a4a2c', '#3f5566', '#8a5a3a', '#5c6b3a', '#6b3a5a', '#2e5a7c', '#a05a2c']);
-  const cloth2 = r.pick(['#e0b276', '#6b7f92', '#c98a5b', '#8fa67a', '#9483b8', '#4d7fa0']);
+  const skin = r.pick(['#ffe9d2', '#ffdcbc', '#f7cba6', '#efc095', '#e6b287']);
+  const skinShadow = '#d9a06e';
+  const hairColor = r.pick(['#2e2a33', '#4a3527', '#6b4a2f', '#7a2e3a', '#3a2e4a', '#2c4a55', '#8a6a4a']);
+  const hairLight = r.pick(['#6b5a75', '#8a6a4a', '#a5825a', '#b5606a', '#6b5a8a', '#5a7a8a', '#c9a06a']);
+  const eyeColor = r.pick(['#c96a4a', '#5a6a9a', '#8a4a7a', '#4a7a5a', '#7a5a9a', '#4a5a8a']);
+  const cloth = r.pick(['#b5453a', '#3f5a7a', '#7a4a6a', '#4a7a6a', '#8a5a2c', '#5a3a7a', '#2e5a7c', '#a06a3a']);
+  const cloth2 = r.pick(['#f0d6b0', '#c9d6e0', '#e0c9d6', '#c9e0d6', '#e0c9a0', '#d0c9e0', '#b0c9e0']);
   const hairStyle = r.pick(['short', 'long', 'twin', 'bun', 'wave']);
   const happy = r.next() < 0.35;
   const hx = (x: number) => Math.round((x / 100) * width);
   const hy = (y: number) => Math.round((y / 125) * height);
   const hz = (z: number) => Math.round(z * (width / 100));
 
+  /* ---- 日系动漫画法（狐妖小红娘风）：鹅蛋脸 + 大眼高光 + 腮红 + 精细发型 + 古风交领服饰 ---- */
+
+  // 鹅蛋脸：额头宽、颧骨圆润、下颌收窄、下巴尖
+  const face = `<path d="M50 26 Q38 26 33 34 Q27 44 27 54 Q27 66 33 74 Q40 82 50 84 Q60 82 67 74 Q73 66 73 54 Q73 44 67 34 Q62 26 50 26 Z" fill="${skin}"/>`;
+  // 耳朵
+  const earL = `<path d="M29 46 Q24 52 26 58 Q28 62 32 62 Q33 56 32 50 Z" fill="${skin}"/>`;
+  const earR = `<path d="M71 46 Q76 52 74 58 Q72 62 68 62 Q67 56 68 50 Z" fill="${skin}"/>`;
+
+  // 发型：分层刘海 + 侧发 + 高光挑染（五种发型自带高光）
   let hair = '';
   if (hairStyle === 'short') {
-    hair = `<path d="M50 22 Q20 22 18 44 Q16 52 22 50 L22 34 Q30 24 50 24 Q70 24 78 34 L78 50 Q84 52 82 44 Q80 22 50 22 Z" fill="${hairColor}"/>`;
+    hair = `<path d="M50 20 Q24 20 20 40 Q18 50 24 48 L24 36 Q30 26 50 26 Q70 26 76 36 L76 48 Q82 50 80 40 Q76 20 50 20 Z" fill="${hairColor}"/>` +
+      `<path d="M24 36 Q30 28 50 28 Q70 28 76 36 L76 44 Q70 34 50 34 Q30 34 24 44 Z" fill="${hairLight}" opacity="0.5"/>` +
+      `<path d="M33 40 Q40 36 47 40 M53 40 Q60 36 67 40" stroke="${hairLight}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.7"/>`;
   } else if (hairStyle === 'long') {
-    hair = `<path d="M50 20 Q18 24 16 46 L16 96 Q16 104 24 102 Q30 86 34 78 Q36 96 42 100 L44 44 Q44 30 50 28 Q56 30 56 44 L58 100 Q64 96 66 78 Q70 86 76 102 Q84 104 84 96 L84 46 Q82 24 50 20 Z" fill="${hairColor}"/>`;
+    hair = `<path d="M50 18 Q22 20 18 42 L18 92 Q18 104 28 104 Q34 88 36 76 Q38 92 44 100 L44 42 Q44 28 50 26 Q56 28 56 42 L56 100 Q62 92 64 76 Q66 88 72 104 Q82 104 82 92 L82 42 Q78 20 50 18 Z" fill="${hairColor}"/>` +
+      `<path d="M28 40 Q30 30 50 28 Q70 30 72 40 L72 48 Q70 36 50 36 Q30 36 28 48 Z" fill="${hairLight}" opacity="0.5"/>` +
+      `<path d="M24 44 Q28 36 36 36 M64 36 Q72 36 76 44" stroke="${hairLight}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.7"/>`;
   } else if (hairStyle === 'twin') {
-    hair = `<path d="M50 20 Q20 24 18 44 L18 52 Q24 54 28 48 L28 38 Q36 26 50 26 Q64 26 72 38 L72 48 Q76 54 82 52 L82 44 Q80 24 50 20 Z" fill="${hairColor}"/><circle cx="20" cy="52" r="11" fill="${hairColor}"/><circle cx="80" cy="52" r="11" fill="${hairColor}"/>`;
+    hair = `<path d="M50 18 Q22 20 18 40 L18 46 Q24 48 28 42 L28 32 Q36 24 50 24 Q64 24 72 32 L72 42 Q76 48 82 46 L82 40 Q78 20 50 18 Z" fill="${hairColor}"/>` +
+      `<circle cx="20" cy="50" r="13" fill="${hairColor}"/><circle cx="80" cy="50" r="13" fill="${hairColor}"/>` +
+      `<path d="M20 42 Q18 50 20 58 Q24 60 26 54 Q27 46 26 42 Z" fill="${hairLight}" opacity="0.55"/>` +
+      `<path d="M80 42 Q82 50 80 58 Q76 60 74 54 Q73 46 74 42 Z" fill="${hairLight}" opacity="0.55"/>` +
+      `<path d="M32 36 Q38 30 48 30 M52 30 Q62 30 68 36" stroke="${hairLight}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.7"/>`;
   } else if (hairStyle === 'bun') {
-    hair = `<path d="M50 22 Q20 26 18 44 L18 50 Q24 52 28 46 L28 36 Q36 26 50 26 Q64 26 72 36 L72 46 Q76 52 82 50 L82 44 Q80 26 50 22 Z" fill="${hairColor}"/><circle cx="50" cy="14" r="10" fill="${hairColor}"/>`;
+    hair = `<path d="M50 18 Q22 20 18 40 L18 46 Q24 48 28 42 L28 32 Q36 24 50 24 Q64 24 72 32 L72 42 Q76 48 82 46 L82 40 Q78 20 50 18 Z" fill="${hairColor}"/>` +
+      `<circle cx="50" cy="12" r="9" fill="${hairColor}"/><circle cx="50" cy="12" r="6" fill="${hairLight}" opacity="0.6"/>` +
+      `<path d="M30 34 Q36 28 48 28 M52 28 Q64 28 70 34" stroke="${hairLight}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.7"/>` +
+      `<path d="M45 12 L52 6 L55 12" fill="${cloth}"/>`;
   } else {
-    hair = `<path d="M50 20 Q16 26 16 48 Q18 50 22 48 Q24 28 50 28 Q76 28 78 48 Q82 50 84 48 Q84 26 50 20 Z" fill="${hairColor}"/><path d="M50 28 Q56 36 54 44 Q62 40 66 50 Q58 48 56 56 Q52 48 50 54 Z" fill="${hairColor}" opacity="0.9"/>`;
+    // wave 波浪长发
+    hair = `<path d="M50 18 Q16 24 16 46 Q18 50 22 46 Q24 30 50 30 Q76 30 78 46 Q82 50 84 46 Q84 24 50 18 Z" fill="${hairColor}"/>` +
+      `<path d="M28 34 Q24 42 26 50 Q30 44 34 46 Q36 38 34 34 Z" fill="${hairColor}" opacity="0.9"/>` +
+      `<path d="M72 34 Q76 42 74 50 Q70 44 66 46 Q64 38 66 34 Z" fill="${hairColor}" opacity="0.9"/>` +
+      `<path d="M50 28 Q56 36 54 44 Q62 40 66 50 Q58 48 56 56 Q52 48 50 54 Z" fill="${hairLight}" opacity="0.7"/>` +
+      `<path d="M36 32 Q32 40 34 48" stroke="${hairLight}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.6"/>`;
   }
 
-  const mouth = happy ? '<path d="M42 84 Q50 92 58 84" stroke="#a54a3a" stroke-width="2.5" fill="none" stroke-linecap="round"/>' : '<path d="M42 86 Q50 82 58 86" stroke="#a54a3a" stroke-width="2.5" fill="none" stroke-linecap="round"/>';
+  // 日系大眼：白底 + 虹膜 + 瞳孔 + 双层高光 + 上眼线 + 下眼线
+  const eye = (cx: number) =>
+    `<path d="M${cx - 8} 50 Q${cx} 44 ${cx + 8} 50 Q${cx} 56 ${cx - 8} 50 Z" fill="#fff"/>` +
+    `<ellipse cx="${cx}" cy="50" rx="6" ry="5.4" fill="${eyeColor}"/>` +
+    `<circle cx="${cx}" cy="50" r="3.1" fill="#26221f"/>` +
+    `<circle cx="${cx - 2}" cy="48.2" r="1.5" fill="#fff" opacity="0.95"/>` +
+    `<circle cx="${cx + 2.4}" cy="51.6" r="0.8" fill="#fff" opacity="0.7"/>` +
+    `<path d="M${cx - 9} 48.5 Q${cx} 42 ${cx + 9} 48.5" stroke="#2a2320" stroke-width="1.6" fill="none" stroke-linecap="round"/>` +
+    `<path d="M${cx - 9.6} 49.5 Q${cx} 56.5 ${cx + 9.6} 49.5" stroke="#2a2320" stroke-width="1.1" fill="none" stroke-linecap="round" opacity="0.55"/>`;
+  const eyes = eye(hx(41)) + eye(hx(59));
+
+  // 细弯眉
+  const brow = `<path d="M${hx(35)} ${hy(42)} Q${hx(41)} ${hy(40)} ${hx(47)} ${hy(41.5)}" stroke="#5a4632" stroke-width="${hz(1.7)}" fill="none" stroke-linecap="round"/>` +
+    `<path d="M${hx(53)} ${hy(41.5)} Q${hx(59)} ${hy(40)} ${hx(65)} ${hy(42)}" stroke="#5a4632" stroke-width="${hz(1.7)}" fill="none" stroke-linecap="round"/>`;
+
+  // 腮红（日漫标配粉晕）
+  const blush = `<ellipse cx="${hx(34)}" cy="${hy(57)}" rx="${hz(5)}" ry="${hz(3)}" fill="#f29aa8" opacity="0.4"/>` +
+    `<ellipse cx="${hx(66)}" cy="${hy(57)}" rx="${hz(5)}" ry="${hz(3)}" fill="#f29aa8" opacity="0.4"/>`;
+
+  const mouth = happy
+    ? `<path d="M${hx(42)} ${hy(76)} Q${hx(50)} ${hy(82)} ${hx(58)} ${hy(76)}" stroke="#a54a3a" stroke-width="${hz(2.4)}" fill="none" stroke-linecap="round"/><path d="M${hx(47)} ${hy(77)} Q${hx(50)} ${hy(79.5)} ${hx(53)} ${hy(77)}" stroke="#e06a5a" stroke-width="${hz(1.4)}" fill="none"/>`
+    : `<path d="M${hx(43)} ${hy(78)} Q${hx(50)} ${hy(75.5)} ${hx(57)} ${hy(78)}" stroke="#a54a3a" stroke-width="${hz(2.4)}" fill="none" stroke-linecap="round"/>`;
+
+  // 古风交领服饰
   const id = `p-${seed.slice(0, 6)}`;
+  const neck = `<path d="M${hx(44)} ${hy(84)} Q${hx(50)} ${hy(88)} ${hx(56)} ${hy(84)} L${hx(56)} ${hy(94)} Q${hx(50)} ${hy(97)} ${hx(44)} ${hy(94)} Z" fill="${skinShadow}"/>`;
+  const clothBody = `<path d="M${hx(22)} ${hy(92)} Q${hx(50)} ${hy(86)} ${hx(78)} ${hy(92)} L${hx(86)} ${hy(124)} L${hx(14)} ${hy(124)} Z" fill="url(#${id})"/>`;
+  const collar = `<path d="M${hx(50)} ${hy(90)} L${hx(30)} ${hy(118)} L${hx(50)} ${hy(112)} Z" fill="${cloth2}" opacity="0.85"/>` +
+    `<path d="M${hx(50)} ${hy(90)} L${hx(70)} ${hy(118)} L${hx(50)} ${hy(112)} Z" fill="${cloth2}" opacity="0.65"/>`;
+  const belt = `<path d="M${hx(26)} ${hy(112)} Q${hx(50)} ${hy(108)} ${hx(74)} ${hy(112)} L${hx(74)} ${hy(118)} Q${hx(50)} ${hy(114)} ${hx(26)} ${hy(118)} Z" fill="${cloth2}"/>`;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" height="100%">
 <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${cloth}"/><stop offset="100%" stop-color="${cloth2}"/></linearGradient></defs>
-<rect x="${hx(22)}" y="${hy(92)}" width="${hx(56)}" height="${hy(33)}" rx="${hz(10)}" fill="url(#${id})"/>
-<circle cx="${hx(50)}" cy="${hy(52)}" r="${hz(30)}" fill="${skin}"/>
-<ellipse cx="${hx(50)}" cy="${hy(74)}" rx="${hz(26)}" ry="${hz(14)}" fill="${skin}"/>
+${clothBody}
+${collar}
+${belt}
+${neck}
+${earL}${earR}
+${face}
 ${hair}
-<circle cx="${hx(41)}" cy="${hy(48)}" r="${hz(2.6)}" fill="#26221f"/><circle cx="${hx(59)}" cy="${hy(48)}" r="${hz(2.6)}" fill="#26221f"/>
-<path d="M${hx(38)} ${hy(56)} Q${hx(50)} ${hy(60)} ${hx(62)} ${hy(56)}" stroke="#d9a06e" stroke-width="${hz(1.6)}" fill="none" stroke-linecap="round"/>
+${eyes}
+${brow}
+${blush}
 ${mouth}
 <text x="${hx(50)}" y="${hy(18)}" font-family="${FONT}" font-size="${hz(11)}" font-weight="700" fill="#cbb37a" text-anchor="middle">${esc(name)}</text>
 </svg>`;

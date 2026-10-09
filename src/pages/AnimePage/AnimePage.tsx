@@ -1,13 +1,14 @@
 // EXPORTS: AnimePage（组件文件）
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Lock, Clapperboard } from 'lucide-react';
+import { ArrowLeft, Lock, Clapperboard, Eye, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { api, isVip, fmtCoins } from '@/lib/api';
 import { useDataVersion } from '@/hooks/use-data';
 import { useAuth } from '@/lib/auth-context';
 import { idbGet } from '@/lib/idb';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export default function AnimePage() {
@@ -69,12 +70,19 @@ export default function AnimePage() {
   };
 
   return (
-    <div className="mx-auto max-w-lg space-y-5">
+    <div className="mx-auto max-w-2xl space-y-5">
       <Button variant="ghost" size="sm" onClick={() => navigate(`/book/${book.id}`)}>
         <ArrowLeft className="mr-1 h-4 w-4" /> 返回详情
       </Button>
 
-      <div className="overflow-hidden rounded-2xl border border-border bg-black shadow-xl">
+      {/* 播放器：动漫平台正片视角 */}
+      <div className="overflow-hidden rounded-2xl border border-border bg-black shadow-[0_18px_44px_-24px_hsl(0_0%_0%/0.65)]">
+        <div className="flex items-center justify-between gap-2 border-b border-white/10 px-4 py-2.5">
+          <span className="flex items-center gap-1.5 text-xs font-medium text-white/85">
+            <Clapperboard className="h-3.5 w-3.5 text-[hsl(333_92%_66%)]" /> 动漫 · 正片
+          </span>
+          <span className="text-xs text-white/50">{book.views.toLocaleString('zh-CN')} 人追番</span>
+        </div>
         {missing ? (
           <div className="flex aspect-video flex-col items-center justify-center gap-3 text-center">
             <Clapperboard className="h-10 w-10 text-muted-foreground" />
@@ -93,10 +101,24 @@ export default function AnimePage() {
         )}
       </div>
 
-      <div>
-        <h1 className="font-serif text-xl font-bold">{book.title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{book.authorName} · 动漫视频</p>
-        <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{book.description}</p>
+      {/* 作品信息：标题 + 数据徽章 + 简介 */}
+      <div className="space-y-3">
+        <h1 className="section-title text-gradient-anime font-serif text-2xl font-bold">{book.title}</h1>
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <Badge variant="secondary" className="gap-1">
+            <Clapperboard className="h-3 w-3" /> {book.authorName} 出品
+          </Badge>
+          <Badge variant="outline">{book.genre}</Badge>
+          <Badge variant="outline" className="gap-1">
+            <Eye className="h-3 w-3" /> {book.views.toLocaleString('zh-CN')} 追
+          </Badge>
+          {book.rating > 0 && (
+            <Badge variant="outline" className="gap-1">
+              <Star className="h-3 w-3 fill-primary text-primary" /> {book.rating.toFixed(1)}
+            </Badge>
+          )}
+        </div>
+        <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{book.description}</p>
       </div>
 
       <Dialog open={!unlocked} onOpenChange={() => {}}>
