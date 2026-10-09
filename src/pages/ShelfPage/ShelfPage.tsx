@@ -45,14 +45,14 @@ export default function ShelfPage() {
 
   return (
     <div className="space-y-5">
-      <h1 className="font-serif text-2xl font-bold">我的书架</h1>
+      <h1 className="text-gradient-anime font-serif text-2xl font-bold">我的书架</h1>
       {privacy.hideShelf && (
         <p className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
           <Lock className="h-3.5 w-3.5 text-primary" /> 书架已设为隐私（对外不可见），你仍可正常阅读与管理
         </p>
       )}
       <Tabs defaultValue="recent">
-        <TabsList>
+        <TabsList className="rounded-full border border-border/60 bg-muted/50 p-1">
           <TabsTrigger value="recent" className="gap-1.5">
             <History className="h-3.5 w-3.5" /> 最近阅读
           </TabsTrigger>
@@ -89,7 +89,7 @@ export default function ShelfPage() {
                         </p>
                       </div>
                       {/* 继续角标 */}
-                      <span className="absolute right-2 top-2 flex items-center gap-0.5 rounded-full bg-primary/95 px-2 py-0.5 text-[10px] font-medium text-primary-foreground shadow">
+                      <span className="absolute right-2 top-2 flex items-center gap-0.5 rounded-full bg-gradient-to-r from-[hsl(275_84%_62%)] to-[hsl(333_92%_66%)] px-2 py-0.5 text-[10px] font-medium text-white shadow">
                         继续 <ArrowRight className="h-2.5 w-2.5" />
                       </span>
                       <span className="absolute bottom-1.5 right-2 rounded-full bg-black/50 px-1.5 py-0.5 text-[9px] text-white/85 backdrop-blur">

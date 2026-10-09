@@ -231,7 +231,7 @@ export default function ProfilePage() {
       <Card>
         <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
           <div className="flex items-center gap-4">
-            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl ring-1 ring-border">
+            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl shadow-[0_0_0_2px_hsl(333_92%_66%/0.45),0_0_18px_-2px_hsl(275_84%_62%/0.5)] ring-1 ring-border/50">
               <div dangerouslySetInnerHTML={{ __html: avatarSVG(user.id, user.nickname) }} />
               {vip && (
                 <span className="absolute bottom-0 left-0 right-0 bg-primary/90 py-0.5 text-center text-[9px] font-bold text-primary-foreground">
@@ -260,7 +260,7 @@ export default function ProfilePage() {
             {user.role === 'reader' && (
               <Button
                 size="sm"
-                className="gap-1.5"
+                className="btn-anime gap-1.5"
                 onClick={() => {
                   navigate('/creator');
                 }}
@@ -276,7 +276,7 @@ export default function ProfilePage() {
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/15 font-serif text-lg font-bold text-primary">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[hsl(275_84%_62%/0.2)] to-[hsl(199_100%_48%/0.2)] font-serif text-lg font-bold text-primary">
               Lv.{user.level}
             </span>
             <div className="min-w-0 flex-1">
@@ -285,7 +285,7 @@ export default function ProfilePage() {
                 {user.level >= 6 && <span className="ml-2 text-xs text-primary">已满级</span>}
               </p>
               <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
-                <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${levelProgress}%` }} />
+                <div className="h-full rounded-full bg-gradient-to-r from-[hsl(275_84%_62%)] to-[hsl(199_100%_48%)] transition-all" style={{ width: `${levelProgress}%` }} />
               </div>
               <p className="mt-1 text-[11px] text-muted-foreground">
                 {nextLevel
