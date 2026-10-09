@@ -8,6 +8,7 @@ import { useDataVersion } from '@/hooks/use-data';
 import { useAuth } from '@/lib/auth-context';
 import SceneArt from '@/components/SceneArt';
 import { personSVG } from '@/lib/svg';
+import { charArtUrl } from '@/lib/charArt';
 import { SCENE_NAMES } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -81,10 +82,17 @@ export default function VisualPage() {
       {/* 画面人物（互动角色） */}
       {(node.char || node.speaker) && (
         <div className="pointer-events-none absolute inset-x-0 bottom-24 z-[5] flex justify-center">
-          <div
-            className="w-52 aspect-[2/3] float-slow opacity-95 drop-shadow-2xl"
-            dangerouslySetInnerHTML={{ __html: personSVG(node.char ?? `${bookId}-${node.speaker ?? '角色'}`, node.speaker ?? '角色', { poster: true }) }}
-          />
+          <div className="relative w-52 aspect-[2/3] float-slow opacity-95 drop-shadow-2xl overflow-hidden rounded-2xl ring-1 ring-white/40">
+            <div className="absolute inset-0" dangerouslySetInnerHTML={{ __html: personSVG(node.char ?? `${bookId}-${node.speaker ?? '角色'}`, node.speaker ?? '角色', { poster: true }) }} />
+            <img
+              src={charArtUrl(node.char ?? `${bookId}-${node.speaker ?? '角色'}`)}
+              alt={node.speaker ?? '角色'}
+              loading="lazy"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#f14627]/95 px-3 py-0.5 text-xs font-bold text-white shadow ring-1 ring-[#ffd9a0]">{node.speaker ?? '角色'}</div>
+          </div>
         </div>
       )}
 

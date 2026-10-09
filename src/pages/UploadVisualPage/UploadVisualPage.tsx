@@ -11,6 +11,7 @@ import BookInfoFields from '@/components/BookInfoFields';
 import { EMPTY_DRAFT, type IBookDraft } from '@/lib/upload-types';
 import SceneArt from '@/components/SceneArt';
 import { personSVG } from '@/lib/svg';
+import { charArtUrl } from '@/lib/charArt';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -342,10 +343,17 @@ export default function UploadVisualPage() {
                 </div>
                 {(currentNode.char || currentNode.speaker) && (
                   <div className="pointer-events-none absolute inset-x-0 bottom-16 flex justify-center">
-                    <div
-                      className="w-28 aspect-[2/3]"
-                      dangerouslySetInnerHTML={{ __html: personSVG(currentNode.char || currentNode.speaker || '角色', currentNode.speaker || currentNode.char || '角色', { poster: true }) }}
-                    />
+                    <div className="relative w-28 aspect-[2/3] overflow-hidden rounded-xl ring-1 ring-white/40">
+                      <div className="absolute inset-0" dangerouslySetInnerHTML={{ __html: personSVG(currentNode.char || currentNode.speaker || '角色', currentNode.speaker || currentNode.char || '角色', { poster: true }) }} />
+                      <img
+                        src={charArtUrl(currentNode.char || currentNode.speaker || '角色')}
+                        alt={currentNode.speaker || currentNode.char || '角色'}
+                        loading="lazy"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                        className="absolute inset-0 h-full w-full object-cover"
+                      />
+                      <div className="absolute bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#f14627]/95 px-2 py-px text-[10px] font-bold text-white ring-1 ring-[#ffd9a0]">{currentNode.speaker || currentNode.char || '角色'}</div>
+                    </div>
                   </div>
                 )}
               </div>
