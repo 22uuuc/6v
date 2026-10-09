@@ -363,7 +363,7 @@ export default function CreatorPage() {
               return (
                 <div key={book.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
                   <div className="w-12 shrink-0">
-                    <BookCover seed={book.coverSeed} title={book.title} author={book.authorName} genre={book.genre} style={book.coverStyle} bookId={book.id} coverType={book.coverType} font={book.coverFont} />
+                    <BookCover seed={book.coverSeed} title={book.title} author={book.authorName} genre={book.genre} style={book.coverStyle} bookId={book.id} coverType={book.coverType} font={book.coverFont}  charArt={book.type === 'visual'} />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">

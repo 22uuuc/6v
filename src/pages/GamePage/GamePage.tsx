@@ -128,12 +128,12 @@ export default function GamePage() {
       <section className="relative overflow-hidden rounded-2xl border border-border">
         <div className="relative h-44 w-full sm:h-52">
           <div className="absolute inset-0 scale-110 blur-sm">
-            <BookCover seed={book.coverSeed} title={book.title} author={book.authorName} genre={book.genre} style={book.coverStyle} bookId={book.id} coverType={book.coverType} font={book.coverFont} />
+            <BookCover seed={book.coverSeed} title={book.title} author={book.authorName} genre={book.genre} style={book.coverStyle} bookId={book.id} coverType={book.coverType} font={book.coverFont}  charArt={book.type === 'visual'} />
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 flex items-end gap-4 p-4">
             <div className="w-24 shrink-0 sm:w-28">
-              <BookCover seed={book.coverSeed} title={book.title} author={book.authorName} genre={book.genre} style={book.coverStyle} bookId={book.id} coverType={book.coverType} font={book.coverFont} />
+              <BookCover seed={book.coverSeed} title={book.title} author={book.authorName} genre={book.genre} style={book.coverStyle} bookId={book.id} coverType={book.coverType} font={book.coverFont}  charArt={book.type === 'visual'} />
             </div>
             <div className="min-w-0 pb-1">
               <div className="mb-1.5 flex flex-wrap items-center gap-1.5">

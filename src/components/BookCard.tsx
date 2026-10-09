@@ -11,7 +11,7 @@ export default function BookCard({ book }: { book: IBook }) {
   return (
     <Link to={`/book/${book.id}`} className="group block">
       <div className="cover-lift relative">
-        <BookCover seed={book.coverSeed} title={book.title} author={book.authorName} genre={book.genre} style={book.coverStyle} bookId={book.id} coverType={book.coverType} font={book.coverFont} />
+        <BookCover seed={book.coverSeed} title={book.title} author={book.authorName} genre={book.genre} style={book.coverStyle} bookId={book.id} coverType={book.coverType} font={book.coverFont} charArt={book.type === 'visual'} />
         <Badge className="absolute left-2 top-2 bg-black/55 text-[10px] text-foreground backdrop-blur">
           {TYPE_LABEL[book.type]}
         </Badge>

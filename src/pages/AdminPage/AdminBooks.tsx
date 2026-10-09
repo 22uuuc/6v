@@ -59,7 +59,7 @@ export default function AdminBooks() {
             {pending.map((b) => (
               <div key={b.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
                 <div className="w-11 shrink-0">
-                  <BookCover seed={b.coverSeed} title={b.title} author={b.authorName} genre={b.genre} style={b.coverStyle} bookId={b.id} coverType={b.coverType} font={b.coverFont} />
+                  <BookCover seed={b.coverSeed} title={b.title} author={b.authorName} genre={b.genre} style={b.coverStyle} bookId={b.id} coverType={b.coverType} font={b.coverFont}  charArt={b.type === 'visual'} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
@@ -96,7 +96,7 @@ export default function AdminBooks() {
           {managed.map((b) => (
             <div key={b.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
               <div className="w-11 shrink-0">
-                <BookCover seed={b.coverSeed} title={b.title} author={b.authorName} genre={b.genre} style={b.coverStyle} bookId={b.id} coverType={b.coverType} font={b.coverFont} />
+                <BookCover seed={b.coverSeed} title={b.title} author={b.authorName} genre={b.genre} style={b.coverStyle} bookId={b.id} coverType={b.coverType} font={b.coverFont}  charArt={b.type === 'visual'} />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
