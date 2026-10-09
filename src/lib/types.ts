@@ -5,7 +5,10 @@
 //   ISettlement, ISecurityLog, IAuditLog, ISettings, LEVELS, IApplicant, ApplicantStatus
 //   PaymentProviderId, IPaymentProvider, IPayTransfer
 
-export type BookType = 'novel' | 'visual' | 'comic' | 'anime';
+/** 作品类型（题材大类）：小说 / 互动IP / 漫画 / 动漫 / 对话小说 / 游戏 */
+export type BookType = 'novel' | 'visual' | 'comic' | 'anime' | 'dialogue' | 'game';
+/** 游戏试玩模板（type=game 时有效）：memory 翻牌记忆配对 */
+export type GameKind = 'memory';
 export type BookGenre =
   | '玄幻' | '都市' | '科幻' | '悬疑' | '古言' | '青春' | '武侠' | '奇幻'
   | '仙侠' | '历史' | '游戏' | '言情' | '轻小说' | '现实';
@@ -278,6 +281,8 @@ export interface IBook {
   featured?: boolean;
   /** 动漫视频文件在 IndexedDB 中的 key */
   animeKey?: string;
+  /** 游戏试玩模板（type=game 时有效） */
+  gameKind?: GameKind;
   /** 是否被安全系统隔离 */
   quarantined?: boolean;
 }

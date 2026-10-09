@@ -6,6 +6,7 @@ import { zhCN } from 'date-fns/locale';
 import {
   Plus, PenLine, MessageSquareText, Images, Landmark, Eye, Heart,
   ArrowUpRight, Trash2, PencilLine, Clapperboard, BadgeCheck, Clock3,
+  MessagesSquare, Gamepad2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { api, fmtYuan } from '@/lib/api';
@@ -36,7 +37,7 @@ const STATUS_META: Record<string, { label: string; variant: 'default' | 'outline
   offline: { label: '已下架', variant: 'secondary' },
 };
 
-const TYPE_LABEL: Record<string, string> = { novel: '普通小说', visual: '互动小说', comic: '漫画', anime: '动漫视频' };
+const TYPE_LABEL: Record<string, string> = { novel: '小说', visual: '互动IP', comic: '漫画', anime: '动漫', dialogue: '对话小说', game: '游戏' };
 
 function fmtTime(iso: string): string {
   try {
@@ -150,8 +151,9 @@ export default function CreatorPage() {
                 <Select value={workType} onValueChange={(v) => setWorkType(v as BookType)}>
                   <SelectTrigger className="w-full"><SelectValue placeholder="选择类型" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="novel">普通小说</SelectItem>
-                    <SelectItem value="visual">画面互动小说</SelectItem>
+                    <SelectItem value="novel">小说</SelectItem>
+                    <SelectItem value="visual">互动IP</SelectItem>
+                    <SelectItem value="dialogue">对话小说</SelectItem>
                     <SelectItem value="comic">漫画</SelectItem>
                   </SelectContent>
                 </Select>
@@ -180,8 +182,10 @@ export default function CreatorPage() {
   }
 
   const uploadEntries = [
-    { to: '/creator/upload-novel', icon: PenLine, label: '上传普通小说', desc: '章节文字，连载或完结' },
-    { to: '/creator/upload-visual', icon: MessageSquareText, label: '上传互动小说', desc: '场景 + 分支 + 多结局' },
+    { to: '/creator/upload-novel', icon: PenLine, label: '上传小说', desc: '章节文字，连载或完结' },
+    { to: '/creator/upload-visual', icon: MessageSquareText, label: '上传互动IP', desc: '场景 + 分支 + 多结局' },
+    { to: '/creator/upload-dialogue', icon: MessagesSquare, label: '上传对话小说', desc: '聊天气泡推进剧情' },
+    { to: '/creator/upload-game', icon: Gamepad2, label: '游戏上架', desc: '选试玩模板，读者直接开玩' },
     { to: '/creator/upload-comic', icon: Images, label: '上传漫画', desc: '分镜页面，一话一话' },
     ...(user.role === 'admin' ? [{ to: '/creator/upload-anime', icon: Clapperboard, label: '上传动漫视频', desc: '管理员专属，上传直接上架' }] : []),
   ];
@@ -378,11 +382,9 @@ export default function CreatorPage() {
                         查看
                       </Button>
                     )}
-                    {(book.type === 'novel' || book.type === 'visual' || book.type === 'comic' || book.type === 'anime') && (
-                      <Button size="sm" variant="ghost" onClick={() => navigate(`/creator/upload-${book.type}?edit=${book.id}`)}>
-                        <PencilLine className="mr-1 h-3.5 w-3.5" /> 编辑
-                      </Button>
-                    )}
+                    <Button size="sm" variant="ghost" onClick={() => navigate(`/creator/upload-${book.type}?edit=${book.id}`)}>
+                      <PencilLine className="mr-1 h-3.5 w-3.5" /> 编辑
+                    </Button>
                     {statusBtn(book)}
                     <Button size="icon" variant="ghost" aria-label="删除" onClick={() => setToDelete(book)}>
                       <Trash2 className="h-4 w-4 text-destructive" />

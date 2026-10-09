@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { IApplicant } from '@/lib/types';
 
-const TYPE_LABEL: Record<string, string> = { novel: '普通小说', visual: '互动小说', comic: '漫画', anime: '动漫视频' };
+const TYPE_LABEL: Record<string, string> = { novel: '小说', visual: '互动IP', comic: '漫画', anime: '动漫', dialogue: '对话小说', game: '游戏' };
 
 function fmtTime(iso: string): string {
   try {

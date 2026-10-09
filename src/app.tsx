@@ -14,6 +14,10 @@ const ReaderPage = lazy(() => import('@/pages/ReaderPage/ReaderPage'));
 const VisualPage = lazy(() => import('@/pages/VisualPage/VisualPage'));
 const ComicPage = lazy(() => import('@/pages/ComicPage/ComicPage'));
 const AnimePage = lazy(() => import('@/pages/AnimePage/AnimePage'));
+const DialoguePage = lazy(() => import('@/pages/DialoguePage/DialoguePage'));
+const GamePage = lazy(() => import('@/pages/GamePage/GamePage'));
+const UploadDialoguePage = lazy(() => import('@/pages/UploadDialoguePage/UploadDialoguePage'));
+const UploadGamePage = lazy(() => import('@/pages/UploadGamePage/UploadGamePage'));
 const ShelfPage = lazy(() => import('@/pages/ShelfPage/ShelfPage'));
 const SearchPage = lazy(() => import('@/pages/SearchPage/SearchPage'));
 const AuthPage = lazy(() => import('@/pages/AuthPage/AuthPage'));
@@ -58,6 +62,8 @@ export default function App() {
               <Route path="visual/:bookId" element={<VisualPage />} />
               <Route path="comic/:bookId/:chapterId" element={<ComicPage />} />
               <Route path="anime/:bookId" element={<AnimePage />} />
+              <Route path="dialogue/:bookId/:chapterId" element={<DialoguePage />} />
+              <Route path="game/:bookId" element={<GamePage />} />
               <Route path="shelf" element={<ShelfPage />} />
               <Route path="search" element={<SearchPage />} />
               <Route path="rank" element={<RankPage />} />
@@ -68,6 +74,8 @@ export default function App() {
               <Route path="creator/upload-visual" element={<UploadVisualPage />} />
               <Route path="creator/upload-comic" element={<UploadComicPage />} />
               <Route path="creator/upload-anime" element={<UploadAnimePage />} />
+              <Route path="creator/upload-dialogue" element={<UploadDialoguePage />} />
+              <Route path="creator/upload-game" element={<UploadGamePage />} />
               <Route path="creator/earnings" element={<EarningsPage />} />
               <Route path="feedback" element={<FeedbackPage />} />
               <Route path="support" element={<SupportPage />} />

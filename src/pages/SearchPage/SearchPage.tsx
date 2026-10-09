@@ -38,7 +38,7 @@ export default function SearchPage() {
           placeholder="搜书名、作者、标签，如：馄饨 / 知了 / 悬疑"
           className="flex-1"
         />
-        <Button type="submit" className="gap-1.5">
+        <Button type="submit" className="btn-anime gap-1.5">
           <Search className="h-4 w-4" /> 搜索
         </Button>
       </form>
@@ -52,7 +52,7 @@ export default function SearchPage() {
         </div>
       ) : (
         <div>
-          <p className="mb-3 text-sm text-muted-foreground">找到 {results.length} 部相关作品</p>
+          <p className="mb-3 flex items-center gap-1.5 text-sm text-muted-foreground"><Search className="h-4 w-4" />找到 {results.length} 部相关作品</p>
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-5 sm:gap-4">
             {results.map((book) => (
               <BookCard key={book.id} book={book} />

@@ -1,7 +1,7 @@
 // EXPORTS: HomePage（组件文件）
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, MessageSquareText, BookOpenText, Images, Clapperboard, Flame, Megaphone, LibraryBig, BadgeCheck, LayoutGrid } from 'lucide-react';
+import { ArrowRight, MessageSquareText, BookOpenText, Images, Flame, Megaphone, LibraryBig, BadgeCheck, LayoutGrid, MessagesSquare, Gamepad2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useDataVersion } from '@/hooks/use-data';
 import SceneArt from '@/components/SceneArt';
@@ -17,31 +17,38 @@ import type { BookType, IBook } from '@/lib/types';
 const TYPE_ENTRY = [
   {
     type: 'novel' as BookType,
-    title: '普通小说',
+    title: '小说',
     desc: '沉浸式文字阅读，章节连载，随心追更',
     icon: BookOpenText,
     tile: 'icon-tile-gold',
   },
   {
     type: 'visual' as BookType,
-    title: '画面互动小说',
-    desc: '插画场景 + 画面人物，你的选择决定结局',
+    title: '互动IP',
+    desc: '插画场景 + 剧情分支，你的选择决定结局',
     icon: MessageSquareText,
     tile: 'icon-tile-violet',
   },
   {
-    type: 'comic' as BookType,
-    title: '漫画',
-    desc: '分镜画面，一话一话追下去',
-    icon: Images,
+    type: 'dialogue' as BookType,
+    title: '对话小说',
+    desc: '聊天气泡推进剧情，像追剧一样追消息',
+    icon: MessagesSquare,
     tile: 'icon-tile-pink',
   },
   {
-    type: 'anime' as BookType,
-    title: '动漫视频',
-    desc: '管理员上架，一集一集看',
-    icon: Clapperboard,
+    type: 'comic' as BookType,
+    title: '动漫',
+    desc: '漫画分镜与动画番剧，一话一话追下去',
+    icon: Images,
     tile: 'icon-tile-blue',
+  },
+  {
+    type: 'game' as BookType,
+    title: '游戏上架',
+    desc: '可直接开玩的游戏作品，挑战最好成绩',
+    icon: Gamepad2,
+    tile: 'icon-tile-teal',
   },
 ];
 
@@ -57,7 +64,7 @@ const HOT_GENRES: { label: string; chip: string }[] = [
   { label: '奇幻', chip: 'chip-violet' },
 ];
 
-const PUSH_TYPE_LABEL: Record<string, string> = { novel: '小说', visual: '互动', comic: '漫画', anime: '动漫' };
+const PUSH_TYPE_LABEL: Record<string, string> = { novel: '小说', visual: '互动IP', comic: '漫画', anime: '动漫', dialogue: '对话', game: '游戏' };
 
 type PushItem = { kind: 'notice'; text: string } | { kind: 'book'; book: IBook };
 
@@ -318,7 +325,7 @@ export default function HomePage() {
 
       {/* 分类入口（写意手绘描边 · 微旋错落 · 图标浮动） */}
       <section>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {TYPE_ENTRY.map((e, i) => (
             <Link
               key={e.type}

@@ -101,6 +101,12 @@ function collectRoutePaths(srcDir: string): string[] {
 
 export default defineConfig(({ command }) => ({
   plugins: [react(), tailwindcss(), miaodaOutputPlugin(), sparkJsonPlugin()],
+  // 本地开发：/api 转发到服务端（moying/server，端口 8787）
+  server: {
+    proxy: {
+      '/api': 'http://localhost:8787',
+    },
+  },
   // 生产构建：JS/CSS 引用带 CDN 前缀（无 CDN 时退回 base path）；dev 恒为 /
   base: command === 'build' ? cdnPrefix || basePath : '/',
   define: {

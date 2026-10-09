@@ -12,14 +12,19 @@ import type { BookGenre, BookType } from '@/lib/types';
 import { GENRES } from '@/lib/types';
 
 const TYPE_META: Record<string, { label: string; desc: string }> = {
-  all: { label: '全部作品', desc: '小说、互动、漫画、动漫，一座城都在这' },
-  novel: { label: '普通小说', desc: '沉浸式文字阅读，章节连载' },
-  visual: { label: '画面互动小说', desc: '插画场景 + 剧情分支，选择决定结局' },
-  comic: { label: '漫画', desc: '分镜画面，一话一话追下去' },
+  all: { label: '全部作品', desc: '小说、互动、对话、动漫、游戏，一座城都在这' },
+  novel: { label: '小说', desc: '沉浸式文字阅读，章节连载' },
+  visual: { label: '互动IP', desc: '插画场景 + 剧情分支，你的选择决定结局' },
+  comic: { label: '动漫', desc: '漫画分镜与动画番剧，一话一话追下去' },
+  dialogue: { label: '对话小说', desc: '聊天气泡推进剧情，每条消息都可能是转折' },
+  game: { label: '游戏上架', desc: '可直接试玩的游戏作品，开一局就停不下来' },
   anime: { label: '动漫视频', desc: '动画番剧，管理员独家上传' },
 };
 
 type SortKey = 'hot' | 'new' | 'rating';
+
+/** 题材筛选胶囊色组（与首页 HOT_GENRES 同体系，循环分配） */
+const CHIP_CYCLE = ['chip-violet', 'chip-pink', 'chip-teal', 'chip-blue', 'chip-gold'];
 
 export default function CategoryPage() {
   const { type = 'all' } = useParams();
@@ -51,10 +56,10 @@ export default function CategoryPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-serif text-2xl font-bold">{meta.label}</h1>
+        <h1 className="section-title text-gradient-anime font-serif text-2xl font-bold">{meta.label}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{meta.desc}</p>
         {qSerial === 'finished' && (
-          <Button asChild size="sm" className="mt-2 gap-1.5">
+          <Button asChild size="sm" className="btn-anime mt-2 gap-1.5">
             <Link to="/category/all">
               只看完本 <span className="text-xs opacity-70">✕ 清除</span>
             </Link>
@@ -74,17 +79,22 @@ export default function CategoryPage() {
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button
-          size="sm"
-          variant={genre === 'all' ? 'default' : 'outline'}
+        <button
+          type="button"
           onClick={() => setGenre('all')}
+          className={`chip-grad chip-gold rounded-full px-3.5 py-1.5 text-xs font-medium ${genre === 'all' ? 'ring-2 ring-primary/60' : ''}`}
         >
           全部
-        </Button>
-        {genres.map((g) => (
-          <Button key={g} size="sm" variant={genre === g ? 'default' : 'outline'} onClick={() => setGenre(g)}>
+        </button>
+        {genres.map((g, gi) => (
+          <button
+            key={g}
+            type="button"
+            onClick={() => setGenre(g)}
+            className={`chip-grad ${CHIP_CYCLE[gi % CHIP_CYCLE.length]} rounded-full px-3.5 py-1.5 text-xs font-medium ${genre === g ? 'ring-2 ring-primary/60' : ''}`}
+          >
             {g}
-          </Button>
+          </button>
         ))}
         <div className="ml-auto w-32">
           <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
@@ -116,7 +126,7 @@ export default function CategoryPage() {
               <Link
                 key={book.id}
                 to={to}
-                className="group relative block overflow-hidden rounded-2xl border border-border shadow-[0_14px_30px_-20px_hsl(0_0%_0%/0.55)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_22px_40px_-22px_hsl(0_0%_0%/0.6)]"
+                className="card-anime group relative block overflow-hidden rounded-2xl border border-border shadow-[0_14px_30px_-20px_hsl(0_0%_0%/0.55)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_22px_40px_-22px_hsl(0_0%_0%/0.6)]"
               >
                 <div className={isAnime ? 'aspect-video w-full' : 'aspect-[3/4] w-full'}>
                   <BookCover

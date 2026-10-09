@@ -5,7 +5,7 @@ import type { IBook } from '@/lib/types';
 import BookCover from '@/components/BookCover';
 import { Badge } from '@/components/ui/badge';
 
-const TYPE_LABEL: Record<string, string> = { novel: '小说', visual: '互动', comic: '漫画' };
+const TYPE_LABEL: Record<string, string> = { novel: '小说', visual: '互动IP', comic: '漫画', anime: '动漫', dialogue: '对话', game: '游戏' };
 
 export default function BookCard({ book }: { book: IBook }) {
   return (

@@ -11,7 +11,7 @@ import type {
   IProgress, IShelfEntry, ITx, IWithdrawal, IReview, BookType, BookGenre,
   BookStatus, UserRole, TxKind, ISettings, ISettlement, IAuditLog,
   IWithdrawChannel, ChannelType, IApplicant, IPrivacy, IFeedback, IMessage,
-  CoverStyle, CoverFont, IComment,
+  CoverStyle, CoverFont, IComment, GameKind,
   PaymentProviderId, IPaymentProvider, IPayTransfer,
   ILoginSession, IUserPrefs,
 } from '@/lib/types';
@@ -812,6 +812,7 @@ export const api = {
     description: string; tags: string[]; serial: 'serial' | 'finished';
     chapterPrice: number; authorId: string; authorName: string; status: BookStatus;
     animeKey?: string; coverStyle?: CoverStyle; coverType?: 'svg' | 'image'; coverFont?: CoverFont;
+    gameKind?: GameKind;
   }): IBook {
     // 数据层兜底校验：标题非空、价格非负有限、标签为字符串数组（防页面绕过直接注入脏数据）
     const title = (input.title ?? '').trim();

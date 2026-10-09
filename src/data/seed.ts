@@ -112,6 +112,20 @@ export function buildSeed(): ISeedData {
       tags: ['轻小说', '校园', '星星'], serial: 'serial', words: 920, views: 2710, likes: 168, rating: 4.8,
       createdAt: day(-5), chapterPrice: 10, chapterIds: ['b10c1'], featured: true,
     },
+    {
+      id: 'b-d1', type: 'dialogue', title: '深夜电台的最后一通电话', authorId: 'u-c1', authorName: '知了',
+      genre: '悬疑', status: 'published', coverSeed: 'night-city', coverStyle: 'dark', description:
+        '凌晨的电台只接一通电话。主播阿澄收到的第一通来电，听众正是三年前失踪的前主播本人。以聊天气泡推进的故事，每一条消息都可能是最后一条。',
+      tags: ['对话小说', '悬疑', '电台'], serial: 'serial', words: 420, views: 1980, likes: 96, rating: 4.6,
+      createdAt: day(-3), chapterPrice: 15, chapterIds: ['b-d1c1', 'b-d1c2'],
+    },
+    {
+      id: 'b-g1', type: 'game', title: '墨影翻翻乐', authorId: 'u-c2', authorName: '阿柚',
+      genre: '游戏', status: 'published', coverSeed: 'space', coverStyle: 'anime', description:
+        '以墨影书城经典角色为牌面的翻牌记忆挑战：翻开两张相同即可消除，用最少步数配对全部卡牌。支持反复挑战刷新纪录，通关后去作品区给作者打个赏吧。',
+      tags: ['游戏', '休闲', '记忆挑战'], serial: 'finished', words: 0, views: 3420, likes: 231, rating: 4.7,
+      createdAt: day(-4), chapterPrice: 0, chapterIds: [], gameKind: 'memory',
+    },
   ];
 
   const chapters: IChapter[] = [
@@ -170,6 +184,28 @@ export function buildSeed(): ISeedData {
       id: 'b10c1', bookId: 'b10', index: 1, title: '三分钟', price: 0,
       content:
         '天文社的活动室，在天台角落。门上挂着一块歪了的牌子，写着「天文观测部」，括号里补了一行小字：人少，勿扰。\n\n社长叫林栀，高二，戴一副圆框眼镜。她记数据从来不抄本子，直接写在手背上，写满了就洗掉，再写。\n\n我负责看望远镜。社团经费少，望远镜是二手淘的，镜筒上还贴着上一任社长的名字。据说那位学长毕业后去了天文台，信里说，这台镜子有点毛病：看得远，但记不住时间。\n\n我没当真。\n\n直到那天晚上，林栀忽然把手背伸到我面前，上面画了一排数字，最后一行是「7-13」。\n\n“你看，”她说，“这颗星，今晚升起来的时间，比昨晚早了整整三分钟。”\n\n我凑到目镜前。7-13 亮得很规矩，在猎户座旁边，安安静静。\n\n“会不会是你记错了？”我说。\n\n“我记了三周了。”她说，“每天都早三分钟。不多不少，正好三分钟。”\n\n窗台上，那只猫翻了个身，尾巴尖动了动，没醒。\n\n那晚熄灯前，我躺在床上，算了笔账：三周，每天早三分钟，加起来，这颗星比三周前，提前升起了六十三分钟。\n\n它在靠近。\n\n朝着我们。',
+    },
+    {
+      id: 'b-d1c1', bookId: 'b-d1', index: 1, title: '第一通来电', price: 0,
+      content:
+        '听众|喂……接通了吗？我听了你三年前的最后一期节目。|L\n' +
+        '阿澄|接通了，这里是深夜电台。本台每晚只接一通电话，请问你想点什么歌？|R\n' +
+        '听众|我不点歌。我想问，你桌上的那杯茶，是不是一直没人喝？|L\n' +
+        '阿澄|……你看得见我？|R\n' +
+        '听众|三年前我也坐在那个位置。替我喝了吧，凉了三年了。|L\n' +
+        '阿澄|这个号码查无此人。你到底是谁？|R\n' +
+        '听众|明晚十一点，还是这个号码。我给你讲一个关于"失踪"的故事。|L',
+    },
+    {
+      id: 'b-d1c2', bookId: 'b-d1', index: 2, title: '第二通来电', price: 15,
+      content:
+        '听众|今晚的背景音乐选得不好。那首歌是我写的。|L\n' +
+        '阿澄|歌单是台长三年前锁死的，没人改得了。|R\n' +
+        '听众|锁在系统里的东西，不一定是人放的。查一下歌单的创建时间。|L\n' +
+        '阿澄|……创建时间是三年前的今晚，23:59。|R\n' +
+        '听众|现在，去播音间的门后看。贴着一张便签，是我留给你的最后一条消息。|L\n' +
+        '阿澄|便签上写着："别接下一通电话。"|R\n' +
+        '听众|可惜啊，你现在听到的，就是下一通。|L',
     },
   ];
 

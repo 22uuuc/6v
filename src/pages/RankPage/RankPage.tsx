@@ -11,8 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-const MEDALS = ['text-amber-400', 'text-slate-300', 'text-amber-700'];
-const TYPE_LABEL: Record<string, string> = { novel: '小说', visual: '互动', comic: '漫画', anime: '动漫' };
+const MEDALS = ['bg-amber-400 text-black', 'bg-slate-300 text-black', 'bg-orange-400 text-black'];
+const TYPE_LABEL: Record<string, string> = { novel: '小说', visual: '互动IP', comic: '漫画', anime: '动漫', dialogue: '对话', game: '游戏' };
 
 export default function RankPage() {
   useDataVersion();
@@ -34,7 +34,7 @@ export default function RankPage() {
           <ArrowLeft className="h-4.5 w-4.5" />
         </Button>
         <div>
-          <h1 className="font-serif text-xl font-bold">排行榜</h1>
+          <h1 className="section-title text-gradient-anime font-serif text-xl font-bold">排行榜</h1>
           <p className="text-xs text-muted-foreground">热读 / 新书 / 打赏 · 数据实时统计</p>
         </div>
       </div>
@@ -57,9 +57,9 @@ export default function RankPage() {
                 <Link
                   key={book.id}
                   to={`/book/${book.id}`}
-                  className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/60"
+                  className="card-anime flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-all hover:-translate-y-0.5 hover:border-primary/60"
                 >
-                  <span className={`w-7 shrink-0 text-center font-serif text-lg font-bold ${i < 3 ? MEDALS[i] : 'text-muted-foreground/50'}`}>
+                  <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg font-serif text-sm font-bold shadow ${i < 3 ? MEDALS[i] : 'bg-muted text-muted-foreground/50'}`}>
                     {i + 1}
                   </span>
                   <div className="w-11 shrink-0">

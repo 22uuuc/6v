@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-const TYPE_LABEL: Record<string, string> = { novel: '小说', visual: '互动', comic: '漫画', anime: '动漫' };
+const TYPE_LABEL: Record<string, string> = { novel: '小说', visual: '互动IP', comic: '漫画', anime: '动漫', dialogue: '对话小说', game: '游戏' };
 
 export default function AdminBooks() {
   const navigate = useNavigate();
