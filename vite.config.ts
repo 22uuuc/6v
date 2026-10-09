@@ -116,22 +116,26 @@ export default defineConfig(({ command }) => ({
     outDir: 'dist/client',
     sourcemap: false,
     chunkSizeWarningLimit: 1000,
+    // vite 8（rolldown 内核）已移除 manualChunks，改用等价的 advancedChunks 拆包
+    // （advancedChunks 是 rolldown OutputOptions 字段，须放在 rollupOptions.output 下）
     rollupOptions: {
       output: {
-        manualChunks: {
-          // React 核心运行时
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          // 图表库（体积大，单独拆包）
-          'echarts-vendor': ['echarts', 'echarts-for-react'],
-          'recharts-vendor': ['recharts'],
-          // 动画库
-          'animation-vendor': ['framer-motion', 'gsap', '@gsap/react'],
-          // 表单 & 校验
-          'form-vendor': ['react-hook-form', '@hookform/resolvers', 'zod'],
-          // UI 组件基础
-          'ui-vendor': ['class-variance-authority', 'clsx', 'tailwind-merge', 'sonner'],
-          // 日期 & 工具
-          'util-vendor': ['date-fns', 'qrcode', 'react-markdown', 'remark-gfm'],
+        advancedChunks: {
+          groups: [
+            // React 核心运行时
+            { name: 'react-vendor', test: /[\\/]node_modules[\\/](react|react-dom|react-router-dom)[\\/]/ },
+            // 图表库（体积大，单独拆包；zrender 为 echarts 渲染引擎）
+            { name: 'echarts-vendor', test: /[\\/]node_modules[\\/](echarts|zrender|echarts-for-react)[\\/]/ },
+            { name: 'recharts-vendor', test: /[\\/]node_modules[\\/]recharts[\\/]/ },
+            // 动画库
+            { name: 'animation-vendor', test: /[\\/]node_modules[\\/](framer-motion|gsap|@gsap[\\/]react)[\\/]/ },
+            // 表单 & 校验
+            { name: 'form-vendor', test: /[\\/]node_modules[\\/](react-hook-form|@hookform[\\/]resolvers|zod)[\\/]/ },
+            // UI 组件基础
+            { name: 'ui-vendor', test: /[\\/]node_modules[\\/](class-variance-authority|clsx|tailwind-merge|sonner)[\\/]/ },
+            // 日期 & 工具
+            { name: 'util-vendor', test: /[\\/]node_modules[\\/](date-fns|qrcode|react-markdown|remark-gfm)[\\/]/ },
+          ],
         },
       },
     },
