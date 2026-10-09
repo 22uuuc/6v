@@ -649,97 +649,132 @@ export function personSVG(seed: string, name: string, opts: Opts & { dress?: str
   const r = makeRand(seed);
   const skin = r.pick(['#ffe9d2', '#ffdcbc', '#f7cba6', '#efc095', '#e6b287']);
   const skinShadow = '#d9a06e';
-  const hairColor = r.pick(['#2e2a33', '#4a3527', '#6b4a2f', '#7a2e3a', '#3a2e4a', '#2c4a55', '#8a6a4a']);
-  const hairLight = r.pick(['#6b5a75', '#8a6a4a', '#a5825a', '#b5606a', '#6b5a8a', '#5a7a8a', '#c9a06a']);
+  /* 日漫渐变发色（参考：多彩渐变编发/云海樱吹雪）：sakura 樱粉 / azure 天蓝 / violet 紫藤 / amber 金棕 / mint 青碧 / blush 蜜桃 / pearl 银蓝 / crimson 绯红 */
+  const hairGrads: Array<[string, string]> = [
+    ['#f6c9d8', '#e875a8'], ['#a8d8f0', '#4a8ac9'], ['#c8b0ec', '#7a52c4'],
+    ['#f5d9a0', '#d68a3a'], ['#b5e0cc', '#4a9a78'], ['#f9c4b8', '#e8758a'],
+    ['#dcdcf2', '#8a92d0'], ['#f0b0b0', '#b04a58'],
+  ];
+  const [hairA, hairB] = r.pick(hairGrads);
+  const hairColor = hairB;
+  const hairLight = r.pick(['#fff2e6', '#ffe9f2', '#e8f2ff', '#f2ffe9', '#fffbe8']);
   const eyeColor = r.pick(['#c96a4a', '#5a6a9a', '#8a4a7a', '#4a7a5a', '#7a5a9a', '#4a5a8a']);
   const cloth = r.pick(['#b5453a', '#3f5a7a', '#7a4a6a', '#4a7a6a', '#8a5a2c', '#5a3a7a', '#2e5a7c', '#a06a3a']);
   const cloth2 = r.pick(['#f0d6b0', '#c9d6e0', '#e0c9d6', '#c9e0d6', '#e0c9a0', '#d0c9e0', '#b0c9e0']);
   const hairStyle = opts.hairStyle ?? r.pick(['short', 'long', 'twin', 'bun', 'wave', 'hime', 'pony', 'spiky']);
   const happy = r.next() < 0.35;
-  /* 服饰风格（角色 IP 多元化 · 参考画风）：gufeng 古风交领（狐妖小红娘）/ xiuxian 道袍（从前有座灵剑山）/ modern 现代衬衫（夏目友人帐）/ school 制服外套（灵契）/ yaoxian 妖仙披帛（涂山狐妖）；置于随机序列末位以保持旧 seed 角色完全不变 */
+  /* 服饰风格：gufeng 古风交领（狐妖小红娘）/ xiuxian 道袍（从前有座灵剑山）/ modern 现代衬衫（夏目友人帐）/ school 制服外套（灵契）/ yaoxian 妖仙披帛（涂山狐妖） */
   const dress = opts.dress ?? r.pick(['gufeng', 'xiuxian', 'modern', 'school', 'yaoxian']);
   const hx = (x: number) => Math.round((x / 100) * width);
   const hy = (y: number) => Math.round((y / 125) * height);
   const hz = (z: number) => Math.round(z * (width / 100));
+  const id = `p-${seed.slice(0, 6)}`;
+  const hg = `url(#${id}-hg)`;
 
-  /* ---- 日系动漫画法（狐妖小红娘风）：鹅蛋脸 + 大眼高光 + 腮红 + 精细发型 + 古风交领服饰 ---- */
+  /* 氛围背景（poster 立绘 → 动漫画面，参考图质感）：sky 云海 / sakura 樱花 / halo 光晕，确定性 */
+  let backdrop = '';
+  if (poster) {
+    const ar = makeRand(`${seed}:scene`);
+    const mood = ar.pick(['sky', 'sakura', 'halo', 'sky', 'sakura']);
+    if (mood === 'sky') {
+      let clouds = '';
+      for (let i = 0; i < 4; i++) {
+        const cx = ar.range(10, 210), cy = ar.range(8, 130), cw = ar.range(34, 70);
+        clouds += `<g fill="#fff" opacity="${ar.range(0.25, 0.6).toFixed(2)}"><ellipse cx="${cx.toFixed(0)}" cy="${cy.toFixed(0)}" rx="${cw.toFixed(0)}" ry="${(cw * 0.32).toFixed(0)}"/><ellipse cx="${(cx + cw * 0.35).toFixed(0)}" cy="${(cy - 5).toFixed(0)}" rx="${(cw * 0.5).toFixed(0)}" ry="${(cw * 0.24).toFixed(0)}"/></g>`;
+      }
+      let bubbles = '';
+      for (let i = 0; i < 6; i++) {
+        const bx = ar.range(8, 212), by = ar.range(6, 120), br = ar.range(2, 5);
+        bubbles += `<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="${br.toFixed(1)}" fill="#fff" opacity="${ar.range(0.2, 0.5).toFixed(2)}"/>`;
+      }
+      backdrop = `<rect width="220" height="330" fill="url(#${id}-sky)"/>${clouds}${bubbles}`;
+    } else if (mood === 'sakura') {
+      let petals = '';
+      for (let i = 0; i < 14; i++) {
+        const px = ar.range(6, 214), py = ar.range(4, 200), ps = ar.range(3, 5.5);
+        petals += `<path d="M${px.toFixed(1)} ${py.toFixed(1)} q${(ps * 0.9).toFixed(1)} ${(ps * 0.5).toFixed(1)} 0 ${(ps * 1.2).toFixed(1)} q${(-ps * 0.9).toFixed(1)} ${(ps * 0.5).toFixed(1)} 0 0 Z" fill="#f7b8cd" opacity="${ar.range(0.5, 0.95).toFixed(2)}"/>`;
+      }
+      backdrop = `<rect width="220" height="330" fill="url(#${id}-sakura)"/><g stroke="#d98a9a" stroke-width="2.5" fill="none" opacity="0.7"><path d="M-6 150 Q60 120 96 158"/><path d="M90 156 Q128 132 226 152"/><path d="M196 148 Q206 168 214 182"/></g><g fill="#f7b8cd"><circle cx="88" cy="150" r="4" opacity="0.9"/><circle cx="104" cy="164" r="3.2" opacity="0.8"/><circle cx="118" cy="146" r="2.8" opacity="0.85"/><circle cx="206" cy="158" r="3.6" opacity="0.9"/><circle cx="212" cy="172" r="2.6" opacity="0.8"/></g>${petals}`;
+    } else {
+      let stars = '';
+      for (let i = 0; i < 8; i++) {
+        const sx = ar.range(8, 212), sy = ar.range(6, 150);
+        stars += `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${ar.range(1, 2.6).toFixed(1)}" fill="#fff" opacity="${ar.range(0.4, 0.9).toFixed(2)}"/>`;
+      }
+      backdrop = `<rect width="220" height="330" fill="url(#${id}-halo)"/>${stars}`;
+    }
+  }
 
-  // 鹅蛋脸：额头宽、颧骨圆润、下颌收窄、下巴尖
+  // 鹅蛋脸
   const face = `<path d="M50 26 Q38 26 33 34 Q27 44 27 54 Q27 66 33 74 Q40 82 50 84 Q60 82 67 74 Q73 66 73 54 Q73 44 67 34 Q62 26 50 26 Z" fill="${skin}"/>`;
-  // 耳朵
   const earL = `<path d="M29 46 Q24 52 26 58 Q28 62 32 62 Q33 56 32 50 Z" fill="${skin}"/>`;
   const earR = `<path d="M71 46 Q76 52 74 58 Q72 62 68 62 Q67 56 68 50 Z" fill="${skin}"/>`;
 
-  // 发型：分层刘海 + 侧发 + 高光挑染 + 呆毛/发饰（八种发型，角色 IP 多元化）
+  // 发型：分层刘海 + 侧发 + 高光挑染 + 渐变发色（八种，角色 IP 多元化）
   let hair = '';
   if (hairStyle === 'short') {
-    hair = `<path d="M50 20 Q24 20 20 40 Q18 50 24 48 L24 36 Q30 26 50 26 Q70 26 76 36 L76 48 Q82 50 80 40 Q76 20 50 20 Z" fill="${hairColor}"/>` +
+    hair = `<path d="M50 20 Q24 20 20 40 Q18 50 24 48 L24 36 Q30 26 50 26 Q70 26 76 36 L76 48 Q82 50 80 40 Q76 20 50 20 Z" fill="${hg}"/>` +
       `<path d="M24 36 Q30 28 50 28 Q70 28 76 36 L76 44 Q70 34 50 34 Q30 34 24 44 Z" fill="${hairLight}" opacity="0.5"/>` +
       `<path d="M33 40 Q40 36 47 40 M53 40 Q60 36 67 40" stroke="${hairLight}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.7"/>`;
   } else if (hairStyle === 'long') {
-    hair = `<path d="M50 18 Q22 20 18 42 L18 92 Q18 104 28 104 Q34 88 36 76 Q38 92 44 100 L44 42 Q44 28 50 26 Q56 28 56 42 L56 100 Q62 92 64 76 Q66 88 72 104 Q82 104 82 92 L82 42 Q78 20 50 18 Z" fill="${hairColor}"/>` +
+    hair = `<path d="M50 18 Q22 20 18 42 L18 92 Q18 104 28 104 Q34 88 36 76 Q38 92 44 100 L44 42 Q44 28 50 26 Q56 28 56 42 L56 100 Q62 92 64 76 Q66 88 72 104 Q82 104 82 92 L82 42 Q78 20 50 18 Z" fill="${hg}"/>` +
       `<path d="M28 40 Q30 30 50 28 Q70 30 72 40 L72 48 Q70 36 50 36 Q30 36 28 48 Z" fill="${hairLight}" opacity="0.5"/>` +
       `<path d="M24 44 Q28 36 36 36 M64 36 Q72 36 76 44" stroke="${hairLight}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.7"/>`;
   } else if (hairStyle === 'twin') {
-    hair = `<path d="M50 18 Q22 20 18 40 L18 46 Q24 48 28 42 L28 32 Q36 24 50 24 Q64 24 72 32 L72 42 Q76 48 82 46 L82 40 Q78 20 50 18 Z" fill="${hairColor}"/>` +
-      `<circle cx="20" cy="50" r="13" fill="${hairColor}"/><circle cx="80" cy="50" r="13" fill="${hairColor}"/>` +
+    hair = `<path d="M50 18 Q22 20 18 40 L18 46 Q24 48 28 42 L28 32 Q36 24 50 24 Q64 24 72 32 L72 42 Q76 48 82 46 L82 40 Q78 20 50 18 Z" fill="${hg}"/>` +
+      `<circle cx="20" cy="50" r="13" fill="${hg}"/><circle cx="80" cy="50" r="13" fill="${hg}"/>` +
       `<path d="M20 42 Q18 50 20 58 Q24 60 26 54 Q27 46 26 42 Z" fill="${hairLight}" opacity="0.55"/>` +
       `<path d="M80 42 Q82 50 80 58 Q76 60 74 54 Q73 46 74 42 Z" fill="${hairLight}" opacity="0.55"/>` +
       `<circle cx="20" cy="36" r="4" fill="#f29aa8"/><circle cx="80" cy="36" r="4" fill="#f29aa8"/>` +
       `<path d="M32 36 Q38 30 48 30 M52 30 Q62 30 68 36" stroke="${hairLight}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.7"/>`;
   } else if (hairStyle === 'bun') {
-    hair = `<path d="M50 18 Q22 20 18 40 L18 46 Q24 48 28 42 L28 32 Q36 24 50 24 Q64 24 72 32 L72 42 Q76 48 82 46 L82 40 Q78 20 50 18 Z" fill="${hairColor}"/>` +
-      `<circle cx="50" cy="12" r="9" fill="${hairColor}"/><circle cx="50" cy="12" r="6" fill="${hairLight}" opacity="0.6"/>` +
+    hair = `<path d="M50 18 Q22 20 18 40 L18 46 Q24 48 28 42 L28 32 Q36 24 50 24 Q64 24 72 32 L72 42 Q76 48 82 46 L82 40 Q78 20 50 18 Z" fill="${hg}"/>` +
+      `<circle cx="50" cy="12" r="9" fill="${hg}"/><circle cx="50" cy="12" r="6" fill="${hairLight}" opacity="0.6"/>` +
       `<path d="M30 34 Q36 28 48 28 M52 28 Q64 28 70 34" stroke="${hairLight}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.7"/>` +
       `<path d="M45 12 L52 6 L55 12" fill="${cloth}"/>`;
   } else if (hairStyle === 'hime') {
-    // 姬发式（狐妖/日漫公主头）：齐刘海 + 鬓角 + 呆毛，古风/道袍配发簪
-    hair = `<path d="M50 16 Q20 18 16 40 L16 72 Q22 76 28 70 L28 46 Q34 32 50 30 Q66 32 72 46 L72 70 Q78 76 84 72 L84 40 Q80 18 50 16 Z" fill="${hairColor}"/>` +
-      `<path d="M18 38 Q22 26 50 24 Q78 26 82 38 L82 44 Q78 32 50 32 Q22 32 18 44 Z" fill="${hairColor}"/>` +
+    hair = `<path d="M50 16 Q20 18 16 40 L16 72 Q22 76 28 70 L28 46 Q34 32 50 30 Q66 32 72 46 L72 70 Q78 76 84 72 L84 40 Q80 18 50 16 Z" fill="${hg}"/>` +
+      `<path d="M18 38 Q22 26 50 24 Q78 26 82 38 L82 44 Q78 32 50 32 Q22 32 18 44 Z" fill="${hg}"/>` +
       `<path d="M24 40 Q28 30 50 30 Q72 30 76 40 L76 46 Q72 38 50 38 Q28 38 24 46 Z" fill="${hairLight}" opacity="0.45"/>` +
       `<path d="M50 12 Q55 16 50 21" stroke="${hairColor}" stroke-width="2.5" fill="none" stroke-linecap="round"/>` +
       `<path d="M34 34 Q40 28 50 28 M58 28 Q64 32 68 38" stroke="${hairLight}" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.6"/>` +
       (dress === 'gufeng' || dress === 'xiuxian' ? `<path d="M64 24 L74 15" stroke="#cbb37a" stroke-width="2.5" stroke-linecap="round"/>` : '');
   } else if (hairStyle === 'pony') {
-    // 侧马尾（现代元气）：右马尾 + 蝴蝶结 + 呆毛
-    hair = `<path d="M50 18 Q24 20 20 42 L20 48 Q26 50 30 44 L30 34 Q36 26 50 26 Q64 26 72 34 L74 52 Q78 52 80 48 L78 42 Q76 20 50 18 Z" fill="${hairColor}"/>` +
-      `<path d="M74 40 Q80 50 76 62 Q84 58 84 68 L78 72 Q76 60 70 56 Q78 50 74 40 Z" fill="${hairColor}"/>` +
+    hair = `<path d="M50 18 Q24 20 20 42 L20 48 Q26 50 30 44 L30 34 Q36 26 50 26 Q64 26 72 34 L74 52 Q78 52 80 48 L78 42 Q76 20 50 18 Z" fill="${hg}"/>` +
+      `<path d="M74 40 Q80 50 76 62 Q84 58 84 68 L78 72 Q76 60 70 56 Q78 50 74 40 Z" fill="${hg}"/>` +
       `<path d="M78 54 Q82 62 79 68" stroke="${hairLight}" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.55"/>` +
       `<circle cx="78" cy="47" r="4.5" fill="#f29aa8"/><circle cx="78" cy="47" r="1.8" fill="#fff" opacity="0.7"/>` +
       `<path d="M50 14 Q54 17 50 21" stroke="${hairColor}" stroke-width="2.5" fill="none" stroke-linecap="round"/>` +
       `<path d="M32 34 Q40 28 50 28 M60 28 Q66 32 68 38" stroke="${hairLight}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.7"/>`;
   } else if (hairStyle === 'spiky') {
-    // 短发刺猬（少年感）：刺尖 + 前额碎发
-    hair = `<path d="M50 18 Q28 18 24 34 L20 46 Q24 48 28 44 L30 34 Q38 24 50 24 Q62 24 70 34 L72 44 Q76 48 80 46 L76 34 Q72 18 50 18 Z" fill="${hairColor}"/>` +
+    hair = `<path d="M50 18 Q28 18 24 34 L20 46 Q24 48 28 44 L30 34 Q38 24 50 24 Q62 24 70 34 L72 44 Q76 48 80 46 L76 34 Q72 18 50 18 Z" fill="${hg}"/>` +
       `<path d="M36 22 L33 12 L42 19 M50 20 L50 10 L58 19 M64 21 L67 11 L72 22" stroke="${hairColor}" stroke-width="3" fill="none" stroke-linecap="round"/>` +
       `<path d="M34 34 Q40 28 50 28 Q60 28 66 34 L66 42 Q58 36 50 36 Q42 36 34 42 Z" fill="${hairLight}" opacity="0.45"/>` +
       `<path d="M30 36 Q36 30 44 30 M58 30 Q64 32 68 38" stroke="${hairLight}" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.7"/>`;
   } else {
-    // wave 波浪长发 + 呆毛
-    hair = `<path d="M50 18 Q16 24 16 46 Q18 50 22 46 Q24 30 50 30 Q76 30 78 46 Q82 50 84 46 Q84 24 50 18 Z" fill="${hairColor}"/>` +
-      `<path d="M28 34 Q24 42 26 50 Q30 44 34 46 Q36 38 34 34 Z" fill="${hairColor}" opacity="0.9"/>` +
-      `<path d="M72 34 Q76 42 74 50 Q70 44 66 46 Q64 38 66 34 Z" fill="${hairColor}" opacity="0.9"/>` +
+    hair = `<path d="M50 18 Q16 24 16 46 Q18 50 22 46 Q24 30 50 30 Q76 30 78 46 Q82 50 84 46 Q84 24 50 18 Z" fill="${hg}"/>` +
+      `<path d="M28 34 Q24 42 26 50 Q30 44 34 46 Q36 38 34 34 Z" fill="${hg}" opacity="0.9"/>` +
+      `<path d="M72 34 Q76 42 74 50 Q70 44 66 46 Q64 38 66 34 Z" fill="${hg}" opacity="0.9"/>` +
       `<path d="M50 28 Q56 36 54 44 Q62 40 66 50 Q58 48 56 56 Q52 48 50 54 Z" fill="${hairLight}" opacity="0.7"/>` +
       `<path d="M36 32 Q32 40 34 48" stroke="${hairLight}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.6"/>` +
       `<path d="M50 12 Q54 16 50 20" stroke="${hairColor}" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
   }
 
-  // 日系大眼：白底 + 虹膜 + 瞳孔 + 双层高光 + 上眼线 + 下眼线
+  // 日系大眼：渐变虹膜 + 双层高光 + 上眼线 + 下眼线 + 卧蚕亮线
   const eye = (cx: number) =>
     `<path d="M${cx - 8} 50 Q${cx} 44 ${cx + 8} 50 Q${cx} 56 ${cx - 8} 50 Z" fill="#fff"/>` +
-    `<ellipse cx="${cx}" cy="50" rx="6" ry="5.4" fill="${eyeColor}"/>` +
+    `<ellipse cx="${cx}" cy="50" rx="6.2" ry="5.6" fill="url(#${id}-eg)"/>` +
     `<circle cx="${cx}" cy="50" r="3.1" fill="#26221f"/>` +
-    `<circle cx="${cx - 2}" cy="48.2" r="1.5" fill="#fff" opacity="0.95"/>` +
-    `<circle cx="${cx + 2.4}" cy="51.6" r="0.8" fill="#fff" opacity="0.7"/>` +
+    `<circle cx="${cx - 2}" cy="48.2" r="1.6" fill="#fff" opacity="0.95"/>` +
+    `<circle cx="${cx + 2.4}" cy="51.6" r="0.9" fill="#fff" opacity="0.7"/>` +
     `<path d="M${cx - 9} 48.5 Q${cx} 42 ${cx + 9} 48.5" stroke="#2a2320" stroke-width="1.6" fill="none" stroke-linecap="round"/>` +
-    `<path d="M${cx - 9.6} 49.5 Q${cx} 56.5 ${cx + 9.6} 49.5" stroke="#2a2320" stroke-width="1.1" fill="none" stroke-linecap="round" opacity="0.55"/>`;
+    `<path d="M${cx - 9.6} 49.5 Q${cx} 56.5 ${cx + 9.6} 49.5" stroke="#2a2320" stroke-width="1.1" fill="none" stroke-linecap="round" opacity="0.55"/>` +
+    `<path d="M${cx - 8.5} 56.2 Q${cx} 58.5 ${cx + 8.5} 56.2" stroke="#fff" stroke-width="0.9" fill="none" stroke-linecap="round" opacity="0.5"/>`;
   const eyes = eye(hx(41)) + eye(hx(59));
 
-  // 细弯眉
   const brow = `<path d="M${hx(35)} ${hy(42)} Q${hx(41)} ${hy(40)} ${hx(47)} ${hy(41.5)}" stroke="#5a4632" stroke-width="${hz(1.7)}" fill="none" stroke-linecap="round"/>` +
     `<path d="M${hx(53)} ${hy(41.5)} Q${hx(59)} ${hy(40)} ${hx(65)} ${hy(42)}" stroke="#5a4632" stroke-width="${hz(1.7)}" fill="none" stroke-linecap="round"/>`;
 
-  // 腮红（日漫标配粉晕）
   const blush = `<ellipse cx="${hx(34)}" cy="${hy(57)}" rx="${hz(5)}" ry="${hz(3)}" fill="#f29aa8" opacity="0.4"/>` +
     `<ellipse cx="${hx(66)}" cy="${hy(57)}" rx="${hz(5)}" ry="${hz(3)}" fill="#f29aa8" opacity="0.4"/>`;
 
@@ -747,28 +782,23 @@ export function personSVG(seed: string, name: string, opts: Opts & { dress?: str
     ? `<path d="M${hx(42)} ${hy(76)} Q${hx(50)} ${hy(82)} ${hx(58)} ${hy(76)}" stroke="#a54a3a" stroke-width="${hz(2.4)}" fill="none" stroke-linecap="round"/><path d="M${hx(47)} ${hy(77)} Q${hx(50)} ${hy(79.5)} ${hx(53)} ${hy(77)}" stroke="#e06a5a" stroke-width="${hz(1.4)}" fill="none"/>`
     : `<path d="M${hx(43)} ${hy(78)} Q${hx(50)} ${hy(75.5)} ${hx(57)} ${hy(78)}" stroke="#a54a3a" stroke-width="${hz(2.4)}" fill="none" stroke-linecap="round"/>`;
 
-  // 服饰：五套画风（gufeng 古风交领·狐妖 / xiuxian 道袍·灵剑山 / modern 现代衬衫·夏目 / school 制服外套·灵契 / yaoxian 妖仙披帛·涂山狐妖）
-  const id = `p-${seed.slice(0, 6)}`;
   const neck = `<path d="M${hx(44)} ${hy(84)} Q${hx(50)} ${hy(88)} ${hx(56)} ${hy(84)} L${hx(56)} ${hy(94)} Q${hx(50)} ${hy(97)} ${hx(44)} ${hy(94)} Z" fill="${skinShadow}"/>`;
   let clothBody = '';
   let collar = '';
   let belt = '';
   let accessory = '';
   if (dress === 'gufeng' || dress === 'yaoxian') {
-    // 古风交领（狐妖小红娘基础款）
     clothBody = `<path d="M${hx(22)} ${hy(92)} Q${hx(50)} ${hy(86)} ${hx(78)} ${hy(92)} L${hx(86)} ${hy(124)} L${hx(14)} ${hy(124)} Z" fill="url(#${id})"/>`;
     collar = `<path d="M${hx(50)} ${hy(90)} L${hx(30)} ${hy(118)} L${hx(50)} ${hy(112)} Z" fill="${cloth2}" opacity="0.85"/>` +
       `<path d="M${hx(50)} ${hy(90)} L${hx(70)} ${hy(118)} L${hx(50)} ${hy(112)} Z" fill="${cloth2}" opacity="0.65"/>`;
     belt = `<path d="M${hx(26)} ${hy(112)} Q${hx(50)} ${hy(108)} ${hx(74)} ${hy(112)} L${hx(74)} ${hy(118)} Q${hx(50)} ${hy(114)} ${hx(26)} ${hy(118)} Z" fill="${cloth2}"/>`;
     if (dress === 'yaoxian') {
-      // 妖仙披帛 + 铃铛（涂山狐妖仙气感）
       accessory = `<path d="M${hx(14)} ${hy(98)} Q${hx(26)} ${hy(90)} ${hx(36)} ${hy(96)} L${hx(32)} ${hy(124)} L${hx(12)} ${hy(122)} Z" fill="${cloth2}" opacity="0.85"/>` +
         `<path d="M${hx(86)} ${hy(98)} Q${hx(74)} ${hy(90)} ${hx(64)} ${hy(96)} L${hx(68)} ${hy(124)} L${hx(88)} ${hy(122)} Z" fill="${cloth2}" opacity="0.85"/>` +
         `<circle cx="${hx(30)}" cy="${hy(123)}" r="${hz(2.2)}" fill="#cbb37a"/>` +
         `<circle cx="${hx(70)}" cy="${hy(123)}" r="${hz(2.2)}" fill="#cbb37a"/>`;
     }
   } else if (dress === 'xiuxian') {
-    // 道袍：大袖 + 斜襟 + 腰带 + 飘带（从前有座灵剑山）
     clothBody = `<path d="M${hx(16)} ${hy(92)} Q${hx(50)} ${hy(84)} ${hx(84)} ${hy(92)} L${hx(92)} ${hy(124)} L${hx(8)} ${hy(124)} Z" fill="url(#${id})"/>` +
       `<path d="M${hx(10)} ${hy(96)} L${hx(16)} ${hy(124)}" stroke="${cloth2}" stroke-width="2" opacity="0.4"/>` +
       `<path d="M${hx(90)} ${hy(96)} L${hx(84)} ${hy(124)}" stroke="${cloth2}" stroke-width="2" opacity="0.4"/>`;
@@ -776,21 +806,19 @@ export function personSVG(seed: string, name: string, opts: Opts & { dress?: str
     belt = `<path d="M${hx(24)} ${hy(110)} Q${hx(50)} ${hy(106)} ${hx(76)} ${hy(110)} L${hx(76)} ${hy(116)} Q${hx(50)} ${hy(112)} ${hx(24)} ${hy(116)} Z" fill="${cloth2}"/>`;
     accessory = `<path d="M${hx(64)} ${hy(112)} Q${hx(78)} ${hy(122)} ${hx(72)} ${hy(124)} Q${hx(62)} ${hy(116)} ${hx(54)} ${hy(114)} Z" fill="${cloth}" opacity="0.85"/>`;
   } else if (dress === 'modern') {
-    // 现代衬衫：圆领 + 门襟 + 扣子（夏目友人帐治愈感）
     clothBody = `<path d="M${hx(22)} ${hy(92)} Q${hx(50)} ${hy(86)} ${hx(78)} ${hy(92)} L${hx(86)} ${hy(124)} L${hx(14)} ${hy(124)} Z" fill="url(#${id})"/>`;
     collar = `<path d="M${hx(50)} ${hy(87)} Q${hx(43)} ${hy(94)} ${hx(43)} ${hy(101)} L${hx(57)} ${hy(101)} Q${hx(57)} ${hy(94)} ${hx(50)} ${hy(87)} Z" fill="${cloth2}"/>` +
       `<path d="M${hx(50)} ${hy(101)} L${hx(50)} ${hy(113)}" stroke="${cloth2}" stroke-width="1.8"/>` +
       `<circle cx="${hx(50)}" cy="${hy(105)}" r="${hz(1.6)}" fill="${cloth2}"/><circle cx="${hx(50)}" cy="${hy(110)}" r="${hz(1.6)}" fill="${cloth2}"/>`;
     belt = '';
   } else {
-    // school 制服外套：西装领 + 领带（灵契现代都市感）
     clothBody = `<path d="M${hx(22)} ${hy(92)} Q${hx(50)} ${hy(86)} ${hx(78)} ${hy(92)} L${hx(86)} ${hy(124)} L${hx(14)} ${hy(124)} Z" fill="url(#${id})"/>`;
     collar = `<path d="M${hx(50)} ${hy(89)} L${hx(36)} ${hy(103)} L${hx(50)} ${hy(99)} L${hx(64)} ${hy(103)} Z" fill="${cloth2}" opacity="0.9"/>` +
       `<path d="M${hx(46)} ${hy(100)} L${hx(54)} ${hy(100)} L${hx(50)} ${hy(112)} Z" fill="#c96a4a"/>`;
     belt = `<path d="M${hx(26)} ${hy(112)} Q${hx(50)} ${hy(108)} ${hx(74)} ${hy(112)} L${hx(74)} ${hy(118)} Q${hx(50)} ${hy(114)} ${hx(26)} ${hy(118)} Z" fill="${cloth2}"/>`;
   }
+
   if (poster) {
-    // 立绘模式（漫画平台式）：透明底 + 居中上移 + 底部融入渐变 + 地面阴影 + 和风名牌 + 浮空光点
     const fadeId = `${id}-fade`;
     const pr = makeRand(`${seed}:poster`);
     let dots = '';
@@ -804,7 +832,8 @@ export function personSVG(seed: string, name: string, opts: Opts & { dress?: str
     const tx = Math.round((220 - width) / 2);
     const body = `<g transform="translate(${tx} 20)">${clothBody}${collar}${belt}${accessory}${neck}${earL}${earR}${face}${hair}${eyes}${brow}${blush}${mouth}</g>`;
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 330" width="100%" height="100%">
-<defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${cloth}"/><stop offset="100%" stop-color="${cloth2}"/></linearGradient><linearGradient id="${fadeId}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(30,20,40,0)"/><stop offset="100%" stop-color="rgba(30,20,40,0.4)"/></linearGradient></defs>
+<defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${cloth}"/><stop offset="100%" stop-color="${cloth2}"/></linearGradient><linearGradient id="${id}-hg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${hairA}"/><stop offset="100%" stop-color="${hairB}"/></linearGradient><linearGradient id="${id}-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#cfe8f7"/><stop offset="55%" stop-color="#e8f6fc"/><stop offset="100%" stop-color="#ffffff"/></linearGradient><linearGradient id="${id}-sakura" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#dff0fa"/><stop offset="70%" stop-color="#ffffff"/></linearGradient><radialGradient id="${id}-halo" cx="50%" cy="38%" r="75%"><stop offset="0%" stop-color="#fff3dd"/><stop offset="60%" stop-color="#ffe9d2"/><stop offset="100%" stop-color="#fce4c8"/></radialGradient><radialGradient id="${id}-eg" cx="50%" cy="45%" r="65%"><stop offset="0%" stop-color="${eyeColor}"/><stop offset="100%" stop-color="#3a2a35"/></radialGradient><linearGradient id="${fadeId}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(30,20,40,0)"/><stop offset="100%" stop-color="rgba(30,20,40,0.4)"/></linearGradient></defs>
+${backdrop}
 ${dots}
 ${body}
 <rect x="0" y="196" width="220" height="134" fill="url(#${fadeId})"/>
@@ -813,7 +842,7 @@ ${body}
 </svg>`;
   }
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" height="100%">
-<defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${cloth}"/><stop offset="100%" stop-color="${cloth2}"/></linearGradient></defs>
+<defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${cloth}"/><stop offset="100%" stop-color="${cloth2}"/></linearGradient><linearGradient id="${id}-hg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${hairA}"/><stop offset="100%" stop-color="${hairB}"/></linearGradient><radialGradient id="${id}-eg" cx="50%" cy="45%" r="65%"><stop offset="0%" stop-color="${eyeColor}"/><stop offset="100%" stop-color="#3a2a35"/></radialGradient></defs>
 ${clothBody}
 ${collar}
 ${belt}
