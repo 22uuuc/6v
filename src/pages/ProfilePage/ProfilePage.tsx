@@ -276,7 +276,7 @@ export default function ProfilePage() {
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[hsl(275_84%_62%/0.2)] to-[hsl(199_100%_48%/0.2)] font-serif text-lg font-bold text-primary">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[hsl(9_88%_52%/0.18)] to-[hsl(12_92%_60%/0.18)] font-serif text-lg font-bold text-primary">
               Lv.{user.level}
             </span>
             <div className="min-w-0 flex-1">
@@ -285,7 +285,7 @@ export default function ProfilePage() {
                 {user.level >= 6 && <span className="ml-2 text-xs text-primary">已满级</span>}
               </p>
               <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
-                <div className="h-full rounded-full bg-gradient-to-r from-[hsl(275_84%_62%)] to-[hsl(199_100%_48%)] transition-all" style={{ width: `${levelProgress}%` }} />
+                <div className="h-full rounded-full bg-gradient-to-r from-[hsl(9_88%_52%)] to-[hsl(12_92%_60%)] transition-all" style={{ width: `${levelProgress}%` }} />
               </div>
               <p className="mt-1 text-[11px] text-muted-foreground">
                 {nextLevel

@@ -140,7 +140,7 @@ export default function CategoryPage() {
                   {isAnime ? '▶ 动漫' : '漫画'}
                 </span>
                 {book.rating >= 4.5 && (
-                  <span className="absolute right-2 top-2 rounded-md bg-[hsl(333_92%_66%)]/90 px-1.5 py-0.5 text-[10px] font-bold text-white shadow">
+                  <span className="absolute right-2 top-2 rounded-md bg-[hsl(12_92%_60%)]/90 px-1.5 py-0.5 text-[10px] font-bold text-white shadow">
                     {book.rating.toFixed(1)} 分
                   </span>
                 )}

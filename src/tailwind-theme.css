@@ -9,54 +9,56 @@
   --elevate-1: rgba(255,255,255, .04);
   --elevate-2: rgba(255,255,255, .09);
 
-  /* 墨影书城 · 霓虹漫夜 · 二次元书城
-     基底：深紫蓝夜 | 主色：B站粉 | 点缀：电光蓝（参考 B站/腾讯动漫/漫画台） */
-  --background: hsl(240 26% 8%);
-  --foreground: hsl(42 30% 94%);
-  --card: hsl(238 22% 12%);
-  --card-foreground: hsl(42 30% 94%);
-  --card-border: hsl(235 16% 22%);
-  --popover: hsl(238 22% 13%);
-  --popover-foreground: hsl(42 30% 94%);
-  --primary: hsl(343 94% 72%);
-  --primary-foreground: hsl(235 30% 8%);
-  --secondary: hsl(240 14% 18%);
-  --secondary-foreground: hsl(42 30% 94%);
-  --muted: hsl(240 12% 16%);
-  --muted-foreground: hsl(42 14% 62%);
-  --accent: hsl(199 100% 48%);
-  --accent-foreground: hsl(235 30% 8%);
-  --info: hsl(343 94% 72%);
-  --info-foreground: hsl(235 30% 8%);
-  --destructive: hsl(2 72% 56%);
+  /* 墨影书城 · 日系漫感 · 治愈纸漫（v2）
+     基底：暖白纸感（番茄/七猫式阅读舒适）| 主色：国漫朱砂红→暖橙 | 点缀：天青/玫粉
+     画风参考：夏目友人帐（治愈淡彩）/ 灵契 / 从前有座灵剑山 / 狐妖小红娘（国漫 IP）
+     UI 参考：B站 / 漫画台 / 腾讯动漫 / 爱奇艺（二次元软件体系） */
+  --background: hsl(40 33% 97%);
+  --foreground: hsl(24 24% 14%);
+  --card: hsl(42 40% 99%);
+  --card-foreground: hsl(24 24% 14%);
+  --card-border: hsl(36 18% 88%);
+  --popover: hsl(42 40% 99%);
+  --popover-foreground: hsl(24 24% 14%);
+  --primary: hsl(9 88% 55%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(30 30% 93%);
+  --secondary-foreground: hsl(24 24% 22%);
+  --muted: hsl(36 22% 94%);
+  --muted-foreground: hsl(24 12% 45%);
+  --accent: hsl(190 70% 40%);
+  --accent-foreground: hsl(0 0% 100%);
+  --info: hsl(9 88% 55%);
+  --info-foreground: hsl(0 0% 100%);
+  --destructive: hsl(2 72% 52%);
   --destructive-foreground: hsl(0 0% 100%);
-  --success: hsl(140 45% 46%);
-  --success-foreground: hsl(115 77% 97%);
-  --warning: hsl(26 90% 49%);
+  --success: hsl(150 50% 42%);
+  --success-foreground: hsl(115 60% 97%);
+  --warning: hsl(30 95% 48%);
   --warning-foreground: hsl(33 100% 96%);
-  --border: hsl(235 16% 24%);
-  --input: hsl(235 16% 28%);
-  --ring: hsl(343 94% 72%);
-  --chart-1: #FB7299;
-  --chart-2: #00AEEC;
-  --chart-3: #9B6BFF;
+  --border: hsl(36 16% 87%);
+  --input: hsl(36 16% 84%);
+  --ring: hsl(9 88% 55%);
+  --chart-1: #E85B3F;
+  --chart-2: #2BA8C9;
+  --chart-3: #A66BF0;
   --chart-4: #FFB43A;
-  --chart-5: #6DE3C0;
-  --sidebar: hsl(240 24% 10%);
-  --sidebar-foreground: hsl(42 30% 94%);
-  --sidebar-primary: hsl(343 94% 72%);
-  --sidebar-primary-foreground: hsl(235 30% 8%);
-  --sidebar-accent: hsl(240 12% 17%);
-  --sidebar-accent-foreground: hsl(42 30% 94%);
-  --sidebar-border: hsl(235 16% 21%);
-  --sidebar-ring: hsl(343 94% 72%);
+  --chart-5: #4FC99B;
+  --sidebar: hsl(38 30% 96%);
+  --sidebar-foreground: hsl(24 24% 14%);
+  --sidebar-primary: hsl(9 88% 55%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(30 26% 91%);
+  --sidebar-accent-foreground: hsl(24 24% 22%);
+  --sidebar-border: hsl(36 16% 86%);
+  --sidebar-ring: hsl(9 88% 55%);
 
   /* Computed borders using hsl relative color syntax */
-  --primary-border: hsl(from hsl(343 94% 72%) h s calc(l + var(--opaque-button-border-intensity)));
-  --secondary-border: hsl(from hsl(240 14% 18%) h s calc(l + var(--opaque-button-border-intensity)));
+  --primary-border: hsl(from hsl(9 88% 55%) h s calc(l + var(--opaque-button-border-intensity)));
+  --secondary-border: hsl(from hsl(30 30% 93%) h s calc(l + var(--opaque-button-border-intensity)));
   --destructive-border: hsl(from hsl(2 72% 56%) h s calc(l + var(--opaque-button-border-intensity)));
-  --accent-border: hsl(from hsl(199 100% 48%) h s calc(l + var(--opaque-button-border-intensity)));
-  --muted-border: hsl(from hsl(240 12% 16%) h s calc(l + var(--opaque-button-border-intensity)));
+  --accent-border: hsl(from hsl(190 70% 40%) h s calc(l + var(--opaque-button-border-intensity)));
+  --muted-border: hsl(from hsl(36 22% 94%) h s calc(l + var(--opaque-button-border-intensity)));
   --font-sans:
     'LarkHackSafariFont', 'LarkEmojiFont', 'LarkChineseQuote', '-apple-system',
     'BlinkMacSystemFont', 'Helvetica Neue', 'Tahoma', 'PingFang SC',
@@ -165,33 +167,33 @@
   }
 
   body {
-    /* 深夜书城 · 动漫质感：星尘光晕 + 纸张噪点纹理 */
+    /* 日系漫感 · 治愈纸漫：暖白纸感 + 极淡朱红/天青/蜜桃光晕 + 纸张噪点纹理 */
     background-color: var(--background);
     background-image:
-      radial-gradient(1100px 520px at 82% -12%, hsl(343 94% 72% / 0.08), transparent 62%),
-      radial-gradient(900px 520px at -12% 22%, hsl(235 60% 38% / 0.3), transparent 62%),
-      radial-gradient(760px 420px at 50% 115%, hsl(199 100% 48% / 0.06), transparent 62%),
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.028'/%3E%3C/svg%3E");
+      radial-gradient(1000px 460px at 84% -10%, hsl(12 92% 62% / 0.07), transparent 62%),
+      radial-gradient(860px 480px at -10% 18%, hsl(190 70% 45% / 0.06), transparent 62%),
+      radial-gradient(720px 400px at 50% 118%, hsl(330 70% 68% / 0.06), transparent 62%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.022'/%3E%3C/svg%3E");
     background-attachment: fixed;
     color: var(--foreground);
   }
 
   ::selection {
-    background-color: hsl(343 94% 72% / 0.35);
+    background-color: hsl(9 88% 55% / 0.26);
     color: var(--foreground);
   }
 
-  /* 卡片质感：细腻金边，动漫插画般柔和 */
+  /* 卡片质感：暖白纸面，动漫插画般柔和 */
   .card-surface {
-    background-image: linear-gradient(160deg, hsl(238 24% 15% / 0.9), hsl(240 22% 11% / 0.92));
+    background-image: linear-gradient(160deg, hsl(42 40% 99.5% / 0.95), hsl(38 32% 97% / 0.96));
     box-shadow:
-      inset 0 1px 0 hsl(343 94% 80% / 0.08),
-      0 10px 30px -12px hsl(0 0% 0% / 0.55);
+      inset 0 1px 0 hsl(12 92% 62% / 0.1),
+      0 10px 30px -14px hsl(24 24% 40% / 0.22);
   }
 
   /* 动漫感：鎏金→朱红渐变标题 */
   .text-gradient-gold {
-    background-image: linear-gradient(100deg, hsl(45 90% 62%), hsl(39 82% 55%) 45%, hsl(6 72% 58%));
+    background-image: linear-gradient(100deg, hsl(28 96% 58%), hsl(18 90% 52%) 45%, hsl(9 88% 48%));
     background-clip: text;
     -webkit-background-clip: text;
     color: transparent;
@@ -203,11 +205,11 @@
   }
   .card-hover-glow:hover {
     transform: translateY(-2px);
-    border-color: hsl(343 94% 72% / 0.5);
+    border-color: hsl(12 92% 60% / 0.5);
     box-shadow:
-      inset 0 1px 0 hsl(343 94% 85% / 0.1),
-      0 0 0 1px hsl(343 94% 72% / 0.2),
-      0 14px 34px -12px hsl(0 0% 0% / 0.6);
+      inset 0 1px 0 hsl(12 92% 62% / 0.12),
+      0 0 0 1px hsl(12 92% 60% / 0.22),
+      0 14px 34px -14px hsl(24 24% 40% / 0.26);
   }
 
   /* 动漫感：柔和入场（轻量、无侵入） */
@@ -223,13 +225,13 @@
 
   /* 滚动条：夜色书脊 */
   ::-webkit-scrollbar { width: 10px; height: 10px; }
-  ::-webkit-scrollbar-track { background: hsl(240 24% 10%); }
+  ::-webkit-scrollbar-track { background: hsl(38 26% 93%); }
   ::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, hsl(343 94% 72% / 0.5), hsl(240 16% 24%));
+    background: linear-gradient(180deg, hsl(12 92% 62% / 0.55), hsl(190 70% 45% / 0.35));
     border-radius: 8px;
-    border: 2px solid hsl(240 24% 10%);
+    border: 2px solid hsl(38 26% 93%);
   }
-  ::-webkit-scrollbar-thumb:hover { background: hsl(343 94% 72% / 0.75); }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(12 92% 58% / 0.8); }
 
   /* 星尘漂浮粒子（Hero 画境用） */
   @keyframes moying-drift {
@@ -241,28 +243,28 @@
   .star-drift {
     position: absolute;
     border-radius: 9999px;
-    background: hsl(45 90% 75%);
-    box-shadow: 0 0 8px 1px hsl(45 90% 70% / 0.7);
+    background: hsl(12 92% 66%);
+    box-shadow: 0 0 8px 1px hsl(12 92% 60% / 0.6);
     animation: moying-drift 7s linear infinite;
     pointer-events: none;
   }
 
   /* 主按钮：鎏金渐变 + 微光（Hero / 关键 CTA 用） */
   .btn-gold {
-    background-image: linear-gradient(120deg, hsl(343 94% 76%), hsl(343 94% 66%) 55%, hsl(330 84% 60%));
+    background-image: linear-gradient(120deg, hsl(14 94% 62%), hsl(9 88% 54%) 55%, hsl(338 82% 56%));
     background-size: 150% 100%;
     background-position: 0% 0%;
-    color: hsl(235 30% 8%);
+    color: #fff;
     box-shadow:
-      inset 0 1px 0 hsl(343 100% 90% / 0.55),
-      0 6px 18px -6px hsl(343 94% 72% / 0.55);
+      inset 0 1px 0 hsl(20 100% 92% / 0.5),
+      0 6px 18px -6px hsl(12 92% 58% / 0.5);
     transition: background-position 0.35s ease, box-shadow 0.25s ease, transform 0.2s ease;
   }
   .btn-gold:hover {
     background-position: 100% 0%;
     box-shadow:
-      inset 0 1px 0 hsl(343 100% 90% / 0.6),
-      0 10px 24px -6px hsl(343 94% 72% / 0.7);
+      inset 0 1px 0 hsl(20 100% 92% / 0.55),
+      0 10px 24px -6px hsl(12 92% 56% / 0.65);
     transform: translateY(-1px);
   }
   .btn-gold:active { transform: translateY(0); }
@@ -278,19 +280,19 @@
   .reading-article p:first-of-type::first-letter {
     font-size: 1.7em;
     font-weight: 600;
-    color: hsl(343 94% 72%);
+    color: hsl(9 88% 52%);
     margin-right: 0.08em;
     line-height: 1;
   }
 
   /* 底部导航玻璃拟态（backdrop-filter 每帧重采样背后动画层，半径必须小） */
   .glass-nav {
-    background: hsl(240 26% 9% / 0.8);
+    background: hsl(40 33% 98% / 0.82);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     box-shadow:
-      inset 0 1px 0 hsl(343 94% 80% / 0.1),
-      0 -8px 30px -12px hsl(0 0% 0% / 0.6);
+      inset 0 1px 0 hsl(12 92% 62% / 0.14),
+      0 -8px 30px -12px hsl(24 24% 40% / 0.18);
   }
 
   /* 导航激活胶囊 */
@@ -306,7 +308,7 @@
     height: 2px;
     width: 18px;
     border-radius: 9999px;
-    background: linear-gradient(90deg, transparent, hsl(39 82% 58%), transparent);
+    background: linear-gradient(90deg, transparent, hsl(12 92% 58%), transparent);
   }
 
   /* 书封悬停：上浮 + 主色流光描边 + 封面微缩放（动漫海报质感） */
@@ -366,8 +368,8 @@
     height: 1.1em;
     width: 3px;
     border-radius: 9999px;
-    background: linear-gradient(180deg, hsl(45 92% 62%), hsl(6 72% 58%));
-    box-shadow: 0 0 8px hsl(39 82% 55% / 0.5);
+    background: linear-gradient(180deg, hsl(28 96% 58%), hsl(9 88% 50%));
+    box-shadow: 0 0 8px hsl(12 92% 56% / 0.45);
   }
 
   /* 禁止生硬：可交互元素统一柔和过渡 */
@@ -446,7 +448,7 @@
 
   /* 粉紫渐变标题：番剧海报感 */
   .text-gradient-anime {
-    background-image: linear-gradient(100deg, hsl(333 92% 66%), hsl(275 84% 68%) 55%, hsl(220 90% 66%));
+    background-image: linear-gradient(100deg, hsl(12 92% 58%), hsl(22 96% 52%) 55%, hsl(330 82% 58%));
     background-clip: text;
     -webkit-background-clip: text;
     color: transparent;
@@ -455,48 +457,48 @@
 
   /* 粉紫主按钮：B 站风 CTA */
   .btn-anime {
-    background-image: linear-gradient(120deg, hsl(333 92% 66%), hsl(275 84% 64%) 55%, hsl(215 90% 62%));
+    background-image: linear-gradient(120deg, hsl(14 94% 60%), hsl(9 88% 52%) 55%, hsl(338 82% 54%));
     background-size: 150% 100%;
     background-position: 0% 0%;
     color: #fff;
     box-shadow:
-      inset 0 1px 0 hsl(300 100% 88% / 0.5),
-      0 6px 18px -6px hsl(275 84% 64% / 0.55);
+      inset 0 1px 0 hsl(20 100% 92% / 0.5),
+      0 6px 18px -6px hsl(12 92% 56% / 0.5);
     transition: background-position 0.35s ease, box-shadow 0.25s ease, transform 0.2s ease;
   }
   .btn-anime:hover {
     background-position: 100% 0%;
     box-shadow:
-      inset 0 1px 0 hsl(300 100% 88% / 0.55),
-      0 10px 24px -6px hsl(275 84% 64% / 0.7);
+      inset 0 1px 0 hsl(20 100% 92% / 0.55),
+      0 10px 24px -6px hsl(12 92% 56% / 0.65);
     transform: translateY(-1px);
   }
   .btn-anime:active { transform: translateY(0); }
 
   /* 分区入口图标底：粉紫渐变圆片 */
   .icon-chip-anime {
-    background-image: linear-gradient(135deg, hsl(333 92% 66%), hsl(275 84% 62%));
+    background-image: linear-gradient(135deg, hsl(14 94% 60%), hsl(9 88% 50%));
     color: #fff;
-    box-shadow: 0 6px 16px -6px hsl(275 84% 64% / 0.6);
+    box-shadow: 0 6px 16px -6px hsl(12 92% 56% / 0.55);
   }
 
   /* 逛书城 tab：激活态粉紫渐变胶囊（动漫平台分区感） */
   [data-slot="tabs-trigger"][data-state="active"] {
-    background-image: linear-gradient(120deg, hsl(333 92% 66%), hsl(275 84% 64%));
+    background-image: linear-gradient(120deg, hsl(14 94% 60%), hsl(9 88% 50%));
     color: #fff !important;
     border-color: transparent !important;
-    box-shadow: 0 4px 14px -4px hsl(275 84% 64% / 0.55) !important;
+    box-shadow: 0 4px 14px -4px hsl(12 92% 56% / 0.5) !important;
   }
 
   /* 导航激活节线：粉→紫 */
   .nav-pill.is-active::after {
-    background: linear-gradient(90deg, transparent, hsl(333 92% 66%), hsl(220 90% 66%), transparent);
+    background: linear-gradient(90deg, transparent, hsl(12 92% 60%), hsl(190 70% 46%), transparent);
   }
 
   /* 区块标题小节线：粉紫 */
   .section-title::before {
-    background: linear-gradient(180deg, hsl(333 92% 66%), hsl(275 84% 64%));
-    box-shadow: 0 0 8px hsl(275 84% 64% / 0.5);
+    background: linear-gradient(180deg, hsl(12 92% 60%), hsl(190 70% 46%));
+    box-shadow: 0 0 8px hsl(12 92% 56% / 0.4);
   }
 
   /* 动漫平台光斑：局部粉紫氛围 */
@@ -505,8 +507,8 @@
     inset: 0;
     pointer-events: none;
     background:
-      radial-gradient(600px 300px at 90% -10%, hsl(333 92% 66% / 0.14), transparent 60%),
-      radial-gradient(500px 260px at -5% 30%, hsl(220 90% 66% / 0.12), transparent 60%);
+      radial-gradient(600px 300px at 90% -10%, hsl(12 92% 60% / 0.1), transparent 60%),
+      radial-gradient(500px 260px at -5% 30%, hsl(190 70% 45% / 0.08), transparent 60%);
   }
 
   /* ===== 动漫氛围层（构成感，非配色）：极光 + 飘落光点 + 流光卡 + 彩色胶囊 ===== */
@@ -529,16 +531,16 @@
     /* 性能关键：禁用 filter:blur（62vmax 大层 + 动画 = 每帧重栅格化，严重卡顿），
        柔边烘进渐变 falloff，动画仅剩 transform 合成，GPU 近零成本 */
     background-repeat: no-repeat;
-    opacity: 0.16;
+    opacity: 0.12;
     will-change: transform;
     animation: anime-aurora 26s ease-in-out infinite alternate;
   }
   .anime-atmosphere::before {
     background-image: radial-gradient(
       circle,
-      hsl(262 62% 60% / 0.85) 0%,
-      hsl(262 62% 60% / 0.4) 32%,
-      hsl(262 62% 60% / 0.12) 52%,
+      hsl(340 70% 74% / 0.8) 0%,
+      hsl(340 70% 74% / 0.35) 32%,
+      hsl(340 70% 74% / 0.1) 52%,
       transparent 70%
     );
     top: -20vmax;
@@ -547,9 +549,9 @@
   .anime-atmosphere::after {
     background-image: radial-gradient(
       circle,
-      hsl(330 72% 58% / 0.85) 0%,
-      hsl(330 72% 58% / 0.4) 32%,
-      hsl(330 72% 58% / 0.12) 52%,
+      hsl(160 48% 62% / 0.8) 0%,
+      hsl(160 48% 62% / 0.35) 32%,
+      hsl(160 48% 62% / 0.1) 52%,
       transparent 70%
     );
     top: 18vh;
@@ -567,8 +569,8 @@
     position: absolute;
     top: -8px;
     border-radius: 9999px;
-    background: hsl(45 92% 74%);
-    box-shadow: 0 0 7px 1px hsl(45 92% 70% / 0.55);
+    background: hsl(12 92% 62%);
+    box-shadow: 0 0 7px 1px hsl(12 92% 56% / 0.5);
     opacity: 0;
     animation: anime-fall linear infinite;
   }
@@ -701,18 +703,18 @@
     top: -60%;
     width: 90%;
     height: 130%;
-    background: radial-gradient(60% 55% at 30% 30%, hsl(262 70% 72% / 0.16), transparent 70%);
+    background: radial-gradient(60% 55% at 30% 30%, hsl(12 92% 60% / 0.14), transparent 70%);
     opacity: 0;
     transition: opacity 0.35s ease, transform 0.35s ease;
     transform: translateY(12px);
     pointer-events: none;
   }
   .card-anime:hover {
-    border-color: hsl(45 90% 65% / 0.5);
+    border-color: hsl(12 92% 60% / 0.55);
     box-shadow:
-      0 0 0 1px hsl(45 90% 65% / 0.28),
-      0 12px 34px -12px hsl(262 62% 60% / 0.4),
-      0 18px 44px -16px hsl(330 72% 58% / 0.32);
+      0 0 0 1px hsl(12 92% 60% / 0.3),
+      0 12px 34px -12px hsl(12 92% 55% / 0.28),
+      0 18px 44px -16px hsl(190 70% 45% / 0.2);
   }
   .card-anime:hover::after {
     opacity: 1;
@@ -722,9 +724,9 @@
   /* Hero 极光覆盖：紫粉蓝氛围渐变 */
   .hero-aurora {
     background-image:
-      radial-gradient(120% 90% at 85% 0%, hsl(330 72% 58% / 0.3), transparent 55%),
-      radial-gradient(110% 80% at 8% 30%, hsl(262 62% 60% / 0.32), transparent 58%),
-      linear-gradient(120deg, hsl(39 82% 55% / 0.14), transparent 45%);
+      radial-gradient(120% 90% at 85% 0%, hsl(14 94% 60% / 0.22), transparent 55%),
+      radial-gradient(110% 80% at 8% 30%, hsl(190 70% 45% / 0.2), transparent 58%),
+      linear-gradient(120deg, hsl(28 96% 58% / 0.14), transparent 45%);
   }
 
   /* 分类胶囊：彩色渐变（动漫平台题材标签） */
@@ -742,19 +744,19 @@
   .chip-violet { background-image: linear-gradient(120deg, hsl(262 62% 58%), hsl(286 66% 52%)); }
   .chip-pink { background-image: linear-gradient(120deg, hsl(330 70% 56%), hsl(350 74% 52%)); }
   .chip-blue { background-image: linear-gradient(120deg, hsl(210 72% 52%), hsl(240 60% 58%)); }
-  .chip-gold { background-image: linear-gradient(120deg, hsl(343 94% 72%), hsl(330 84% 60%)); }
+  .chip-gold { background-image: linear-gradient(120deg, hsl(28 96% 58%), hsl(12 92% 52%)); }
   .chip-teal { background-image: linear-gradient(120deg, hsl(170 52% 42%), hsl(200 60% 46%)); }
 
   /* 入口图标底：彩色渐变（金/紫/粉/蓝） */
   .icon-tile {
     color: hsl(225 32% 9%);
-    box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.35), 0 6px 14px -6px hsl(0 0% 0% / 0.5);
+    box-shadow: inset 0 1px 0 hsl(0 0% 100% / 0.45), 0 6px 14px -6px hsl(24 24% 40% / 0.28);
   }
-  .icon-tile-gold { background-image: linear-gradient(135deg, hsl(343 94% 74%), hsl(330 84% 60%)); }
-  .icon-tile-violet { background-image: linear-gradient(135deg, hsl(262 70% 66%), hsl(286 66% 52%)); }
-  .icon-tile-pink { background-image: linear-gradient(135deg, hsl(330 76% 66%), hsl(350 74% 52%)); }
-  .icon-tile-blue { background-image: linear-gradient(135deg, hsl(210 76% 60%), hsl(240 62% 56%)); }
-  .icon-tile-teal { background-image: linear-gradient(135deg, hsl(172 66% 50%), hsl(190 90% 42%)); }
+  .icon-tile-gold { background-image: linear-gradient(135deg, hsl(28 96% 58%), hsl(12 92% 52%)); }
+  .icon-tile-violet { background-image: linear-gradient(135deg, hsl(265 66% 64%), hsl(285 66% 54%)); }
+  .icon-tile-pink { background-image: linear-gradient(135deg, hsl(340 76% 68%), hsl(350 80% 56%)); }
+  .icon-tile-blue { background-image: linear-gradient(135deg, hsl(196 76% 56%), hsl(215 66% 54%)); }
+  .icon-tile-teal { background-image: linear-gradient(135deg, hsl(165 60% 46%), hsl(185 76% 44%)); }
 }
 
 /**

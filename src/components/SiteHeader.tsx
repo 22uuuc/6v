@@ -28,7 +28,7 @@ export default function SiteHeader() {
     <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-sm">
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-3 px-4">
         <Link to="/" className="flex shrink-0 items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[hsl(333_92%_66%)] to-[hsl(275_84%_62%)] text-white shadow-[0_0_14px_-2px_hsl(275_84%_64%/0.7)]">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[hsl(12_92%_60%)] to-[hsl(9_88%_50%)] text-white shadow-[0_0_14px_-2px_hsl(12_92%_56%/0.5)]">
             <BookOpenText className="h-4.5 w-4.5" />
           </span>
           <span className="hidden font-serif text-lg font-bold tracking-wide sm:block">墨影书城</span>

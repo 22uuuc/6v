@@ -89,7 +89,7 @@ export default function ShelfPage() {
                         </p>
                       </div>
                       {/* 继续角标 */}
-                      <span className="absolute right-2 top-2 flex items-center gap-0.5 rounded-full bg-gradient-to-r from-[hsl(275_84%_62%)] to-[hsl(333_92%_66%)] px-2 py-0.5 text-[10px] font-medium text-white shadow">
+                      <span className="absolute right-2 top-2 flex items-center gap-0.5 rounded-full bg-gradient-to-r from-[hsl(9_88%_52%)] to-[hsl(12_92%_60%)] px-2 py-0.5 text-[10px] font-medium text-white shadow">
                         继续 <ArrowRight className="h-2.5 w-2.5" />
                       </span>
                       <span className="absolute bottom-1.5 right-2 rounded-full bg-black/50 px-1.5 py-0.5 text-[9px] text-white/85 backdrop-blur">

@@ -18,7 +18,7 @@ const SETTINGS_DIR = DB_DIR;
 
 // 用户数据仓库（与内容/代码仓库分离）：注册用户、余额、流水、收益、提现等用户信息数据
 const USER_REPO_OWNER = '22uuuc';
-const USER_REPO_NAME = 'fantastic-rotary-phone';
+const USER_REPO_NAME = 'moying-users';
 
 export const CLOUD_FILES = [
   { key: 'books', path: `${DB_DIR}/books.json` },
@@ -37,6 +37,8 @@ export const USER_DATA_FILES = [
   { key: 'reviews', path: `${DB_DIR}/reviews.json` },
   { key: 'payProviders', path: `${DB_DIR}/pay-providers.json` },
   { key: 'applicants', path: `${DB_DIR}/applicants.json` },
+  { key: 'shelf', path: `${DB_DIR}/shelf.json` },
+  { key: 'progress', path: `${DB_DIR}/progress.json` },
 ] as const;
 
 // 平台设置与认证会话仓库（第三库）：存放全站排版风格/字体设置（settings）与登录设备会话（authSessions）
@@ -1279,7 +1281,7 @@ export const cloud = {
     const r1 = await this.pushToCloud();
     results.push({ repo: '内容库 22uuuc/6v', ok: r1.ok, msg: r1.msg ?? (r1.failed ?? []).join('、') });
     const r2 = await this.pushUserData();
-    results.push({ repo: '用户库 22uuuc/fantastic-rotary-phone', ok: r2.ok, msg: r2.msg ?? (r2.failed ?? []).join('、') });
+    results.push({ repo: '用户库 22uuuc/moying-users', ok: r2.ok, msg: r2.msg ?? (r2.failed ?? []).join('、') });
     const r3 = await this.pushSettings();
     results.push({ repo: '设置仓 22uuuc/moying-settings', ok: r3.ok, msg: r3.msg ?? (r3.failed ?? []).join('、') });
     const allOk = results.every((r) => r.ok);

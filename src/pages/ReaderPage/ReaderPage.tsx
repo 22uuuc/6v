@@ -174,7 +174,7 @@ export default function ReaderPage() {
       {/* 章节进度条 */}
       <div className="-mx-4 h-1 bg-muted">
         <div
-          className="h-full bg-gradient-to-r from-primary via-[hsl(45_92%_62%)] to-accent transition-all duration-500"
+          className="h-full bg-gradient-to-r from-primary via-[hsl(28_96%_58%)] to-accent transition-all duration-500"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -242,14 +242,14 @@ export default function ReaderPage() {
             <button
               type="button"
               onClick={() => switchMode('scroll')}
-              className={`rounded-full px-3 py-1 transition-colors ${mode === 'scroll' ? 'bg-gradient-to-r from-[hsl(275_84%_62%)] to-[hsl(333_92%_66%)] font-medium text-white' : 'text-muted-foreground'}`}
+              className={`rounded-full px-3 py-1 transition-colors ${mode === 'scroll' ? 'bg-gradient-to-r from-[hsl(9_88%_52%)] to-[hsl(12_92%_60%)] font-medium text-white' : 'text-muted-foreground'}`}
             >
               连续滚动
             </button>
             <button
               type="button"
               onClick={() => switchMode('page')}
-              className={`rounded-full px-3 py-1 transition-colors ${mode === 'page' ? 'bg-gradient-to-r from-[hsl(275_84%_62%)] to-[hsl(333_92%_66%)] font-medium text-white' : 'text-muted-foreground'}`}
+              className={`rounded-full px-3 py-1 transition-colors ${mode === 'page' ? 'bg-gradient-to-r from-[hsl(9_88%_52%)] to-[hsl(12_92%_60%)] font-medium text-white' : 'text-muted-foreground'}`}
             >
               分页翻读
             </button>

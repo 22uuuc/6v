@@ -115,9 +115,9 @@ export function PushBar({ announcement, books }: { announcement: string; books: 
   if (items.length === 0) return null;
   const it = items[idx % items.length];
   return (
-    <div className="relative flex h-9 items-center gap-2.5 overflow-hidden rounded-xl border border-primary/25 bg-gradient-to-r from-[hsl(275_84%_62%/0.16)] via-card to-[hsl(333_92%_66%/0.12)] px-3">
+    <div className="relative flex h-9 items-center gap-2.5 overflow-hidden rounded-xl border border-primary/25 bg-gradient-to-r from-[hsl(12_92%_60%/0.14)] via-card to-[hsl(9_88%_52%/0.1)] px-3">
       <Megaphone className="h-3.5 w-3.5 shrink-0 text-primary" />
-      <span className="shrink-0 rounded-md bg-gradient-to-r from-[hsl(333_92%_66%)] to-[hsl(275_84%_62%)] px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
+      <span className="shrink-0 rounded-md bg-gradient-to-r from-[hsl(12_92%_60%)] to-[hsl(9_88%_50%)] px-1.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
         推送
       </span>
       <div key={idx} className="anim-fade-up min-w-0 flex-1 truncate text-xs">
@@ -264,7 +264,7 @@ export default function HomePage() {
           {/* 写意墨点与云纹装饰层（国风氛围，缓慢漂移） */}
           <span className="drift-slow absolute right-[24%] top-[16%] h-14 w-14 rounded-full bg-primary/15 blur-md" />
           <span className="drift-slower absolute left-[9%] top-[42%] h-6 w-6 rounded-full bg-accent/25 blur-[2px]" />
-          <span className="drift-slow absolute right-[9%] bottom-[22%] h-8 w-8 rounded-full bg-[hsl(333_92%_66%)]/20 blur-sm" />
+          <span className="drift-slow absolute right-[9%] bottom-[22%] h-8 w-8 rounded-full bg-[hsl(12_92%_60%)]/20 blur-sm" />
           <span className="drift-slower absolute left-[22%] bottom-[14%] h-3 w-3 rounded-full bg-primary/30" />
           <svg
             className="drift-slow absolute right-[15%] top-[46%] hidden h-16 w-24 opacity-60 md:block"

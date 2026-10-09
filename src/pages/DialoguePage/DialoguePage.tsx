@@ -86,7 +86,7 @@ export default function DialoguePage() {
               <div key={i} className={`anim-fade-up flex items-end gap-2 ${right ? 'flex-row-reverse' : ''}`} style={{ animationDelay: `${Math.min(i * 45, 400)}ms` }}>
                 <span
                   className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white shadow-sm ${
-                    right ? 'bg-gradient-to-br from-[hsl(275_84%_62%)] to-[hsl(333_92%_66%)]' : 'bg-gradient-to-br from-slate-400 to-slate-500'
+                    right ? 'bg-gradient-to-br from-[hsl(9_88%_52%)] to-[hsl(12_92%_60%)]' : 'bg-gradient-to-br from-slate-400 to-slate-500'
                   }`}
                 >
                   {l.speaker.slice(0, 1)}
@@ -96,8 +96,8 @@ export default function DialoguePage() {
                   <p
                     className={`inline-block whitespace-pre-line rounded-2xl px-3.5 py-2 text-sm leading-relaxed shadow-sm ${
                       right
-                        ? 'rounded-br-sm bg-gradient-to-br from-[hsl(275_84%_62%)] to-[hsl(333_92%_66%)] text-white'
-                        : 'rounded-bl-sm border border-[hsl(333_92%_66%/0.22)] bg-gradient-to-br from-card to-[hsl(275_84%_62%/0.05)]'
+                        ? 'rounded-br-sm bg-gradient-to-br from-[hsl(9_88%_52%)] to-[hsl(12_92%_60%)] text-white'
+                        : 'rounded-bl-sm border border-[hsl(12_92%_60%/0.22)] bg-gradient-to-br from-card to-[hsl(9_88%_52%/0.06)]'
                     }`}
                   >
                     {l.text}

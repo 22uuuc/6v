@@ -75,7 +75,7 @@ function MemoryGame({ onWin }: { onWin: (steps: number) => void }) {
                   ? matched.includes(i)
                     ? 'border border-primary/40 bg-primary/10 opacity-70'
                     : 'border border-primary/50 bg-card scale-[1.03]'
-                  : 'border border-border bg-gradient-to-br from-[hsl(275_84%_62%/0.22)] to-[hsl(333_92%_66%/0.18)] hover:-translate-y-0.5 hover:shadow-md'
+                  : 'border border-border bg-gradient-to-br from-[hsl(9_88%_52%/0.2)] to-[hsl(12_92%_60%/0.16)] hover:-translate-y-0.5 hover:shadow-md'
               }`}
             >
               {open ? face : <span className="font-serif text-base font-bold text-primary/70">墨</span>}
