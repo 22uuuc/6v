@@ -1,0 +1,62 @@
+# 墨影书城 · GitHub Pages 部署
+# 触发：main 分支推送 / 手动触发（workflow_dispatch）
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      # 子路径部署：路由 basename 与静态资源 base 均指向 /6v/
+      MIAODA_CLIENT_BASE_PATH: /6v/
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: 整理部署目录（GH Pages 无 CDN，output_resource 并入部署根）
+        run: |
+          mkdir -p deploy
+          cp -r dist/output/* deploy/
+          cp -r dist/output_resource/* deploy/
+          # SPA 路由回退：刷新 /6v/xxx 时由 404.html 承载 index
+          cp deploy/index.html deploy/404.html
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: deploy
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
