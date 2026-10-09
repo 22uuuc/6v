@@ -1,0 +1,267 @@
+// EXPORTS: BookDetailPage（组件文件）
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import {
+  ArrowLeft, BookMarked, BookmarkCheck, Star, Eye, Lock, Play,
+  Gift, MessageSquareText, Images, BookOpenText,
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { api, isVip, fmtCoins } from '@/lib/api';
+import { useDataVersion } from '@/hooks/use-data';
+import { useAuth } from '@/lib/auth-context';
+import BookCover from '@/components/BookCover';
+import CommentSection from '@/components/CommentSection';
+import EmptyState from '@/components/EmptyState';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+
+const TYPE_ICON = { novel: BookOpenText, visual: MessageSquareText, comic: Images, anime: Play };
+const TYPE_LABEL: Record<string, string> = { novel: '普通小说', visual: '画面互动小说', comic: '漫画', anime: '动漫视频' };
+
+const TIP_AMOUNTS = [50, 100, 500, 1000];
+
+export default function BookDetailPage() {
+  const { id = '' } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  useDataVersion();
+
+  const book = api.getBook(id);
+  const [tipOpen, setTipOpen] = useState(false);
+
+  useEffect(() => {
+    if (book && book.status === 'published') api.addView(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  const chapters = useMemo(() => (book?.type === 'novel' ? api.chaptersOf(id) : []), [id, book?.type]);
+  const comicChs = useMemo(() => (book?.type === 'comic' ? api.comicChapters(id) : []), [id, book?.type]);
+  const related = useMemo(() => {
+    if (!book) return [];
+    return api.publishedBooks().filter((b) => b.id !== book.id && (b.type === book.type || b.genre === book.genre)).slice(0, 5);
+  }, [book]);
+
+  if (!book || (book.status !== 'published' && !(user && user.role === 'admin'))) {
+    return (
+      <div className="space-y-4">
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+          <ArrowLeft className="mr-1 h-4 w-4" /> 返回
+        </Button>
+        <EmptyState text="作品不存在或未上架" />
+      </div>
+    );
+  }
+
+  const inShelf = user ? api.inShelf(user.id, book.id) : false;
+  const progress = user ? api.getProgress(user.id, book.id) : null;
+  const TypeIcon = TYPE_ICON[book.type];
+
+  const startTarget = (() => {
+    if (book.type === 'novel') {
+      if (progress?.chapterId) return `/read/${book.id}/${progress.chapterId}`;
+      return chapters.length ? `/read/${book.id}/${chapters[0].id}` : null;
+    }
+    if (book.type === 'visual') return `/visual/${book.id}`;
+    if (book.type === 'anime') return `/anime/${book.id}`;
+    if (comicChs.length) {
+      const last = progress?.chapterId ?? comicChs[0].id;
+      return `/comic/${book.id}/${last}`;
+    }
+    return null;
+  })();
+
+  const handleShelf = () => {
+    if (!user) {
+      toast.info('请先登录');
+      navigate('/auth');
+      return;
+    }
+    if (inShelf) {
+      api.removeShelf(user.id, book.id);
+      toast.success('已移出书架');
+    } else {
+      api.addShelf(user.id, book.id);
+      toast.success('已加入书架');
+    }
+  };
+
+  const handleTip = (coins: number) => {
+    if (!user) {
+      toast.info('请先登录');
+      return;
+    }
+    if (user.coins < coins) {
+      toast.error('书币不足，请先充值');
+      navigate('/profile');
+      return;
+    }
+    api.tip(user.id, book, coins);
+    setTipOpen(false);
+    toast.success(`已打赏 ${coins} 书币`);
+  };
+
+  return (
+    <div className="space-y-6">
+      <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+        <ArrowLeft className="mr-1 h-4 w-4" /> 返回
+      </Button>
+
+      <section className="flex flex-col gap-5 sm:flex-row">
+        <div className="w-36 shrink-0 self-center sm:w-44">
+          <BookCover seed={book.coverSeed} title={book.title} author={book.authorName} genre={book.genre} style={book.coverStyle} bookId={book.id} coverType={book.coverType} font={book.coverFont} />
+        </div>
+        <div className="min-w-0 flex-1 space-y-3">
+          <div className="flex items-center gap-2">
+            <Badge>{TYPE_LABEL[book.type]}</Badge>
+            <Badge variant="secondary">{book.genre}</Badge>
+            <Badge variant="outline">{book.serial === 'serial' ? '连载中' : '已完结'}</Badge>
+            {book.featured && <Badge className="bg-primary text-primary-foreground">编辑推荐</Badge>}
+          </div>
+          <h1 className="font-serif text-2xl font-bold md:text-3xl">{book.title}</h1>
+          <p className="text-sm text-muted-foreground">
+            {book.authorName} · <span className="inline-flex items-center gap-1"><Star className="h-3.5 w-3.5 fill-primary text-primary" />{book.rating > 0 ? book.rating.toFixed(1) : '新书'}</span>
+            <span className="mx-2">·</span>
+            <span className="inline-flex items-center gap-1"><Eye className="h-3.5 w-3.5" />{book.views.toLocaleString('zh-CN')} 阅读</span>
+            <span className="mx-2">·</span>
+            <span className="inline-flex items-center gap-1"><BookMarked className="h-3.5 w-3.5" />{book.likes} 收藏</span>
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {book.tags.map((t) => (
+              <span key={t} className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">#{t}</span>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2 pt-1">
+            {startTarget && (
+              <Button asChild className="gap-1.5">
+                <Link to={startTarget}>
+                  <Play className="h-4 w-4" />
+                  {progress ? '继续阅读' : '开始阅读'}
+                </Link>
+              </Button>
+            )}
+            <Button variant="outline" onClick={handleShelf} className="gap-1.5">
+              {inShelf ? <BookmarkCheck className="h-4 w-4" /> : <BookMarked className="h-4 w-4" />}
+              {inShelf ? '已在书架' : '加入书架'}
+            </Button>
+            <Button variant="outline" onClick={() => setTipOpen(true)} className="gap-1.5">
+              <Gift className="h-4 w-4" /> 打赏
+            </Button>
+          </div>
+          {user && !isVip(user) && (
+            <p className="text-xs text-muted-foreground">
+              开通 <Link to="/profile" className="text-primary hover:underline">VIP</Link> 可免费阅读全部付费内容
+            </p>
+          )}
+        </div>
+      </section>
+
+      <Card>
+        <CardContent className="p-4">
+          <h2 className="mb-2 font-medium">内容简介</h2>
+          <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{book.description}</p>
+        </CardContent>
+      </Card>
+
+      {book.type === 'novel' && (
+        <section>
+          <h2 className="mb-3 font-medium">章节（{chapters.length}）</h2>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {chapters.map((ch) => (
+              <Link
+                key={ch.id}
+                to={`/read/${book.id}/${ch.id}`}
+                className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2.5 transition-colors hover:border-primary/60"
+              >
+                <span className="truncate text-sm">第{ch.index}章 · {ch.title}</span>
+                <span className="ml-2 flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+                  {ch.price > 0 ? (
+                    <>{ch.price > 0 && <Lock className="h-3 w-3" />}{ch.price} 币</>
+                  ) : (
+                    '免费'
+                  )}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {book.type === 'comic' && (
+        <section>
+          <h2 className="mb-3 font-medium">漫画话数（{comicChs.length}）</h2>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {comicChs.map((ch) => (
+              <Link
+                key={ch.id}
+                to={`/comic/${book.id}/${ch.id}`}
+                className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2.5 transition-colors hover:border-primary/60"
+              >
+                <span className="truncate text-sm">第{ch.index}话 · {ch.title}</span>
+                <span className="ml-2 flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+                  {ch.price > 0 ? (<>{ch.price} 币</>) : '免费'}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {book.type === 'visual' && (
+        <Card>
+          <CardContent className="p-4">
+            <h2 className="mb-2 flex items-center gap-2 font-medium">
+              <TypeIcon className="h-4 w-4" /> 互动说明
+            </h2>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              这部作品是画面互动小说：以插画场景推进剧情，你的每次选择都会走向不同分支，可以解锁多个结局。
+            </p>
+            {book.chapterPrice > 0 && (
+              <p className="mt-2 text-sm">
+                全本解锁：<span className="font-medium text-primary">{fmtCoins(book.chapterPrice)} 书币</span>
+                {user && isVip(user) && <span className="ml-2 text-xs text-muted-foreground">（VIP 免费）</span>}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      <CommentSection bookId={book.id} bookTitle={book.title} />
+
+      {related.length > 0 && (
+        <section>
+          <h2 className="mb-3 font-medium">猜你喜欢</h2>
+          <div className="grid grid-cols-5 gap-3 sm:gap-4">
+            {related.map((b) => (
+              <Link key={b.id} to={`/book/${b.id}`}>
+                <BookCover seed={b.coverSeed} title={b.title} author={b.authorName} genre={b.genre} style={b.coverStyle} bookId={b.id} coverType={b.coverType} font={b.coverFont} />
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <Dialog open={tipOpen} onOpenChange={setTipOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>打赏《{book.title}》</DialogTitle>
+            <DialogDescription>
+              当前书币：{user ? fmtCoins(user.coins) : '未登录'}。打赏全额归创作者。
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-4 gap-2">
+            {TIP_AMOUNTS.map((a) => (
+              <Button key={a} variant="outline" onClick={() => handleTip(a)}>
+                {a}
+              </Button>
+            ))}
+          </div>
+          <DialogFooter className="text-xs text-muted-foreground">
+            打赏会记录在收益中心，创作者可在后台查看
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
