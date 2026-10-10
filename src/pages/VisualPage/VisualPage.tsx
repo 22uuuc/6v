@@ -37,7 +37,7 @@ export default function VisualPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeId]);
 
-  if (!book || !script || script.nodes.length === 0) {
+  if (!book || !script || (script.nodes.length === 0 && script.locked !== true)) {
     return (<div className="page-enter py-20 text-center text-sm text-muted-foreground">
         剧本不存在
         <div className="mt-4">
@@ -47,10 +47,34 @@ export default function VisualPage() {
     );
   }
 
+  // 付费墙：未解锁时后端只下发 locked 骨架（nodes 为空），展示解锁视图而非剧本
+  if (script.locked === true) {
+    return (
+      <div className="page-enter mx-auto max-w-md space-y-5 py-24 text-center">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-muted/50">
+          <Lock className="h-6 w-6 text-muted-foreground" />
+        </div>
+        <div>
+          <h1 className="section-title font-serif text-xl font-bold">{book.title}</h1>
+          <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{book.description}</p>
+        </div>
+        <p className="text-sm">
+          付费互动作品，解锁后可体验全部剧情分支与结局。
+          <br />
+          全本价格：{fmtCoins(book.chapterPrice)} 书币{user && isVip(user) ? '（VIP 免费）' : ''}
+        </p>
+        <div className="flex justify-center gap-2">
+          <Button variant="outline" onClick={() => navigate(`/book/${bookId}`)}>返回详情</Button>
+          <Button onClick={() => pay()}>立即解锁（{book.chapterPrice} 币）</Button>
+        </div>
+      </div>
+    );
+  }
+
   const node = script.nodes.find((n) => n.id === nodeId) ?? script.nodes[0];
   const unlocked = user ? api.isUnlocked(user.id, book, 'visual') : book.chapterPrice <= 0;
 
-  const pay = () => {
+  const pay = async () => {
     if (!user) {
       toast.info('请先登录');
       navigate('/auth');
@@ -61,8 +85,9 @@ export default function VisualPage() {
       navigate('/profile');
       return;
     }
-    api.unlockVisual(user.id, book);
-    toast.success(`已解锁《${book.title}》（${book.chapterPrice} 书币）`);
+    const res = await api.unlockVisual(user.id, book);
+    if (res?.ok) toast.success(`已解锁《${book.title}》（${book.chapterPrice} 书币）`);
+    else toast.error(res?.msg ?? '解锁失败，请稍后再试');
   };
 
   const restart = () => {

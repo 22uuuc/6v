@@ -40,7 +40,7 @@ export default function ComicPage() {
 
   const unlocked = user ? api.isUnlocked(user.id, book, 'comic', chapter) : chapter.price <= 0;
 
-  const pay = () => {
+  const pay = async () => {
     if (!user) {
       toast.info('请先登录');
       navigate('/auth');
@@ -51,8 +51,9 @@ export default function ComicPage() {
       navigate('/profile');
       return;
     }
-    api.payComic(user.id, chapter, book);
-    toast.success(`已订阅第${chapter.index}话（${chapter.price} 书币）`);
+    const res = await api.payComic(user.id, chapter, book);
+    if (res?.ok) toast.success(`已订阅第${chapter.index}话（${chapter.price} 书币）`);
+    else toast.error(res?.msg ?? '订阅失败，请稍后再试');
   };
 
   return (<div className="page-enter mx-auto max-w-md">

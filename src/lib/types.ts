@@ -247,6 +247,8 @@ export interface IVisualScript {
   bookId: string;
   startNode: string;
   nodes: IVisualNode[];
+  /** 付费墙：未订阅/非 VIP 时后端只下发 locked 骨架（nodes 为空） */
+  locked?: boolean;
 }
 
 export interface IComicChapter {

@@ -1483,8 +1483,13 @@ export const api = {
     return { ok: true };
   },
 
-  /** 解锁互动小说全本 */
-  unlockVisual(userId: string, book: IBook): { ok: boolean; msg?: string } {
+  /** 解锁互动小说全本（远程走后端，本地模式保留原逻辑） */
+  async unlockVisual(userId: string, book: IBook): Promise<{ ok: boolean; msg?: string }> {
+    if (isRemoteReady()) {
+      const res = await remoteCall('/wallet/unlock-visual', { method: 'POST', body: { bookId: book.id } });
+      if (res.ok) notify();
+      return { ok: !!res.ok, msg: res.msg };
+    }
     const price = book.chapterPrice;
     if (price <= 0) return { ok: true };
     const me = this.getUser(userId);
@@ -1497,8 +1502,13 @@ export const api = {
     return { ok: true };
   },
 
-  /** 订阅漫画章节 */
-  payComic(userId: string, chapter: IComicChapter, book: IBook): { ok: boolean; msg?: string } {
+  /** 订阅漫画章节（远程走后端，本地模式保留原逻辑） */
+  async payComic(userId: string, chapter: IComicChapter, book: IBook): Promise<{ ok: boolean; msg?: string }> {
+    if (isRemoteReady()) {
+      const res = await remoteCall('/wallet/pay-comic', { method: 'POST', body: { chapterId: chapter.id } });
+      if (res.ok) notify();
+      return { ok: !!res.ok, msg: res.msg };
+    }
     if (chapter.price <= 0) return { ok: true };
     const me = this.getUser(userId);
     if (!me) return { ok: false, msg: '请先登录' };
