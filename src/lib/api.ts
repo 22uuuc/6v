@@ -401,6 +401,51 @@ export const api = {
     return { ok: true, user: this.getUser(u.id) ?? u };
   },
 
+  /** 发送验证码：手机/邮箱注册、重置密码、手机号登录（远程走后端，含频控与使用记录） */
+  async sendCode(target: string, purpose: 'register' | 'reset' | 'phone_login'): Promise<{ ok: boolean; msg?: string; demoCode?: string }> {
+    if (isRemoteReady()) {
+      try {
+        const res = await remoteCall('/auth/send-code', { method: 'POST', body: { target, purpose } });
+        return { ok: !!res.ok, msg: res.msg ?? (res.ok ? '验证码已发送' : '发送失败'), demoCode: res.demoCode };
+      } catch {
+        return { ok: false, msg: '验证码发送失败，请重试' };
+      }
+    }
+    const code = genResetCode();
+    security.audit('local', '本地用户', '申请验证码', purpose, '演示环境直接显示');
+    return { ok: true, msg: '验证码已发送（演示环境直接显示）', demoCode: code };
+  },
+
+  /** 手机号验证码注册：手机号唯一 + 验证码后端校验；本地模式回退账号注册并打标 */
+  async phoneRegister(phone: string, code: string, password: string, nickname: string): Promise<{ ok: boolean; msg?: string; user?: IUser }> {
+    if (isRemoteReady()) {
+      const res = await remoteCall('/auth/register', { method: 'POST', body: { phone, code, password, nickname } });
+      if (!res.ok) return { ok: false, msg: res.msg ?? '注册失败' };
+      setToken(res.token);
+      const ls = getSnap();
+      if (ls && !ls.me && res.user) applySnap({ ...ls, me: res.user });
+      notify();
+      return { ok: true, user: res.user };
+    }
+    const res = await this.register(phone, password, nickname);
+    if (res.ok && res.user) this.verifyPhone(res.user.id);
+    return res;
+  },
+
+  /** 手机号验证码登录：未注册自动注册（手机号唯一）；本地模式回退 */
+  async phoneLogin(phone: string, code: string): Promise<{ ok: boolean; msg?: string; user?: IUser }> {
+    if (isRemoteReady()) {
+      const res = await remoteCall('/auth/phone-login', { method: 'POST', body: { phone, code } });
+      if (!res.ok) return { ok: false, msg: res.msg ?? '登录失败' };
+      setToken(res.token);
+      const ls = getSnap();
+      if (ls && !ls.me && res.user) applySnap({ ...ls, me: res.user });
+      notify();
+      return { ok: true, user: res.user };
+    }
+    return this.register(phone, 'phone123456', `书友${phone.slice(-4)}`);
+  },
+
   async logout() {
     if (isRemoteReady()) {
       try { await remoteCall('/auth/logout', { method: 'POST' }); } catch { /* ignore */ }
@@ -1736,8 +1781,12 @@ export const api = {
     return { ok: true };
   },
 
-  /** 申请找回密码验证码：校验账号存在、60 秒频控，验证码存后端模拟层（10 分钟有效） */
-  requestResetCode(account: string): { ok: boolean; msg?: string; demoCode?: string } {
+  /** 申请找回密码验证码：远程走后端 send-code（校验账号+频控+发送记录）；本地演示生成 */
+  async requestResetCode(account: string): Promise<{ ok: boolean; msg?: string; demoCode?: string }> {
+    if (isRemoteReady()) {
+      const res = await remoteCall('/auth/send-code', { method: 'POST', body: { target: account, purpose: 'reset' } });
+      return { ok: !!res.ok, msg: res.msg ?? (res.ok ? '验证码已发送' : '发送失败'), demoCode: res.demoCode };
+    }
     const accountKey = account.trim();
     if (!accountKey) return { ok: false, msg: '请输入注册账号（用户名 / 手机号 / 邮箱）' };
     const users = readUsers();

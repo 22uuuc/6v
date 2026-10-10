@@ -63,6 +63,9 @@ export default function AuthPage() {
   const [fCountdown, setFCountdown] = useState(0);
   const [fNewPwd, setFNewPwd] = useState('');
   const [fNewPwd2, setFNewPwd2] = useState('');
+  const [loginPhone, setLoginPhone] = useState('');
+  const [loginCode, setLoginCode] = useState('');
+  const [loginSmsSending, setLoginSmsSending] = useState(false);
 
   /** 验证码重发倒计时（60 秒） */
   const startCountdown = () => {
@@ -77,13 +80,48 @@ export default function AuthPage() {
     setTimeout(tick, 1000);
   };
 
+
+  /** 手机号验证码登录：验证码由后端生成并校验 */
+  const sendLoginSms = async () => {
+    if (!/^1[3-9]\d{9}$/.test(loginPhone)) {
+      toast.error('请先输入正确的 11 位手机号');
+      return;
+    }
+    const res = await api.sendCode(loginPhone, 'phone_login');
+    if (!res.ok) {
+      toast.error(res.msg ?? '发送失败');
+      return;
+    }
+    setLoginSmsSending(true);
+    toast.info(`${res.msg}：${res.demoCode}`);
+    window.setTimeout(() => setLoginSmsSending(false), 60000);
+  };
+
+  const doPhoneLogin = async () => {
+    if (!/^1[3-9]\d{9}$/.test(loginPhone)) {
+      toast.error('请输入正确的手机号');
+      return;
+    }
+    if (!loginCode.trim()) {
+      toast.error('请输入验证码');
+      return;
+    }
+    const res = await api.phoneLogin(loginPhone, loginCode.trim());
+    if (!res.ok) {
+      toast.error(res.msg ?? '登录失败');
+      return;
+    }
+    toast.success(`欢迎回来，${res.user?.nickname}`);
+    navigate('/profile');
+  };
+
   /** 忘记密码：向后端申请验证码（验证码由后端生成并校验，演示环境直接显示） */
-  const sendForgotCode = () => {
+  const sendForgotCode = async () => {
     if (!fAccount.trim()) {
       toast.error('请先输入注册账号（用户名 / 手机号 / 邮箱）');
       return;
     }
-    const res = api.requestResetCode(fAccount.trim());
+    const res = await api.requestResetCode(fAccount.trim());
     if (!res.ok) {
       toast.error(res.msg ?? '发送失败');
       return;
@@ -156,16 +194,20 @@ export default function AuthPage() {
     navigate('/profile');
   };
 
-  const sendSms = () => {
+  const sendSms = async () => {
     const phone = phoneForm.getValues('phone');
     if (!/^1[3-9]\d{9}$/.test(phone)) {
       toast.error('请先输入正确的 11 位手机号');
       return;
     }
-    const code = String(Math.floor(100000 + Math.random() * 900000));
-    setSentCode(code);
+    const res = await api.sendCode(phone, 'register');
+    if (!res.ok) {
+      toast.error(res.msg ?? '发送失败');
+      return;
+    }
+    setSentCode(res.demoCode ?? '');
     setSending(true);
-    toast.success(`验证码已发送至 ${phone.slice(0, 3)}****${phone.slice(7)}（演示：${code}）`, { duration: 30000 });
+    toast.success(`验证码已发送至 ${phone.slice(0, 3)}****${phone.slice(7)}：${res.demoCode}`, { duration: 30000 });
     window.setTimeout(() => setSending(false), 60000);
   };
 
@@ -178,12 +220,11 @@ export default function AuthPage() {
       toast.error('验证码错误');
       return;
     }
-    const res = await api.register(v.phone, v.password, v.nickname);
+    const res = await api.phoneRegister(v.phone, v.code, v.password, v.nickname);
     if (!res.ok) {
-      toast.error(res.msg === '账号已存在' ? '该手机号已注册，可直接登录' : res.msg ?? '注册失败');
+      toast.error(res.msg === '该手机号已注册，可直接登录' ? '该手机号已注册，可直接登录' : res.msg ?? '注册失败');
       return;
     }
-    api.verifyPhone(res.user!.id); // 验证码注册通过 → 手机认证打标（认证等级提升）
     toast.success('注册成功，赠送 100 书币');
     navigate('/profile');
   };
@@ -282,6 +323,19 @@ export default function AuthPage() {
               <Button type="submit" className="btn-anime w-full" disabled={loginForm.formState.isSubmitting}>
                 登录
               </Button>
+              <div className="space-y-2 rounded-xl border border-border/60 bg-muted/30 p-3">
+                <p className="text-xs font-medium text-muted-foreground">手机号验证码登录</p>
+                <div className="flex gap-2">
+                  <Input placeholder="11 位手机号" inputMode="numeric" maxLength={11} value={loginPhone} onChange={(e) => setLoginPhone(e.target.value)} />
+                  <Button type="button" variant="outline" className="shrink-0" disabled={loginSmsSending} onClick={sendLoginSms}>
+                    {loginSmsSending ? '已发送(60s)' : '获取验证码'}
+                  </Button>
+                </div>
+                <div className="flex gap-2">
+                  <Input placeholder="6 位验证码" inputMode="numeric" maxLength={6} value={loginCode} onChange={(e) => setLoginCode(e.target.value)} />
+                  <Button type="button" className="shrink-0" onClick={doPhoneLogin}>登录</Button>
+                </div>
+              </div>
               <div className="flex justify-end">
                 <button type="button" onClick={() => setForgotOpen(true)} className="text-xs text-muted-foreground underline-offset-4 hover:text-primary hover:underline">
                   忘记密码？通过验证码找回
