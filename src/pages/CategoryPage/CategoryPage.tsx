@@ -29,28 +29,32 @@ export default function CategoryPage() {
 
   const channel = type === 'all' ? null : (CHANNELS.find((c) => c.key === type) ?? null);
   const types = channel ? (channel.types as BookType[]) : undefined;
+  const subs = channel ? (SUBCATEGORIES[channel.key] ?? []) : [];
+
 
   const books = useMemo(() => {
+    const subList = channel ? (SUBCATEGORIES[channel.key] ?? []) : [];
     let list = api.publishedBooks(types);
-    if (sub !== 'all' && subs.includes(sub)) list = list.filter((b) => b.subcategory === sub);
+    if (sub !== 'all' && subList.includes(sub)) list = list.filter((b) => b.subcategory === sub);
     if (qSerial === 'finished') list = list.filter((b) => b.serial === 'finished');
     if (sort === 'new') return [...list].sort((a, b) => (b.createdAt < a.createdAt ? -1 : 1));
     if (sort === 'rating') return [...list].sort((a, b) => b.rating - a.rating);
     return [...list].sort((a, b) => b.views - a.views);
-  }, [types, sub, sort, qSerial]);
+  }, [types, sub, sort, qSerial, channel]);
 
   const label = channel ? channel.label : '全部作品';
   const desc = channel ? channel.desc : '小说、漫画、动漫、视频、游戏，一座城都在这';
-  const subs = channel ? (SUBCATEGORIES[channel.key] ?? []) : [];
+
   const isWall = !!channel && (channel.key === 'comic' || channel.key === 'anime');
 
   /** 各小类作品计数（静态表 + 实时库存） */
   const subCounts = useMemo(() => {
     const map: Record<string, number> = {};
     const all = api.publishedBooks(types);
-    for (const s of subs) map[s] = all.filter((b) => b.subcategory === s).length;
+    const subList = channel ? (SUBCATEGORIES[channel.key] ?? []) : [];
+    for (const s of subList) map[s] = all.filter((b) => b.subcategory === s).length;
     return map;
-  }, [types, subs]);
+  }, [types, channel]);
 
   return (
     <div className="page-enter space-y-5">

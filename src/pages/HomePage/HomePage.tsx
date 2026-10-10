@@ -1,7 +1,7 @@
 // EXPORTS: HomePage（组件文件）
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, MessageSquareText, BookOpenText, Images, Flame, Megaphone, LibraryBig, BadgeCheck, LayoutGrid, MessagesSquare, Gamepad2, Clapperboard, Video } from 'lucide-react';
+import { ArrowRight, BookOpenText, Images, Flame, Megaphone, LibraryBig, BadgeCheck, LayoutGrid, Gamepad2, Clapperboard, Video } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useDataVersion } from '@/hooks/use-data';
 import { heroArtUrl } from '@/lib/charArt';
@@ -12,7 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { BookType, IBook } from '@/lib/types';
+import type { IBook } from '@/lib/types';
 import { CHANNELS } from '@/lib/types';
 
 const TYPE_ENTRY = [

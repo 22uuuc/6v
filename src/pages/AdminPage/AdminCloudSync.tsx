@@ -9,7 +9,6 @@ import {
   GitBranch,
   ExternalLink,
   Lock,
-  Unlock,
   Palette,
   RefreshCw,
   Zap,
@@ -148,8 +147,7 @@ export default function AdminCloudSync() {
   // 同步元信息
   const [lastPullAt, setLastPullAt] = useState<string>('');
   const [lastPushAt, setLastPushAt] = useState<string>('');
-  const [uLastPullAt, setULastPullAt] = useState<string>('');
-  const [uLastPushAt, setULastPushAt] = useState<string>('');
+
 
   useEffect(() => {
     let mounted = true;
@@ -896,8 +894,8 @@ export default function AdminCloudSync() {
             </div>
             <div className="mt-2 flex flex-wrap gap-4 text-xs text-muted-foreground">
               <span>同步状态</span>
-              <span>最后拉取：{uLastPullAt || '从未'}</span>
-              <span>最后推送：{uLastPushAt || '从未'}</span>
+              <span>最后拉取：从未</span>
+              <span>最后推送：从未</span>
             </div>
           </div>
 

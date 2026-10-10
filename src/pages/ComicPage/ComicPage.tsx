@@ -20,7 +20,7 @@ export default function ComicPage() {
   const chapters = useMemo(() => (book ? api.comicChapters(bookId) : []), [book, bookId]);
   const index = chapters.findIndex((c) => c.id === chapterId);
   const chapter = index >= 0 ? chapters[index] : null;
-  const pages = useMemo(() => (chapter ? api.comicPages(chapter.id) : []), [chapter, chapter?.id]);
+  const pages = useMemo(() => (chapter ? api.comicPages(chapter.id) : []), [chapter]);
 
   useEffect(() => {
     if (chapter && user) api.saveProgress(user.id, bookId, chapter.id);

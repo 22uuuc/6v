@@ -6,7 +6,7 @@
 // 内容库键（与 api.ts 数据层一致）：books / chapters / visualScripts / comicChapters / comicPages
 import { store, notify, secureStore, onAfterNotify } from '@/lib/store';
 import { security, scanText } from '@/lib/security';
-import { isWebCryptoAvailable, sha256Sync } from '@/lib/crypto';
+import { sha256Sync } from '@/lib/crypto';
 
 const REPO_OWNER = '22uuuc';
 const REPO_NAME = '6v';
@@ -365,15 +365,6 @@ async function fetchAuth(path: string, token: string): Promise<string> {
   return new TextDecoder().decode(decodeBase64(j.content));
 }
 
-async function fetchSha(path: string, token: string): Promise<string | null> {
-  const res = await fetch(apiUrl(path), {
-    headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' },
-  });
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`查询 ${path} 失败 HTTP ${res.status}`);
-  const j = (await res.json()) as { sha?: string };
-  return j.sha ?? null;
-}
 
 /**
  * 批量获取目录下所有文件的 SHA（1 次请求 vs N 次单文件查询，大幅降低 API 调用）
@@ -627,27 +618,6 @@ async function incrementalPush(opts: SyncEngineOptions): Promise<SyncResult> {
   return { ok: false, pushed, skipped, conflicts, failed, msg: '推送失败，请检查令牌权限与网络' };
 }
 
-/** 用户数据仓库：带令牌读文件内容 */
-async function fetchUserFile(path: string, token: string): Promise<string> {
-  const res = await fetch(userApiUrl(path), {
-    headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' },
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const j = (await res.json()) as { content?: string; encoding?: string };
-  if (!j.content) throw new Error('内容为空');
-  return new TextDecoder().decode(decodeBase64(j.content));
-}
-
-/** 用户数据仓库：查询文件 sha */
-async function fetchUserSha(path: string, token: string): Promise<string | null> {
-  const res = await fetch(userApiUrl(path), {
-    headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' },
-  });
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`查询 ${path} 失败 HTTP ${res.status}`);
-  const j = (await res.json()) as { sha?: string };
-  return j.sha ?? null;
-}
 
 /** 用户数据仓库：推送（PUT） */
 async function putUserFile(path: string, content: string, token: string, sha: string | null) {
@@ -690,25 +660,6 @@ async function putFile(path: string, content: string, token: string, sha: string
 
 /* ---------- 平台设置仓（第三库：设置/排版 + 认证会话） ---------- */
 
-async function fetchSettingsFile(path: string, token: string): Promise<string> {
-  const res = await fetch(settingsApiUrl(path), {
-    headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' },
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const j = (await res.json()) as { content?: string; encoding?: string };
-  if (!j.content) throw new Error('内容为空');
-  return new TextDecoder().decode(decodeBase64(j.content));
-}
-
-async function fetchSettingsSha(path: string, token: string): Promise<string | null> {
-  const res = await fetch(settingsApiUrl(path), {
-    headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' },
-  });
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`查询 ${path} 失败 HTTP ${res.status}`);
-  const j = (await res.json()) as { sha?: string };
-  return j.sha ?? null;
-}
 
 async function putSettingsFile(path: string, content: string, token: string, sha: string | null) {
   const res = await fetch(settingsApiUrl(path), {
@@ -875,7 +826,6 @@ export const cloud = {
       store.set(META_KEY, { ...metaData, lastPullAt: new Date().toISOString(), fileShas: lastShas });
     }
     notify();
-    const total = pulled.length + skipped.length;
     if (pulled.length > 0) {
       return {
         ok: true, pulled, skipped, failed,

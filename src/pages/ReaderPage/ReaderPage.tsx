@@ -22,7 +22,7 @@ export default function ReaderPage() {
   const { user } = useAuth();
   useDataVersion();
   // 个性化偏好：阅读主题/字号/行距/字体（个人设置覆盖平台默认）
-  const prefs = useMemo(() => (user ? api.getPrefs(user.id) : null), [user?.id]);
+  const prefs = useMemo(() => (user ? api.getPrefs(user.id) : null), [user]);
   const [fontSize, setFontSize] = useState(prefs?.fontSize ?? 19);
   // 行距由个性化设置提供（ProfilePage），阅读页只读应用
   const lineHeight = prefs?.lineHeight ?? 1.9;
@@ -58,7 +58,7 @@ export default function ReaderPage() {
   const index = chapters.findIndex((c) => c.id === chapterId);
   const chapter = index >= 0 ? chapters[index] : null;
   // 长章节按空行切段：仅章节内容变化时重算，字号/行距调整不再重复切分
-  const paras = useMemo(() => (chapter ? chapter.content.split('\n\n') : []), [chapter?.content]);
+  const paras = useMemo(() => (chapter ? chapter.content.split('\n\n') : []), [chapter]);
 
   useEffect(() => {
     if (chapter && user) {
