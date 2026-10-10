@@ -137,7 +137,7 @@ export default function UploadComicPage() {
     let bookId = existing?.id ?? '';
     try {
       if (existing) {
-        api.updateBook(existing.id, {
+        await api.updateBook(existing.id, {
           title: draft.title.trim(),
           genre: draft.genre,
           coverSeed: draft.coverScene,
@@ -156,14 +156,14 @@ export default function UploadComicPage() {
         if (saveDraft) {
           toast.success('已保存到草稿箱');
         } else if (existing.status === 'published') {
-          api.setBookStatus(existing.id, 'pending', '', user.id);
+          void api.setBookStatus(existing.id, 'pending', '', user.id);
           toast.success('内容已更新，已重新提交审核，审核通过后自动上架');
         } else {
-          api.setBookStatus(existing.id, 'pending', '', user.id);
+          void api.setBookStatus(existing.id, 'pending', '', user.id);
           toast.success('已保存并提交审核');
         }
       } else {
-        const book = api.createBook({
+        const book = await api.createBook({
           type: 'comic',
           title: draft.title.trim(),
           genre: draft.genre,

@@ -196,7 +196,7 @@ export default function CreatorPage() {
           size="sm"
           variant="outline"
           onClick={() => {
-            api.setBookStatus(book.id, 'pending', '', user.id);
+            void api.setBookStatus(book.id, 'pending', '', user.id);
             toast.success('已提交审核');
           }}
         >
@@ -210,7 +210,7 @@ export default function CreatorPage() {
           size="sm"
           variant="outline"
           onClick={() => {
-            api.setBookStatus(book.id, 'offline', '', user.id);
+            void api.setBookStatus(book.id, 'offline', '', user.id);
             toast.success('已下架');
           }}
         >
@@ -411,7 +411,7 @@ export default function CreatorPage() {
             <AlertDialogAction
               onClick={() => {
                 if (toDelete) {
-                  api.deleteBook(toDelete.id);
+                  void api.deleteBook(toDelete.id);
                   toast.success('已删除');
                 }
               }}

@@ -64,7 +64,7 @@ export default function UploadAnimePage() {
     setBusy(true);
     try {
       if (existing && existing.type === 'anime') {
-        api.updateBook(existing.id, {
+        await api.updateBook(existing.id, {
           title: draft.title.trim(),
           genre: draft.genre,
           coverSeed: draft.coverScene,
@@ -82,7 +82,7 @@ export default function UploadAnimePage() {
         await idbPut(`anime:${existing.id}`, video);
         toast.success('片源已更新，直接上架');
       } else {
-        const book = api.createBook({
+        const book = await api.createBook({
           type: 'anime',
           title: draft.title.trim(),
           genre: draft.genre,

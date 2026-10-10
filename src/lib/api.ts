@@ -753,7 +753,7 @@ export const api = {
         this.setRole(u.id, 'creator');
         this.addExp(u.id, 30, '创作者资质审核通过');
         const genres: BookGenre[] = ['玄幻', '都市', '科幻', '悬疑', '古言', '青春', '武侠', '奇幻', '仙侠', '历史', '游戏', '言情', '轻小说', '现实'];
-        this.createBook({
+        void this.createBook({
           type: app.workType,
           title: app.workTitle,
           genre: genres[0],
@@ -974,19 +974,41 @@ export const api = {
     throw new Error('内容包含危险代码（脚本注入/事件劫持类病毒载荷），已被安全系统拦截，请清理后重新提交');
   },
 
-  createBook(input: {
+  async createBook(input: {
     type: BookType; title: string; genre: BookGenre; coverSeed: string;
     description: string; tags: string[]; serial: 'serial' | 'finished';
     chapterPrice: number; authorId: string; authorName: string; status: BookStatus;
     animeKey?: string; coverStyle?: CoverStyle; coverType?: 'svg' | 'image'; coverFont?: CoverFont;
     gameKind?: GameKind;
-  }): IBook {
+  }): Promise<IBook> {
     // 数据层兜底校验：标题非空、价格非负有限、标签为字符串数组（防页面绕过直接注入脏数据）
     const title = (input.title ?? '').trim();
     if (!title) throw new Error('作品标题不能为空');
     const description = (input.description ?? '').trim();
     const price = Number(input.chapterPrice);
     if (!Number.isFinite(price) || price < 0) throw new Error('章节价格不合法');
+    if (isRemoteReady()) {
+      // 后端模式：作品与作者归属由后端保存（authorId 取自登录态，不传前端值防伪造归属）
+      const res = await remoteCall('/books', {
+        method: 'POST',
+        body: {
+          type: input.type, title, genre: input.genre, coverSeed: input.coverSeed,
+          description, tags: input.tags ?? [], serial: input.serial,
+          chapterPrice: price, status: input.status,
+          animeKey: input.animeKey, coverStyle: input.coverStyle,
+          coverType: input.coverType, coverFont: input.coverFont, gameKind: input.gameKind,
+        },
+      });
+      if (!res.ok) throw new Error(res.msg ?? '发布失败');
+      // 本地占位对象：后续章节上传以 book.id 关联；正式读取走后端快照
+      const b: IBook = {
+        id: (res.bookId as string) ?? uid('b'), ...input, title, description, chapterPrice: price,
+        words: 0, views: 0, likes: 0, rating: 0,
+        featured: false, quarantined: false,
+        createdAt: new Date().toISOString(), chapterIds: [],
+      };
+      return b;
+    }
     // 写入前病毒拦截：标题/简介/标签命中载荷直接拒写
     this.interceptPayload(input.authorId, [
       { field: 'title', text: title },
@@ -1119,7 +1141,12 @@ export const api = {
     notify();
   },
 
-  updateBook(id: string, patch: Partial<IBook>) {
+  async updateBook(id: string, patch: Partial<IBook>) {
+    if (isRemoteReady()) {
+      const res = await remoteCall(`/books/${id}/info`, { method: 'POST', body: patch });
+      if (!res.ok) throw new Error(res.msg ?? '编辑失败');
+      return;
+    }
     const books = read<IBook[]>('books', []);
     const i = books.findIndex((b) => b.id === id);
     if (i >= 0) {
@@ -1156,7 +1183,12 @@ export const api = {
     return { ok: true };
   },
 
-  setBookStatus(id: string, status: BookStatus, note = '', byUserId?: string) {
+  async setBookStatus(id: string, status: BookStatus, note = '', byUserId?: string) {
+    if (isRemoteReady()) {
+      const res = await remoteCall(`/books/${id}/status`, { method: 'POST', body: { status, note } });
+      if (!res.ok) throw new Error(res.msg ?? '状态更新失败');
+      return;
+    }
     // 越权防护：byUserId 存在时必须为管理员，或该书作者本人（只能操作自己的作品）
     if (byUserId) {
       const me = this.getUser(byUserId);
@@ -1185,7 +1217,12 @@ export const api = {
     }
   },
 
-  deleteBook(id: string) {
+  async deleteBook(id: string) {
+    if (isRemoteReady()) {
+      const res = await remoteCall(`/books/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(res.msg ?? '删除失败');
+      return;
+    }
     const books = read<IBook[]>('books', []);
     write('books', books.filter((b) => b.id !== id));
     const chapters = read<IChapter[]>('chapters', []);
@@ -1231,7 +1268,15 @@ export const api = {
     return this.getChapter(id);
   },
 
-  saveChapters(bookId: string, chapters: Omit<IChapter, 'id' | 'bookId'>[]) {
+  async saveChapters(bookId: string, chapters: Omit<IChapter, 'id' | 'bookId'>[]) {
+    if (isRemoteReady()) {
+      const res = await remoteCall(`/books/${bookId}/chapters`, {
+        method: 'POST',
+        body: { chapters: chapters.map((c) => ({ title: c.title, content: c.content, price: c.price })) },
+      });
+      if (!res.ok) throw new Error(res.msg ?? '章节保存失败');
+      return;
+    }
     // 写入前病毒拦截：章节标题/正文命中载荷直接拒写（留痕提交账号）
     const owner = this.getBook(bookId);
     this.interceptPayload(
@@ -1261,7 +1306,15 @@ export const api = {
     return read<IVisualScript[]>('visualScripts', []).find((v) => v.bookId === bookId) ?? null;
   },
 
-  saveVisualScript(bookId: string, script: IVisualScript) {
+  async saveVisualScript(bookId: string, script: IVisualScript) {
+    if (isRemoteReady()) {
+      const res = await remoteCall(`/books/${bookId}/visual`, {
+        method: 'POST',
+        body: { script: { startNode: script.startNode, nodes: script.nodes } },
+      });
+      if (!res.ok) throw new Error(res.msg ?? '剧本保存失败');
+      return;
+    }
     // 写入前病毒拦截：节点文本/选项标签命中载荷直接拒写（留痕提交账号）
     const owner = this.getBook(bookId);
     this.interceptPayload(
@@ -1300,7 +1353,12 @@ export const api = {
       .sort((a, b) => a.index - b.index);
   },
 
-  saveComic(bookId: string, chapters: { title: string; price: number; pages: { scene: string; imageKey?: string; caption?: string; dialogue: string[] }[] }[]) {
+  async saveComic(bookId: string, chapters: { title: string; price: number; pages: { scene: string; imageKey?: string; caption?: string; dialogue: string[] }[] }[]) {
+    if (isRemoteReady()) {
+      const res = await remoteCall(`/books/${bookId}/comic`, { method: 'POST', body: { chapters } });
+      if (!res.ok) throw new Error(res.msg ?? '漫画保存失败');
+      return;
+    }
     // 写入前病毒拦截：章节标题/场景/旁白/对白命中载荷直接拒写（留痕提交账号）
     const owner = this.getBook(bookId);
     this.interceptPayload(
@@ -1362,6 +1420,11 @@ export const api = {
   },
 
   addShelf(userId: string, bookId: string) {
+    if (isRemoteReady()) {
+      // 后端模式：收藏写入后端 shelf 表（同用户跨设备同步），快照由 snapOk 自动刷新
+      void remoteCall(`/books/${bookId}/shelf`, { method: 'POST', body: { on: true } });
+      return;
+    }
     const entries = read<IShelfEntry[]>('shelf', []);
     if (!entries.some((e) => e.userId === userId && e.bookId === bookId)) {
       entries.push({ userId, bookId, addedAt: new Date().toISOString() });
@@ -1378,6 +1441,10 @@ export const api = {
   },
 
   removeShelf(userId: string, bookId: string) {
+    if (isRemoteReady()) {
+      void remoteCall(`/books/${bookId}/shelf`, { method: 'POST', body: { on: false } });
+      return;
+    }
     const entries = read<IShelfEntry[]>('shelf', []);
     write('shelf', entries.filter((e) => !(e.userId === userId && e.bookId === bookId)));
     const books = read<IBook[]>('books', []);

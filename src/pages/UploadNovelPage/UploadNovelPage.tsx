@@ -63,7 +63,7 @@ export default function UploadNovelPage() {
     }
     try {
       if (existing) {
-        api.updateBook(existing.id, {
+        await api.updateBook(existing.id, {
           title: draft.title.trim(),
           genre: draft.genre,
           coverSeed: draft.coverScene,
@@ -78,7 +78,7 @@ export default function UploadNovelPage() {
         if (draft.coverFile) {
           await idbPut(`cover:${existing.id}`, draft.coverFile);
         }
-        api.saveChapters(
+        await api.saveChapters(
           existing.id,
           valid.map((c, i) => ({ title: c.title.trim(), content: c.content.trim(), price: c.price, index: i + 1 })),
         );
@@ -86,14 +86,14 @@ export default function UploadNovelPage() {
           toast.success('已保存到草稿箱');
         } else if (existing.status === 'published') {
           // 已上架作品被编辑：内容改动必须重新进入审核，防止绕过审核直接生效
-          api.setBookStatus(existing.id, 'pending', '', user.id);
+          void api.setBookStatus(existing.id, 'pending', '', user.id);
           toast.success('内容已更新，已重新提交审核，审核通过后自动上架');
         } else {
-          api.setBookStatus(existing.id, 'pending', '', user.id);
+          void api.setBookStatus(existing.id, 'pending', '', user.id);
           toast.success('已保存并提交审核');
         }
       } else {
-        const book = api.createBook({
+        const book = await api.createBook({
           type: 'novel',
           title: draft.title.trim(),
           genre: draft.genre,
@@ -112,7 +112,7 @@ export default function UploadNovelPage() {
         if (draft.coverFile) {
           await idbPut(`cover:${book.id}`, draft.coverFile);
         }
-        api.saveChapters(
+        await api.saveChapters(
           book.id,
           valid.map((c, i) => ({ title: c.title.trim(), content: c.content.trim(), price: c.price, index: i + 1 })),
         );

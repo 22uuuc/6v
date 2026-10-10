@@ -67,12 +67,12 @@ export default function UploadGamePage() {
         gameKind,
       };
       if (existing) {
-        api.updateBook(existing.id, common);
+        await api.updateBook(existing.id, common);
         if (draft.coverFile) await idbPut(`cover:${existing.id}`, draft.coverFile);
-        api.setBookStatus(existing.id, 'pending', '', user.id);
+        void api.setBookStatus(existing.id, 'pending', '', user.id);
         toast.success(existing.status === 'published' ? '内容已更新，已重新提交审核，审核通过后自动上架' : '已保存并提交审核');
       } else {
-        const book = api.createBook({
+        const book = await api.createBook({
           type: 'game',
           ...common,
           authorId: user.id,

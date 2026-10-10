@@ -72,7 +72,7 @@ export default function UploadDialoguePage() {
     }
     try {
       if (existing) {
-        api.updateBook(existing.id, {
+        await api.updateBook(existing.id, {
           title: draft.title.trim(),
           genre: draft.genre,
           coverSeed: draft.coverScene,
@@ -85,14 +85,14 @@ export default function UploadDialoguePage() {
           chapterPrice: draft.chapterPrice,
         });
         if (draft.coverFile) await idbPut(`cover:${existing.id}`, draft.coverFile);
-        api.saveChapters(
+        await api.saveChapters(
           existing.id,
           valid.map((c, i) => ({ title: c.title.trim(), content: c.content, price: c.price, index: i + 1 })),
         );
-        api.setBookStatus(existing.id, 'pending', '', user.id);
+        void api.setBookStatus(existing.id, 'pending', '', user.id);
         toast.success(existing.status === 'published' ? '内容已更新，已重新提交审核，审核通过后自动上架' : '已保存并提交审核');
       } else {
-        const book = api.createBook({
+        const book = await api.createBook({
           type: 'dialogue',
           title: draft.title.trim(),
           genre: draft.genre,
@@ -109,7 +109,7 @@ export default function UploadDialoguePage() {
           status: saveDraft ? 'draft' : 'pending',
         });
         if (draft.coverFile) await idbPut(`cover:${book.id}`, draft.coverFile);
-        api.saveChapters(
+        await api.saveChapters(
           book.id,
           valid.map((c, i) => ({ title: c.title.trim(), content: c.content, price: c.price, index: i + 1 })),
         );

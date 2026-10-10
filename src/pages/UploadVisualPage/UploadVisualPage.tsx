@@ -109,7 +109,7 @@ export default function UploadVisualPage() {
 
     try {
       if (existing) {
-        api.updateBook(existing.id, {
+        await api.updateBook(existing.id, {
           title: draft.title.trim(),
           genre: draft.genre,
           coverSeed: draft.coverScene,
@@ -124,18 +124,18 @@ export default function UploadVisualPage() {
         if (draft.coverFile) {
           await idbPut(`cover:${existing.id}`, draft.coverFile);
         }
-        api.saveVisualScript(existing.id, { ...script, bookId: existing.id });
+        await api.saveVisualScript(existing.id, { ...script, bookId: existing.id });
         if (saveDraft) {
           toast.success('已保存到草稿箱');
         } else if (existing.status === 'published') {
-          api.setBookStatus(existing.id, 'pending', '', user.id);
+          void api.setBookStatus(existing.id, 'pending', '', user.id);
           toast.success('内容已更新，已重新提交审核，审核通过后自动上架');
         } else {
-          api.setBookStatus(existing.id, 'pending', '', user.id);
+          void api.setBookStatus(existing.id, 'pending', '', user.id);
           toast.success('已保存并提交审核');
         }
       } else {
-        const book = api.createBook({
+        const book = await api.createBook({
           type: 'visual',
           title: draft.title.trim(),
           genre: draft.genre,
@@ -154,7 +154,7 @@ export default function UploadVisualPage() {
         if (draft.coverFile) {
           await idbPut(`cover:${book.id}`, draft.coverFile);
         }
-        api.saveVisualScript(book.id, { ...script, bookId: book.id });
+        await api.saveVisualScript(book.id, { ...script, bookId: book.id });
         toast.success(saveDraft ? '已保存到草稿箱' : '互动小说已提交，等待审核上架');
       }
       navigate('/creator');
