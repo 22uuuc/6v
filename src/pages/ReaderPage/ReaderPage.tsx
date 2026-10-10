@@ -219,7 +219,7 @@ export default function ReaderPage() {
       {(mode === 'page' ? pageIdx >= pageCount - 1 : true) && (
         <div className="anim-fade-up my-2 flex items-center justify-center gap-3 card-anime rounded-2xl border border-border/70 bg-card/60 px-4 py-3 shadow-[0_12px_32px_-20px_hsl(333_92%_66%/0.45)]">
           <div className="mascot-bounce shrink-0">
-            <MoyingMascot mood="happy" size={48} />
+            <MoyingMascot mood="happy" size={48} art />
           </div>
           <p className="text-xs leading-relaxed text-muted-foreground">
             {index >= chapters.length - 1

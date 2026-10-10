@@ -1,14 +1,35 @@
 // EXPORTS: MoyingMascot（墨影书灵 · 动漫IP吉祥物组件）
-// 手绘风小墨猫书灵：漂浮 / 眨眼 / 三种表情（reading 读书、happy 开心、sleepy 困倦）
-// 用于首页 Hero、空状态、加载与品牌触点，贯穿全站 IP 化
+// 两种渲染：SVG 手绘小墨猫（默认，含眨眼/表情动画）；art=true 时渲染 AI 动漫立绘位图（圆形头像，对标日系漫感）
+// 用于首页 Hero、登录页、空状态、加载与品牌触点，贯穿全站 IP 化
+import { mascotArtUrl } from '@/lib/charArt';
+import { cn } from '@/lib/utils';
 
 interface Props {
   mood?: 'reading' | 'happy' | 'sleepy';
   size?: number;
   className?: string;
+  /** 位图立绘模式（happy→开心立绘，其余→主形象立绘） */
+  art?: boolean;
 }
 
-export default function MoyingMascot({ mood = 'reading', size = 96, className }: Props) {
+export default function MoyingMascot({ mood = 'reading', size = 96, className, art }: Props) {
+  if (art) {
+    return (
+      <div
+        className={cn('relative overflow-hidden rounded-full ring-2 ring-white/40', className)}
+        style={{ width: size, height: size }}
+        aria-label="墨影书灵"
+      >
+        <img
+          src={mascotArtUrl(mood)}
+          alt="墨影书灵"
+          className="absolute inset-0 h-full w-full object-cover"
+          loading="lazy"
+        />
+        <div className="pointer-events-none absolute inset-0 rounded-full shadow-[inset_0_0_0_2px_rgba(255,255,255,0.35),0_0_18px_rgba(168,130,255,0.45)]" />
+      </div>
+    );
+  }
   const eye = mood === 'sleepy' ? (
     // 半闭眼
     <g>

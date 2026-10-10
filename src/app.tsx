@@ -40,7 +40,7 @@ function PageLoader() {
     <div className="flex min-h-[60vh] items-center justify-center">
       <div className="flex flex-col items-center gap-3">
         <div className="mascot-bounce drop-shadow-[0_0_16px_rgba(168,130,255,0.4)]">
-          <MoyingMascot mood="reading" size={72} />
+          <MoyingMascot mood="reading" size={72} art />
         </div>
         <p className="text-sm text-muted-foreground">书灵正在翻页…</p>
       </div>

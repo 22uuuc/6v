@@ -235,7 +235,7 @@ export default function AuthPage() {
       <div className="mb-6 flex flex-col items-center gap-2 text-center">
         {/* 书灵迎宾：登录时读书（等你回来）、注册时开心（欢迎新朋友） */}
         <div className="mascot-float drop-shadow-[0_0_16px_rgba(168,130,255,0.4)]">
-          <MoyingMascot mood={tab === 'login' ? 'reading' : 'happy'} size={88} />
+          <MoyingMascot mood={tab === 'login' ? 'reading' : 'happy'} size={88} art />
         </div>
         <h1 className="text-gradient-anime font-serif text-2xl font-bold">墨影书城</h1>
         <p className="text-sm text-muted-foreground">

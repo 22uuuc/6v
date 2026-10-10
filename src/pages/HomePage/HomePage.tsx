@@ -259,8 +259,8 @@ export default function HomePage() {
           {/* 墨影书灵：IP 吉祥物漂浮（手机小号、桌面大号） */}
           <div className="mascot-float absolute right-4 top-4 md:right-10 md:top-8">
             <div className="drop-shadow-[0_0_18px_rgba(168,130,255,0.45)]">
-              <MoyingMascot mood="reading" size={64} className="md:hidden" />
-              <MoyingMascot mood="reading" size={104} className="hidden md:block" />
+              <MoyingMascot mood="reading" size={64} className="md:hidden" art />
+              <MoyingMascot mood="reading" size={104} className="hidden md:block" art />
             </div>
           </div>
           {/* 写意墨点与云纹装饰层（国风氛围，缓慢漂移） */}

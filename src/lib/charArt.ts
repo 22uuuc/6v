@@ -66,3 +66,9 @@ export function heroArtUrl(seed: string): string {
   const idx = (hashSeed(seed) % 6) + 1;
   return `${baseUrl()}hero/hero-${idx}.jpg`;
 }
+
+/** 墨影书灵 IP 动漫立绘（圆形头像，happy→mascot-2，其余→mascot-1） */
+export function mascotArtUrl(mood?: string): string {
+  const idx = mood === 'happy' ? 2 : 1;
+  return `${baseUrl()}mascot/mascot-${idx}.jpg`;
+}

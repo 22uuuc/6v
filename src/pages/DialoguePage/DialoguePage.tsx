@@ -68,7 +68,7 @@ export default function DialoguePage() {
           <p className="truncate text-sm font-medium">{book.title}</p>
           <p className="truncate text-xs text-muted-foreground">第{chapter.index}章 · {chapter.title}</p>
         </div>
-        <MoyingMascot mood="reading" size={30} />
+        <MoyingMascot mood="reading" size={30} art />
       </div>
 
       {/* 聊天气泡流 */}

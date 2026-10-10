@@ -15,7 +15,7 @@ export default function EmptyState({
   return (
     <div className={cn('flex flex-col items-center justify-center gap-3 py-16 text-center', className)}>
       <div className="mascot-bounce drop-shadow-[0_0_14px_rgba(168,130,255,0.35)]">
-        <MoyingMascot mood={mood} size={84} />
+        <MoyingMascot mood={mood} size={84} art />
       </div>
       <p className="text-sm text-muted-foreground">{text}</p>
     </div>
