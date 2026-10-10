@@ -60,3 +60,9 @@ export function sceneArtUrl(seed: string, genre?: string): string {
   const idx = g ? pickIn(seed, g.scenes[0], g.scenes[1]) : (hashSeed(seed) % 12) + 1;
   return `${baseUrl()}scenes/scene-${idx}.jpg`;
 }
+
+/** 首页 Hero / 频道头图横幅位图（16:9 动漫横幅，按 seed 全局确定性映射） */
+export function heroArtUrl(seed: string): string {
+  const idx = (hashSeed(seed) % 6) + 1;
+  return `${baseUrl()}hero/hero-${idx}.jpg`;
+}

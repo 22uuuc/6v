@@ -5,6 +5,7 @@ import { ArrowRight, MessageSquareText, BookOpenText, Images, Flame, Megaphone, 
 import { api } from '@/lib/api';
 import { useDataVersion } from '@/hooks/use-data';
 import SceneArt from '@/components/SceneArt';
+import { heroArtUrl } from '@/lib/charArt';
 import BookCover from '@/components/BookCover';
 import BookCard from '@/components/BookCard';
 import MoyingMascot from '@/components/MoyingMascot';
@@ -232,7 +233,12 @@ export default function HomePage() {
       {/* Hero 画境 */}
       <section className="anim-fade-up relative overflow-hidden rounded-2xl border border-border">
         <div className="relative h-60 w-full md:h-80">
-          <SceneArt scene="mountain" seed="hero-mountain" />
+          <img
+            src={heroArtUrl('hero-mountain')}
+            alt=""
+            loading="eager"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
           {/* 动漫平台光斑 */}
           <div className="anime-glow" />
           {/* 极光氛围覆盖（紫粉蓝，番剧海报感） */}
