@@ -8,6 +8,9 @@ import type {
 
 export const REMOTE_BASE: string = (import.meta.env.VITE_API_BASE as string | undefined) ?? 'http://127.0.0.1:8787';
 
+/** App 钥匙（后端 MOYING_APP_KEY 门禁）：经 VITE_APP_KEY 构建期注入，本地 .env.local 存储、不入库 */
+const APP_KEY: string = (import.meta.env.VITE_APP_KEY as string | undefined) ?? '';
+
 /** 远程模式就绪标记：initRemote 成功拉取 bootstrap 后置 true（失败自动回退本地演示模式） */
 let remoteReady = false;
 export function isRemoteReady(): boolean { return remoteReady; }
@@ -113,6 +116,7 @@ export function applySnap(s: any) {
 
 export function authHeaders(): Record<string, string> {
   const h: Record<string, string> = { 'content-type': 'application/json' };
+  if (APP_KEY) h['x-app-key'] = APP_KEY;
   const t = getToken();
   if (t) h.authorization = `Bearer ${t}`;
   return h;
