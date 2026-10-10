@@ -3,6 +3,7 @@
 // 数据层：localStorage + IndexedDB 模拟后端。所有写操作后 notify() 触发订阅刷新。
 // 安全：store 签名校验防篡改；收益走“待结算→管理员审核→可提现”；管理入口安全码 + 审计留痕。
 import { store, notify, secureStore } from '@/lib/store';
+import { isRemoteReady, getSnap, remoteCall, setToken, applySnap } from '@/lib/remote';
 import { buildSeed } from '@/data/seed';
 import { security, scanText } from '@/lib/security';
 import { sha256Sync, generateSalt } from '@/lib/crypto';
@@ -304,12 +305,25 @@ function sameDay(a: string, b: Date): boolean {
 export const api = {
   /* ---- 会话 ---- */
   getSession(): IUser | null {
+    if (isRemoteReady()) {
+      const s = getSnap();
+      return s ? s.me : null;
+    }
     const id = getSessionUserId();
     if (!id) return null;
     return readUsers().find((u) => u.id === id) ?? null;
   },
 
-  login(username: string, password: string): { ok: boolean; msg?: string; user?: IUser } {
+  async login(username: string, password: string): Promise<{ ok: boolean; msg?: string; user?: IUser }> {
+    if (isRemoteReady()) {
+      const res = await remoteCall('/auth/login', { method: 'POST', body: { username, password } });
+      if (!res.ok) return { ok: false, msg: res.msg ?? '账号或密码不对' };
+      setToken(res.token);
+      const ls = getSnap();
+      if (ls && !ls.me && res.user) applySnap({ ...ls, me: res.user });
+      notify();
+      return { ok: true, user: res.user };
+    }
     // 防暴力破解：连续失败 5 次锁定 10 分钟（锁定期间直接拒绝）
     const fail = store.get<{ n: number; until: number }>('loginFail', { n: 0, until: 0 });
     if (fail.until > Date.now()) {
@@ -359,7 +373,16 @@ export const api = {
     return { ok: true, user: this.getUser(u.id) ?? u };
   },
 
-  register(username: string, password: string, nickname: string): { ok: boolean; msg?: string; user?: IUser } {
+  async register(username: string, password: string, nickname: string): Promise<{ ok: boolean; msg?: string; user?: IUser }> {
+    if (isRemoteReady()) {
+      const res = await remoteCall('/auth/register', { method: 'POST', body: { username, password, nickname } });
+      if (!res.ok) return { ok: false, msg: res.msg ?? '注册失败' };
+      setToken(res.token);
+      const ls = getSnap();
+      if (ls && !ls.me && res.user) applySnap({ ...ls, me: res.user });
+      notify();
+      return { ok: true, user: res.user };
+    }
     const settings = this.getSettings();
     if (!settings.openRegister) return { ok: false, msg: '本站暂停注册，请联系管理员' };
     const users = readUsers();
@@ -378,13 +401,30 @@ export const api = {
     return { ok: true, user: this.getUser(u.id) ?? u };
   },
 
-  logout() {
+  async logout() {
+    if (isRemoteReady()) {
+      try { await remoteCall('/auth/logout', { method: 'POST' }); } catch { /* ignore */ }
+      setToken(null);
+      const s = getSnap();
+      if (s) applySnap({ ...s, me: null });
+      notify();
+      return;
+    }
     writeSession(null);
     notify();
   },
 
   /** 第三方快捷登录/注册（演示：微信/QQ 固定演示账号，首次自动注册） */
-  thirdPartyLogin(provider: 'wechat' | 'qq'): { ok: boolean; msg?: string; user?: IUser } {
+  async thirdPartyLogin(provider: 'wechat' | 'qq'): Promise<{ ok: boolean; msg?: string; user?: IUser }> {
+    if (isRemoteReady()) {
+      const res = await remoteCall('/auth/third-party', { method: 'POST', body: { provider } });
+      if (!res.ok) return { ok: false, msg: res.msg ?? '第三方登录失败' };
+      setToken(res.token);
+      const ls = getSnap();
+      if (ls && !ls.me && res.user) applySnap({ ...ls, me: res.user });
+      notify();
+      return { ok: true, user: res.user };
+    }
     const username = provider === 'wechat' ? 'wx_demo' : 'qq_demo';
     const nickname = provider === 'wechat' ? '微信书友' : 'QQ书友';
     const users = readUsers();
@@ -495,6 +535,12 @@ export const api = {
 
   /* ---- 用户 ---- */
   getUser(id: string): IUser | null {
+    if (isRemoteReady()) {
+      const s = getSnap();
+      if (!s) return null;
+      if (s.me && s.me.id === id) return s.me;
+      return s.users?.find((u) => u.id === id) ?? null;
+    }
     const u = readUsers().find((u) => u.id === id);
     return u ? normalizeUser(u) : null;
   },
@@ -511,6 +557,7 @@ export const api = {
   },
 
   allUsers(): IUser[] {
+    if (isRemoteReady()) return getSnap()?.users ?? [];
     return readUsers();
   },
 
@@ -761,7 +808,7 @@ export const api = {
 
   /* ---- 书籍 ---- */
   publishedBooks(type?: BookType | BookType[], genre?: BookGenre, subcategory?: string): IBook[] {
-    let list = read<IBook[]>('books', []).filter((b) => b.status === 'published');
+    let list = (isRemoteReady() ? (getSnap()?.books ?? []) : read<IBook[]>('books', [])).filter((b) => b.status === 'published');
     if (type) {
       const types = Array.isArray(type) ? type : [type];
       list = list.filter((b) => types.includes(b.type));
@@ -772,14 +819,17 @@ export const api = {
   },
 
   allBooks(): IBook[] {
+    if (isRemoteReady()) return getSnap()?.books ?? [];
     return read<IBook[]>('books', []);
   },
 
   creatorBooks(authorId: string): IBook[] {
+    if (isRemoteReady()) return (getSnap()?.books ?? []).filter((b) => b.authorId === authorId);
     return read<IBook[]>('books', []).filter((b) => b.authorId === authorId);
   },
 
   getBook(id: string): IBook | null {
+    if (isRemoteReady()) return getSnap()?.books.find((b) => b.id === id) ?? null;
     return read<IBook[]>('books', []).find((b) => b.id === id) ?? null;
   },
 
@@ -1048,13 +1098,24 @@ export const api = {
 
   /* ---- 章节与剧本 ---- */
   chaptersOf(bookId: string): IChapter[] {
-    return read<IChapter[]>('chapters', [])
+    return (isRemoteReady() ? (getSnap()?.chapters ?? []) : read<IChapter[]>('chapters', []))
       .filter((c) => c.bookId === bookId)
       .sort((a, b) => a.index - b.index);
   },
 
   getChapter(id: string): IChapter | null {
+    if (isRemoteReady()) return getSnap()?.chapters.find((c) => c.id === id) ?? null;
     return read<IChapter[]>('chapters', []).find((c) => c.id === id) ?? null;
+  },
+
+  /** 正文按需加载（远程模式从后端拉正文，不落快照） */
+  async getChapterContent(id: string): Promise<IChapter | null> {
+    if (isRemoteReady()) {
+      const res = await remoteCall(`/chapters/${id}/content`);
+      if (!res.ok) return null;
+      return { ...(res.chapter ?? {}), content: res.content ?? res.chapter?.content ?? '' };
+    }
+    return this.getChapter(id);
   },
 
   saveChapters(bookId: string, chapters: Omit<IChapter, 'id' | 'bookId'>[]) {
@@ -1110,17 +1171,18 @@ export const api = {
   },
 
   comicChapters(bookId: string): IComicChapter[] {
-    return read<IComicChapter[]>('comicChapters', [])
+    return (isRemoteReady() ? (getSnap()?.comicChapters ?? []) : read<IComicChapter[]>('comicChapters', []))
       .filter((c) => c.bookId === bookId)
       .sort((a, b) => a.index - b.index);
   },
 
   comicChapter(id: string): IComicChapter | null {
+    if (isRemoteReady()) return getSnap()?.comicChapters.find((c) => c.id === id) ?? null;
     return read<IComicChapter[]>('comicChapters', []).find((c) => c.id === id) ?? null;
   },
 
   comicPages(chapterId: string): IComicPage[] {
-    return read<IComicPage[]>('comicPages', [])
+    return (isRemoteReady() ? (getSnap()?.comicPages ?? []) : read<IComicPage[]>('comicPages', []))
       .filter((p) => p.chapterId === chapterId)
       .sort((a, b) => a.index - b.index);
   },
@@ -1167,6 +1229,13 @@ export const api = {
 
   /* ---- 书架与进度 ---- */
   shelfOf(userId: string): IBook[] {
+    if (isRemoteReady()) {
+      const s = getSnap();
+      if (!s) return [];
+      return (s.shelf ?? []).filter((e) => e.userId === userId)
+        .map((e) => s.books.find((b) => b.id === e.bookId))
+        .filter((b): b is IBook => !!b);
+    }
     const entries = read<IShelfEntry[]>('shelf', []).filter((e) => e.userId === userId);
     const books = read<IBook[]>('books', []);
     return entries
@@ -1175,6 +1244,7 @@ export const api = {
   },
 
   inShelf(userId: string, bookId: string): boolean {
+    if (isRemoteReady()) return (getSnap()?.shelf ?? []).some((e) => e.userId === userId && e.bookId === bookId);
     return read<IShelfEntry[]>('shelf', []).some((e) => e.userId === userId && e.bookId === bookId);
   },
 
@@ -1205,10 +1275,15 @@ export const api = {
   },
 
   getProgress(userId: string, bookId: string): IProgress | null {
+    if (isRemoteReady()) return (getSnap()?.progress ?? []).find((p) => p.userId === userId && p.bookId === bookId) ?? null;
     return read<IProgress[]>('progress', []).find((p) => p.userId === userId && p.bookId === bookId) ?? null;
   },
 
-  saveProgress(userId: string, bookId: string, chapterId?: string, nodeId?: string) {
+  async saveProgress(userId: string, bookId: string, chapterId?: string, nodeId?: string) {
+    if (isRemoteReady()) {
+      await remoteCall('/progress', { method: 'PUT', body: { bookId, chapterId, nodeId } });
+      return;
+    }
     const all = read<IProgress[]>('progress', []).filter((p) => !(p.userId === userId && p.bookId === bookId));
     all.push({ userId, bookId, chapterId, nodeId, updatedAt: new Date().toISOString() });
     write('progress', all);
@@ -1216,6 +1291,16 @@ export const api = {
   },
 
   recentReads(userId: string): { book: IBook; chapterTitle?: string; updatedAt: string }[] {
+    if (isRemoteReady()) {
+      const s = getSnap();
+      if (!s) return [];
+      const all = (s.progress ?? []).filter((p) => p.userId === userId).sort((a, b) => (b.updatedAt < a.updatedAt ? -1 : 1));
+      return all.slice(0, 8).map((p) => {
+        const book = s.books.find((b) => b.id === p.bookId);
+        const chapter = p.chapterId ? s.chapters.find((c) => c.id === p.chapterId) : undefined;
+        return book ? { book, chapterTitle: chapter?.title, updatedAt: p.updatedAt } : null;
+      }).filter((x): x is NonNullable<typeof x> => x !== null);
+    }
     const all = read<IProgress[]>('progress', [])
       .filter((p) => p.userId === userId)
       .sort((a, b) => (b.updatedAt < a.updatedAt ? -1 : 1));
@@ -1231,6 +1316,7 @@ export const api = {
 
   /* ---- 钱包与付费 ---- */
   txsOf(userId: string): ITx[] {
+    if (isRemoteReady()) return (getSnap()?.txs ?? []).filter((t) => t.userId === userId).sort((a, b) => (b.createdAt < a.createdAt ? -1 : 1));
     return read<ITx[]>('txs', [])
       .filter((t) => t.userId === userId)
       .sort((a, b) => (b.createdAt < a.createdAt ? -1 : 1));
@@ -1253,7 +1339,12 @@ export const api = {
   },
 
   /** 充值到账：金额必须为正数且不超过单笔上限，方式必须在白名单内（防控制台伪造负数/超大额充值刷币或"负充值套现"） */
-  recharge(userId: string, yuan: number, method: string = 'alipay', payNo?: string): { ok: boolean; msg?: string } {
+  async recharge(userId: string, yuan: number, method: string = 'alipay', payNo?: string): Promise<{ ok: boolean; msg?: string }> {
+    if (isRemoteReady()) {
+      const res = await remoteCall('/wallet/recharge', { method: 'POST', body: { yuan, method } });
+      if (res.ok) notify();
+      return { ok: !!res.ok, msg: res.msg };
+    }
     const me = this.getUser(userId);
     if (!me) return { ok: false, msg: '请先登录' };
     if (me.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
@@ -1277,7 +1368,12 @@ export const api = {
   },
 
   /** 订阅普通小说章节（VIP 或免费章直接可读） */
-  payChapter(userId: string, chapter: IChapter): { ok: boolean; msg?: string } {
+  async payChapter(userId: string, chapter: IChapter): Promise<{ ok: boolean; msg?: string }> {
+    if (isRemoteReady()) {
+      const res = await remoteCall('/wallet/pay-chapter', { method: 'POST', body: { chapterId: chapter.id } });
+      if (res.ok) notify();
+      return { ok: !!res.ok, msg: res.msg };
+    }
     if (chapter.price <= 0) return { ok: true };
     const me = this.getUser(userId);
     if (!me) return { ok: false, msg: '请先登录' };
@@ -1316,7 +1412,12 @@ export const api = {
     return { ok: true };
   },
 
-  tip(userId: string, book: IBook, coins: number) {
+  async tip(userId: string, book: IBook, coins: number): Promise<{ ok: boolean; msg?: string }> {
+    if (isRemoteReady()) {
+      const res = await remoteCall(`/books/${book.id}/tip`, { method: 'POST', body: { coins } });
+      if (res.ok) notify();
+      return { ok: !!res.ok, msg: res.msg };
+    }
     const me = this.getUser(userId);
     if (!me) return;
     if (me.banned) return;
@@ -1327,7 +1428,12 @@ export const api = {
     this.creditAuthor(book.id, coins, '打赏');
   },
 
-  buyVip(userId: string): { ok: boolean; msg?: string } {
+  async buyVip(userId: string): Promise<{ ok: boolean; msg?: string }> {
+    if (isRemoteReady()) {
+      const res = await remoteCall('/wallet/buy-vip', { method: 'POST' });
+      if (res.ok) notify();
+      return { ok: !!res.ok, msg: res.msg };
+    }
     const me = this.getUser(userId);
     if (!me) return { ok: false, msg: '请先登录' };
     if (me.banned) return { ok: false, msg: '账号已被封禁，请联系管理员' };
@@ -1511,6 +1617,10 @@ export const api = {
 
   /** 签到数据：今日是否已签、连续天数、今日阅读任务是否完成 */
   checkinInfo(userId: string): { today: boolean; streak: number; readDone: boolean; checkinReward: number; readReward: number } {
+    if (isRemoteReady()) {
+      const c = getSnap()?.checkinInfo;
+      if (c) return { today: c.today, streak: c.streak, readDone: c.readDone, checkinReward: c.checkinReward, readReward: c.readReward };
+    }
     const daily = read<Record<string, { date: string; streak: number; readDone: boolean }>>('daily', {});
     const row = daily[userId];
     const key = this.todayKey();
@@ -1534,7 +1644,12 @@ export const api = {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   },
 
-  checkin(userId: string): { ok: boolean; msg?: string; reward?: number; streak?: number } {
+  async checkin(userId: string): Promise<{ ok: boolean; msg?: string; reward?: number; streak?: number }> {
+    if (isRemoteReady()) {
+      const res = await remoteCall('/checkin', { method: 'POST' });
+      if (res.ok) notify();
+      return { ok: !!res.ok, msg: res.msg, reward: res.reward, streak: res.streak };
+    }
     const me = this.getUser(userId);
     if (!me) return { ok: false, msg: '请先登录' };
     if (me.banned) return { ok: false, msg: '账号已被封禁' };
@@ -1554,7 +1669,12 @@ export const api = {
   },
 
   /** 今日阅读任务：进入阅读页时调用（每天一次） */
-  markReadTask(userId: string): { ok: boolean; reward?: number } {
+  async markReadTask(userId: string): Promise<{ ok: boolean; reward?: number }> {
+    if (isRemoteReady()) {
+      const res = await remoteCall('/checkin/read-task', { method: 'POST' });
+      if (res.ok) notify();
+      return { ok: !!res.ok, reward: res.reward };
+    }
     const info = this.checkinInfo(userId);
     if (info.today && !info.readDone) {
       const daily = read<Record<string, { date: string; streak: number; readDone: boolean }>>('daily', {});
@@ -1578,11 +1698,15 @@ export const api = {
     if (kind === 'new') {
       return [...published].sort((a, b) => (b.createdAt < a.createdAt ? -1 : 1)).slice(0, 10).map((b) => ({ book: b, value: b.likes, label: `${b.likes} 收藏` }));
     }
-    // 打赏榜：按已结算打赏金额聚合
+    // 打赏榜：按已结算打赏金额聚合（远程模式读快照 tipTotals）
     const map = new Map<string, number>();
-    read<ISettlement[]>('settlements', [])
-      .filter((s) => s.kind === 'tip' && s.status === 'approved' && s.bookId)
-      .forEach((s) => map.set(s.bookId!, (map.get(s.bookId!) ?? 0) + s.amount));
+    if (isRemoteReady()) {
+      (getSnap()?.tipTotals ?? []).forEach((t) => map.set(t.bookId, (map.get(t.bookId) ?? 0) + t.amount));
+    } else {
+      read<ISettlement[]>('settlements', [])
+        .filter((s) => s.kind === 'tip' && s.status === 'approved' && s.bookId)
+        .forEach((s) => map.set(s.bookId!, (map.get(s.bookId!) ?? 0) + s.amount));
+    }
     return [...map.entries()]
       .map(([bookId, amount]) => {
         const book = this.getBook(bookId);
@@ -1632,7 +1756,11 @@ export const api = {
   },
 
   /** 忘记密码：按注册账号重置密码。验证码由后端校验：一次性、10 分钟有效、连错 5 次作废 */
-  resetPassword(account: string, code: string, newPwd: string): { ok: boolean; msg?: string } {
+  async resetPassword(account: string, code: string, newPwd: string): Promise<{ ok: boolean; msg?: string }> {
+    if (isRemoteReady()) {
+      const res = await remoteCall('/auth/reset-password', { method: 'POST', body: { account, code, newPwd } });
+      return { ok: !!res.ok, msg: res.msg };
+    }
     const accountKey = account.trim();
     const users = readUsers();
     const u = users.find((x) => x.username === accountKey);
@@ -2222,7 +2350,7 @@ export const api = {
     if (!userId) return false;
     const me = this.getUser(userId);
     if (me && isVip(me)) return true;
-    const txs = read<ITx[]>('txs', []).filter((t) => t.userId === userId && t.kind === 'subscribe' && t.bookId === book.id && (!targetId || t.chapterId === targetId));
+    const txs = (isRemoteReady() ? (getSnap()?.txs ?? []) : read<ITx[]>('txs', [])).filter((t) => t.userId === userId && t.kind === 'subscribe' && t.bookId === book.id && (!targetId || t.chapterId === targetId));
     return txs.length > 0;
   },
 };

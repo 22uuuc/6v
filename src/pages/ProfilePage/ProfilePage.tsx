@@ -147,9 +147,10 @@ export default function ProfilePage() {
     setPayStep('qr');
   };
 
-  const confirmPaid = () => {
+  const confirmPaid = async () => {
     if (!payAmount || !payNo) return;
-    api.recharge(user.id, payAmount, rechargeMethod, payNo);
+    const res = await api.recharge(user.id, payAmount, rechargeMethod, payNo);
+    if (!res.ok) { toast.error(res.msg ?? '充值失败'); setRechargeOpen(false); setPayStep('idle'); return; }
     setRechargeOpen(false);
     setPayStep('idle');
     setPayAmount(0);
@@ -158,8 +159,8 @@ export default function ProfilePage() {
     toast.success(`支付成功，到账 ${fmtCoins(payAmount * settings.rechargeRate)} 书币（单号 ${payNo}）`);
   };
 
-  const doBuyVip = () => {
-    const res = api.buyVip(user.id);
+  const doBuyVip = async () => {
+    const res = await api.buyVip(user.id);
     if (!res.ok) {
       toast.error(res.msg ?? '开通失败');
       return;
@@ -177,9 +178,9 @@ export default function ProfilePage() {
   const txFilter = (kind: string) =>
     txs.filter((t) => (kind === 'all' ? true : t.kind === kind));
 
-  const doCheckin = () => {
+  const doCheckin = async () => {
     if (!user) return;
-    const res = api.checkin(user.id);
+    const res = await api.checkin(user.id);
     if (!res.ok) {
       toast.error(res.msg ?? '签到失败');
       return;

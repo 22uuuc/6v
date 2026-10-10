@@ -89,7 +89,7 @@ export default function BookDetailPage() {
     }
   };
 
-  const handleTip = (coins: number) => {
+  const handleTip = async (coins: number) => {
     if (!user) {
       toast.info('请先登录');
       return;
@@ -99,7 +99,8 @@ export default function BookDetailPage() {
       navigate('/profile');
       return;
     }
-    api.tip(user.id, book, coins);
+    const res = await api.tip(user.id, book, coins);
+    if (!res.ok) { toast.error(res.msg ?? '打赏失败'); setTipOpen(false); return; }
     setTipOpen(false);
     toast.success(`已打赏 ${coins} 书币`);
   };

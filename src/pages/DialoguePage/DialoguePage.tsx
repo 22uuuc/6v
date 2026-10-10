@@ -41,7 +41,7 @@ export default function DialoguePage() {
   }
 
   const unlocked = user ? api.isUnlocked(user.id, book, 'chapter', chapter) : chapter.price <= 0;
-  const pay = () => {
+  const pay = async () => {
     if (!user) {
       toast.info('请先登录');
       navigate('/auth');
@@ -52,7 +52,8 @@ export default function DialoguePage() {
       navigate('/profile');
       return;
     }
-    api.payChapter(user.id, chapter);
+    const res = await api.payChapter(user.id, chapter);
+    if (!res.ok) { toast.error(res.msg ?? '订阅失败'); return; }
     toast.success(`已订阅第${chapter.index}章（${chapter.price} 书币）`);
   };
 

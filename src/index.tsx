@@ -10,10 +10,11 @@ import './index.css';
 import { startGuard } from '@/lib/guard';
 startGuard(30000);
 
-// 云端内容库：每次打开都自动从固定渠道（写死于代码的 GitHub 仓库，见 cloud.ts CLOUD_CHANNEL）增量拉取共享书城
-// 架构：后端管理员控制 → GitHub 数据库中转 → 前端只读提取（匿名拉取，失败静默保留本地兜底）
-import { cloud } from '@/lib/cloud';
-void cloud.initAutoPull();
+// 后端权威接入：启动时探测本地后端（127.0.0.1:8787），成功后进入远程模式（数据经后端权限获取）
+// 失败自动回退本地演示模式；安全边界：接入层纯 HTTP 客户端，不携带任何后端加密材料
+import { initRemote } from '@/lib/remote';
+import { notify } from '@/lib/store';
+void initRemote().then(() => notify());
 
 // PWA：注册 Service Worker（供安装到手机 / 桌面，离线回退壳缓存）
 if ('serviceWorker' in navigator && import.meta.env.PROD) {

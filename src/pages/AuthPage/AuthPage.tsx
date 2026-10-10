@@ -92,7 +92,7 @@ export default function AuthPage() {
     toast.info(`${res.msg}：${res.demoCode}`);
   };
 
-  const doResetPwd = () => {
+  const doResetPwd = async () => {
     if (!fAccount.trim() || !fCode.trim()) {
       toast.error('请填写账号与验证码');
       return;
@@ -105,7 +105,7 @@ export default function AuthPage() {
       toast.error('两次输入的新密码不一致');
       return;
     }
-    const res = api.resetPassword(fAccount.trim(), fCode.trim(), fNewPwd);
+    const res = await api.resetPassword(fAccount.trim(), fCode.trim(), fNewPwd);
     if (!res.ok) {
       toast.error(res.msg ?? '重置失败');
       return;
@@ -136,8 +136,8 @@ export default function AuthPage() {
     defaultValues: { email: '', nickname: '', password: '' },
   });
 
-  const onLogin = (v: z.infer<typeof loginSchema>) => {
-    const res = api.login(v.username, v.password);
+  const onLogin = async (v: z.infer<typeof loginSchema>) => {
+    const res = await api.login(v.username, v.password);
     if (!res.ok) {
       toast.error(res.msg ?? '登录失败');
       return;
@@ -146,8 +146,8 @@ export default function AuthPage() {
     navigate('/profile');
   };
 
-  const onAccountRegister = (v: z.infer<typeof accountSchema>) => {
-    const res = api.register(v.username, v.password, v.nickname);
+  const onAccountRegister = async (v: z.infer<typeof accountSchema>) => {
+    const res = await api.register(v.username, v.password, v.nickname);
     if (!res.ok) {
       toast.error(res.msg ?? '注册失败');
       return;
@@ -169,7 +169,7 @@ export default function AuthPage() {
     window.setTimeout(() => setSending(false), 60000);
   };
 
-  const onPhoneRegister = (v: z.infer<typeof phoneSchema>) => {
+  const onPhoneRegister = async (v: z.infer<typeof phoneSchema>) => {
     if (!sentCode) {
       toast.error('请先获取验证码');
       return;
@@ -178,7 +178,7 @@ export default function AuthPage() {
       toast.error('验证码错误');
       return;
     }
-    const res = api.register(v.phone, v.password, v.nickname);
+    const res = await api.register(v.phone, v.password, v.nickname);
     if (!res.ok) {
       toast.error(res.msg === '账号已存在' ? '该手机号已注册，可直接登录' : res.msg ?? '注册失败');
       return;
@@ -188,7 +188,7 @@ export default function AuthPage() {
     navigate('/profile');
   };
 
-  const onEmailRegister = (v: z.infer<typeof emailSchema>) => {
+  const onEmailRegister = async (v: z.infer<typeof emailSchema>) => {
     if (!emailSentCode) {
       toast.error('请先获取邮箱验证码');
       return;
@@ -197,7 +197,7 @@ export default function AuthPage() {
       toast.error('验证码错误');
       return;
     }
-    const res = api.register(v.email, v.password, v.nickname);
+    const res = await api.register(v.email, v.password, v.nickname);
     if (!res.ok) {
       toast.error(res.msg === '账号已存在' ? '该邮箱已注册，可直接登录' : res.msg ?? '注册失败');
       return;
@@ -220,8 +220,8 @@ export default function AuthPage() {
     window.setTimeout(() => setEmailSending(false), 60000);
   };
 
-  const thirdParty = (provider: 'wechat' | 'qq') => {
-    const res = api.thirdPartyLogin(provider);
+  const thirdParty = async (provider: 'wechat' | 'qq') => {
+    const res = await api.thirdPartyLogin(provider);
     if (!res.ok) {
       toast.error(res.msg ?? '第三方登录失败');
       return;

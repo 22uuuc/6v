@@ -59,7 +59,8 @@ export default function ReaderPage() {
   const index = chapters.findIndex((c) => c.id === chapterId);
   const chapter = index >= 0 ? chapters[index] : null;
   // 长章节按空行切段：仅章节内容变化时重算，字号/行距调整不再重复切分
-  const paras = useMemo(() => (chapter ? chapter.content.split('\n\n') : []), [chapter]);
+  const [body, setBody] = useState<string | null>(chapter ? chapter.content : null);
+  const paras = useMemo(() => (body ? body.split('\n\n') : []), [body]);
 
   useEffect(() => {
     if (chapter && user) {
@@ -81,7 +82,18 @@ export default function ReaderPage() {
   }
 
   const unlocked = user ? api.isUnlocked(user.id, book, 'chapter', chapter) : chapter.price <= 0;
-  const pay = () => {
+
+  // 正文按需加载：远程模式快照不含正文，解锁后自动从后端拉取
+  useEffect(() => {
+    if (!chapter) return;
+    if (!unlocked) { setBody(''); return; }
+    let alive = true;
+    api.getChapterContent(chapter.id).then((c) => { if (alive) setBody(c?.content ?? ''); });
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chapter?.id, chapterId, unlocked]);
+
+  const pay = async () => {
     if (!user) {
       toast.info('请先登录');
       navigate('/auth');
@@ -92,7 +104,8 @@ export default function ReaderPage() {
       navigate('/profile');
       return;
     }
-    api.payChapter(user.id, chapter);
+    const res = await api.payChapter(user.id, chapter);
+    if (!res.ok) { toast.error(res.msg ?? '订阅失败'); return; }
     toast.success(`已订阅第${chapter.index}章（${chapter.price} 书币）`);
   };
 
