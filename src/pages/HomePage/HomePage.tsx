@@ -4,7 +4,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, MessageSquareText, BookOpenText, Images, Flame, Megaphone, LibraryBig, BadgeCheck, LayoutGrid, MessagesSquare, Gamepad2, Clapperboard, Video } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useDataVersion } from '@/hooks/use-data';
-import SceneArt from '@/components/SceneArt';
 import { heroArtUrl } from '@/lib/charArt';
 import BookCover from '@/components/BookCover';
 import BookCard from '@/components/BookCard';
@@ -70,13 +69,6 @@ const PUSH_TYPE_LABEL: Record<string, string> = { novel: '小说', visual: '互�
 
 type PushItem = { kind: 'notice'; text: string } | { kind: 'book'; book: IBook };
 
-/** 题材 → 轮播背景场景画（复用 12 场景插画体系） */
-const GENRE_SCENE: Record<string, string> = {
-  玄幻: 'mountain', 仙侠: 'mountain', 武侠: 'tea-house', 古言: 'tea-house', 历史: 'tea-house',
-  都市: 'night-city', 现实: 'street', 科幻: 'space', 游戏: 'forest', 奇幻: 'forest',
-  悬疑: 'ghost', 青春: 'campus', 言情: 'campus', 轻小说: 'sea',
-};
-const genreScene = (g: string) => GENRE_SCENE[g] ?? 'night-city';
 
 /** 三宫格快捷入口（参考短篇站：最新入库 / 完本精品 / 分类） */
 const QUICK_ENTRIES: {
@@ -152,8 +144,12 @@ function BannerCarousel({ books, label }: { books: IBook[]; label: string }) {
   return (
     <div className="relative overflow-hidden rounded-2xl border border-border shadow-lg shadow-primary/10">
       <div key={b.id} className="anim-fade-up relative h-64 w-full md:h-72">
-        {/* 场景画打底（按题材自动换景） */}
-        <SceneArt scene={genreScene(b.genre)} seed={`banner-${b.coverSeed}`} />
+        {/* 动漫横幅打底（16:9 位图，按书确定性轮换） */}
+        <img
+          src={heroArtUrl(`banner-${b.coverSeed}`)}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+        />
         <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/55 to-background/10" />
         <div className="anime-glow" />
         {/* 右侧作品封面悬浮（桌面端） */}

@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { api } from '@/lib/api';
+import { heroArtUrl } from '@/lib/charArt';
 import { useDataVersion } from '@/hooks/use-data';
 import BookCard from '@/components/BookCard';
 import BookCover from '@/components/BookCover';
@@ -53,16 +54,25 @@ export default function CategoryPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="section-title text-gradient-anime font-serif text-2xl font-bold">{label}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{desc}</p>
-        {qSerial === 'finished' && (
-          <Button asChild size="sm" className="btn-anime mt-2 gap-1.5">
-            <Link to="/category/all">
-              只看完本 <span className="text-xs opacity-70">✕ 清除</span>
-            </Link>
-          </Button>
-        )}
+      <div className="relative overflow-hidden rounded-2xl border border-border p-5 shadow-lg shadow-primary/10 md:p-6">
+        <img
+          src={heroArtUrl(`cat-${type || 'all'}`)}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover opacity-90"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/70 to-background/25" />
+        <div className="anime-glow absolute inset-0" />
+        <div className="relative">
+          <h1 className="section-title text-gradient-anime font-serif text-2xl font-bold">{label}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{desc}</p>
+          {qSerial === 'finished' && (
+            <Button asChild size="sm" className="btn-anime mt-2 gap-1.5">
+              <Link to="/category/all">
+                只看完本 <span className="text-xs opacity-70">✕ 清除</span>
+              </Link>
+            </Button>
+          )}
+          </div>
       </div>
 
       {subs.length > 0 && (
