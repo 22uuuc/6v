@@ -7,7 +7,7 @@ import {
   Crown, Wallet, PenLine, ShieldCheck, LogOut, Coins, PencilLine,
   ArrowRight, BadgeCheck, Landmark, MessageCircle, CreditCard, Zap,
   MessageSquareText, Headset, EyeOff, Lock, Trash2, BookOpenText, KeyRound,
-  RotateCcw, Palette, MonitorSmartphone,
+  RotateCcw, Palette, MonitorSmartphone, Gift,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -417,6 +417,13 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
         )}
+        <Card className="cursor-pointer transition-colors hover:border-primary/60" onClick={() => navigate('/activities')}>
+          <CardContent className="flex items-center gap-3 p-4">
+            <Gift className="h-5 w-5 text-primary" />
+            <span className="text-sm font-medium">活动中心</span>
+            <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground" />
+          </CardContent>
+        </Card>
         <Card className="cursor-pointer transition-colors hover:border-primary/60" onClick={() => navigate('/feedback')}>
           <CardContent className="flex items-center gap-3 p-4">
             <MessageSquareText className="h-5 w-5 text-primary" />

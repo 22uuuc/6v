@@ -32,6 +32,7 @@ const FeedbackPage = lazy(() => import('@/pages/FeedbackPage/FeedbackPage'));
 const SupportPage = lazy(() => import('@/pages/SupportPage/SupportPage'));
 const RankPage = lazy(() => import('@/pages/RankPage/RankPage'));
 const AdminPage = lazy(() => import('@/pages/AdminPage/AdminPage'));
+const ActivitiesPage = lazy(() => import('@/pages/ActivitiesPage/ActivitiesPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage/NotFoundPage'));
 
 /** 路由加载中占位符（书灵翻页 · IP 触点） */
@@ -80,6 +81,7 @@ export default function App() {
               <Route path="feedback" element={<FeedbackPage />} />
               <Route path="support" element={<SupportPage />} />
               <Route path="admin" element={<AdminPage />} />
+              <Route path="activities" element={<ActivitiesPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Route>
           </Routes>

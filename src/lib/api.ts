@@ -153,6 +153,27 @@ const RESET_CODE_TTL = 10 * 60 * 1000; // 10 分钟
 const RESET_CODE_MAX_ATTEMPTS = 5; // 连错 5 次作废
 const RESET_CODE_COOLDOWN = 60 * 1000; // 同账号 60 秒内只能发一次
 
+/* ---------- 活动中心（后端设计推送，前端展示参与） ---------- */
+
+export interface ActivityItem {
+  id: string;
+  type: 'sign' | 'task' | 'festival' | 'redeem' | 'admin';
+  name: string;
+  desc: string;
+  rewardCoins: number;
+  rewardExp: number;
+  startAt: string;
+  endAt: string;
+  status?: string;
+  claimed?: boolean;
+}
+
+const LOCAL_ACTIVITIES: ActivityItem[] = [
+  { id: 'la_sign', type: 'sign', name: '连续签到领书币', desc: '连续 7 天签到，每天登录即可领取当日奖励，中断清零。', rewardCoins: 10, rewardExp: 5, startAt: new Date(Date.now() - 86400_000).toISOString(), endAt: new Date(Date.now() + 30 * 86400_000).toISOString() },
+  { id: 'la_task', type: 'task', name: '阅读 30 分钟挑战', desc: '活动期间累计阅读 30 分钟，奖励一次性发放。', rewardCoins: 50, rewardExp: 20, startAt: new Date(Date.now() - 86400_000).toISOString(), endAt: new Date(Date.now() + 14 * 86400_000).toISOString() },
+  { id: 'la_festival', type: 'festival', name: '金秋书友回馈节', desc: '节日限时福利，参与即可获得双倍经验奖励。', rewardCoins: 100, rewardExp: 30, startAt: new Date(Date.now() - 3600_000).toISOString(), endAt: new Date(Date.now() + 3 * 86400_000).toISOString() },
+];
+
 /** 生成 6 位数字验证码 */
 function genResetCode(): string {
   return String(Math.floor(100000 + Math.random() * 900000));
@@ -444,6 +465,38 @@ export const api = {
       return { ok: true, user: res.user };
     }
     return this.register(phone, 'phone123456', `书友${phone.slice(-4)}`);
+  },
+
+  /** 活动中心：拉取后端设计推送的活动（后端权威数据，含已参与状态） */
+  async listActivities(): Promise<{ ok: boolean; msg?: string; activities?: ActivityItem[] }> {
+    if (isRemoteReady()) {
+      try {
+        const res = await remoteCall('/activities', { method: 'GET' });
+        return { ok: !!res.ok, msg: res.msg, activities: res.activities };
+      } catch {
+        return { ok: false, msg: '活动加载失败，请重试' };
+      }
+    }
+    const me = getSnap()?.me;
+    return { ok: true, activities: LOCAL_ACTIVITIES.map((a) => ({ ...a, claimed: me ? localStorage.getItem(`act_${a.id}_${me.id}`) === '1' : false })) };
+  },
+
+  /** 参与活动：奖励由后端发放（防重复/审计）；本地模式模拟发放 */
+  async claimActivity(id: string): Promise<{ ok: boolean; msg?: string; rewardCoins?: number; rewardExp?: number }> {
+    if (isRemoteReady()) {
+      const res = await remoteCall(`/activities/${id}/claim`, { method: 'POST' });
+      return { ok: !!res.ok, msg: res.msg, rewardCoins: res.rewardCoins, rewardExp: res.rewardExp };
+    }
+    const me = getSnap()?.me;
+    if (!me) return { ok: false, msg: '请先登录后参与活动' };
+    const act = LOCAL_ACTIVITIES.find((a) => a.id === id);
+    if (!act) return { ok: false, msg: '活动不存在或已结束' };
+    if (localStorage.getItem(`act_${id}_${me.id}`) === '1') return { ok: false, msg: '该活动已参与过，不能重复参与' };
+    localStorage.setItem(`act_${id}_${me.id}`, '1');
+    this.pushTx(me.id, 'settle', act.rewardCoins, `活动奖励：《${act.name}》`, 0);
+    this.addExp(me.id, act.rewardExp, `活动奖励：${act.name}`);
+    notify();
+    return { ok: true, rewardCoins: act.rewardCoins, rewardExp: act.rewardExp };
   },
 
   async logout() {
