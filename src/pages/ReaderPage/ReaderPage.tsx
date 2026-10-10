@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, List, Lock, Minus, Plus, ChevronLeft, ChevronRight, SunMoon, Maximize2, Minimize2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { api, isVip, fmtCoins } from '@/lib/api';
+import { sceneArtUrl } from '@/lib/charArt';
 import { fontStack } from '@/lib/platform-style';
 import { useDataVersion } from '@/hooks/use-data';
 import { useAuth } from '@/lib/auth-context';
@@ -107,7 +108,14 @@ export default function ReaderPage() {
     setImmersive((v) => !v);
   };
 
-  return (<div className="page-enter mx-auto max-w-2xl">
+  return (<div className="page-enter relative mx-auto max-w-2xl">
+      {/* 氛围位图背景：按题材场景图，ink/night 主题下透出，paper 保持纸感 */}
+      {theme !== 'paper' && book && (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl" aria-hidden>
+          <img src={sceneArtUrl(book.genre)} alt="" className="absolute inset-0 h-full w-full object-cover opacity-[0.13] blur-[3px] saturate-[1.15]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/15 to-background/75" />
+        </div>
+      )}
       {/* 顶栏（沉浸阅读时淡出，点正文呼出） */}
       <div
         className={`sticky top-14 z-30 -mx-4 mb-4 flex items-center gap-2 border-b border-border bg-background/90 px-4 py-2.5 backdrop-blur-sm transition-all duration-300 ${
@@ -181,7 +189,7 @@ export default function ReaderPage() {
       <article
         key={`${chapterId}-${mode}-${pageIdx}`}
         onClick={tapToggleBars}
-        className={`reader-fade-in min-h-[60vh] cursor-default select-text px-2 pb-10 transition-colors duration-300 ${
+        className={`reader-fade-in relative z-10 min-h-[60vh] cursor-default select-text px-2 pb-10 transition-colors duration-300 ${
           theme === 'paper'
             ? 'reading-article mt-4 rounded-2xl border border-[hsl(40_30%_72%)] bg-[#f5ecd9] p-5 text-[#33302a] shadow-[0_12px_30px_-14px_hsl(0_0%_0%/0.5)] sm:p-7'
             : theme === 'night'
@@ -197,6 +205,11 @@ export default function ReaderPage() {
         >
           {chapter.title}
         </h1>
+        <div className={`mt-2 mb-4 flex items-center gap-2 ${theme === 'paper' ? 'text-[#a89472]' : 'text-primary/70'}`}>
+          <span className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+          <span className="anim-glow-pulse text-xs">✦</span>
+          <span className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+        </div>
         <p className={`mb-6 text-xs ${theme === 'paper' ? 'text-[#8a7c66]' : 'text-muted-foreground'}`}>
           第{chapter.index}章 · {book.title} · {book.authorName}
           {mode === 'page' && ` · 第 ${pageIdx + 1} / ${pageCount} 页`}
