@@ -447,7 +447,7 @@ function defFor(scene: string, id: string): string {
 export function sceneSVG(scene: string, seed: string, opts: Opts = {}): string {
   const w = opts.w ?? 800;
   const h = opts.h ?? 600;
-  const id = `g-${scene}-${seed.length}`;
+  const id = `g-${esc(scene)}-${seed.length}`;
   const art = paintScene(scene, seed, w, h);
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">${defFor(scene, id)}<g>${art.paint}</g>${art.glow ? `<g>${art.glow}</g>` : ''}</svg>`;
 }
@@ -574,7 +574,7 @@ export function coverGradBody(seed: string, style: string): string {
 export function posterSVG(scene: string, seed: string, opts: Opts = {}): string {
   const w = opts.w ?? 600;
   const h = opts.h ?? 900;
-  const id = `ps-${scene}-${seed.length}`;
+  const id = `ps-${esc(scene)}-${seed.length}`;
   const art = paintScene(scene, seed, w, h);
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">${defFor(scene, id)}<g>${art.paint}</g>${art.glow ? `<g>${art.glow}</g>` : ''}<rect x="0" y="0" width="${w}" height="${h}" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2"/></svg>`;
 }
