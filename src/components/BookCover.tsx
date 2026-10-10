@@ -64,7 +64,7 @@ export default function BookCover({
 
   if (useImage && url) {
     return (
-      <div className={cn('relative aspect-[5/7] w-full overflow-hidden rounded-lg shadow-md shadow-black/40', className)}>
+      <div className={cn('cover-fade-in relative aspect-[5/7] w-full overflow-hidden rounded-lg shadow-md shadow-black/40', className)}>
         <img src={url} alt={title} className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 space-y-0.5 p-2.5 text-center">
@@ -83,7 +83,7 @@ export default function BookCover({
 
   if (artSrc) {
     return (
-      <div className={cn('relative aspect-[5/7] w-full overflow-hidden rounded-lg shadow-md shadow-black/40', className)}>
+      <div className={cn('cover-fade-in relative aspect-[5/7] w-full overflow-hidden rounded-lg shadow-md shadow-black/40', className)}>
         <img
           src={artSrc}
           alt={title}

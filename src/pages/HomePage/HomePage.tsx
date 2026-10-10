@@ -222,7 +222,7 @@ export default function HomePage() {
   const gotoAnchor = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   return (
-    <div className="space-y-8">
+    <div className="page-enter space-y-8">
       {/* 动漫风推送栏：公告 + 热门作品轮播 */}
       <PushBar announcement={announcement} books={hot} />
 
@@ -233,7 +233,7 @@ export default function HomePage() {
             src={heroArtUrl('hero-mountain')}
             alt=""
             loading="eager"
-            className="absolute inset-0 h-full w-full object-cover"
+            className="hero-kenburns absolute inset-0 h-full w-full object-cover"
           />
           {/* 动漫平台光斑 */}
           <div className="anime-glow" />
@@ -291,13 +291,13 @@ export default function HomePage() {
           </svg>
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 flex flex-col items-start gap-3 p-5 md:p-8">
-            <Badge className="bg-primary/20 text-primary backdrop-blur">一页一画 · 有画面的故事</Badge>
-            <h1 className="text-gradient-anime font-serif text-2xl font-bold tracking-widest md:text-4xl">墨影书城</h1>
-            <p className="max-w-md text-sm text-muted-foreground md:text-base">
+            <Badge className="hero-title-in bg-primary/20 text-primary backdrop-blur">一页一画 · 有画面的故事</Badge>
+            <h1 className="hero-title-in text-gradient-anime font-serif text-2xl font-bold tracking-widest md:text-4xl">墨影书城</h1>
+            <p className="hero-title-in max-w-md text-sm text-muted-foreground md:text-base">
               小说、画面互动小说、漫画、动漫视频，四种读法都在夜里点灯。创作者上传作品，读者用书币支持，好故事自己会发光。
             </p>
-            <div className="flex gap-2">
-              <Button asChild size="sm" className="btn-anime gap-1.5">
+            <div className="hero-title-in flex gap-2">
+              <Button asChild size="sm" className="btn-anime btn-glow-pulse gap-1.5">
                 <Link to="/category/all">
                   开始阅读 <ArrowRight className="h-3.5 w-3.5" />
                 </Link>

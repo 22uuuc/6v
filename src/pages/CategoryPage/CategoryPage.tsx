@@ -53,7 +53,7 @@ export default function CategoryPage() {
   }, [types, subs]);
 
   return (
-    <div className="space-y-5">
+    <div className="page-enter space-y-5">
       <div className="relative overflow-hidden rounded-2xl border border-border p-5 shadow-lg shadow-primary/10 md:p-6">
         <img
           src={heroArtUrl(`cat-${type || 'all'}`)}
