@@ -29,7 +29,7 @@ export default function NotFoundPage() {
 
       {/* 迷路打盹的书灵 */}
       <div className="mascot-float relative drop-shadow-[0_0_20px_rgba(168,130,255,0.45)]">
-        <MoyingMascot mood="sleepy" size={120} />
+        <MoyingMascot mood="sleepy" size={120} art />
       </div>
 
       <h1 className="text-gradient-anime mt-5 font-serif text-6xl font-bold tracking-widest md:text-7xl">404</h1>
