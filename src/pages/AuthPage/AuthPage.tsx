@@ -1,11 +1,11 @@
-// EXPORTS: AuthPage（组件文件）
+// 登录注册方式收敛：用户侧只支持 手机号验证码 / 微信 / QQ 三种（账号密码注册登录仅管理员从后端使用）
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Smartphone, Mail, KeyRound, MessageCircle, QrCode, RotateCcw } from 'lucide-react';
+import { Smartphone, MessageCircle, QrCode, KeyRound, RotateCcw } from 'lucide-react';
 import { api } from '@/lib/api';
 import MoyingMascot from '@/components/MoyingMascot';
 import { Button } from '@/components/ui/button';
@@ -16,56 +16,31 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
-const loginSchema = z.object({
-  username: z.string().min(1, '请输入账号'),
-  password: z.string().min(1, '请输入密码'),
+const phoneLoginSchema = z.object({
+  phone: z.string().regex(/^1[3-9]\d{9}$/, '请输入正确的 11 位手机号'),
+  code: z.string().regex(/^\d{6}$/, '请输入 6 位验证码'),
 });
 
-const accountSchema = z.object({
-  username: z.string().min(3, '账号至少 3 位').max(20, '账号最长 20 位'),
-  nickname: z.string().min(1, '请输入昵称').max(12, '昵称最长 12 位'),
-  password: z.string().min(6, '密码至少 6 位'),
-});
-
-const phoneSchema = z.object({
+const phoneRegSchema = z.object({
   phone: z.string().regex(/^1[3-9]\d{9}$/, '请输入正确的 11 位手机号'),
   code: z.string().regex(/^\d{6}$/, '请输入 6 位验证码'),
   nickname: z.string().min(1, '请输入昵称').max(12, '昵称最长 12 位'),
-  password: z.string().min(6, '密码至少 6 位'),
+  password: z.string().min(6, '密码至少 6 位（提现二次验证用）'),
 });
-
-const emailSchema = z.object({
-  email: z.string().email('请输入正确的邮箱'),
-  code: z.string().regex(/^\d{6}$/, '请输入 6 位验证码'),
-  nickname: z.string().min(1, '请输入昵称').max(12, '昵称最长 12 位'),
-  password: z.string().min(6, '密码至少 6 位'),
-});
-
-const DEMO_ACCOUNTS = [
-  { role: '管理员', username: 'admin', password: 'admin123' },
-  { role: '创作者', username: 'zhiliao', password: '123456' },
-  { role: '读者', username: 'reader1', password: '123456' },
-];
-
-type RegisterMode = 'account' | 'phone' | 'email';
 
 export default function AuthPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<'login' | 'register'>('login');
-  const [regMode, setRegMode] = useState<RegisterMode>('account');
-  const [sentCode, setSentCode] = useState('');
-  const [sending, setSending] = useState(false);
-  const [emailSentCode, setEmailSentCode] = useState('');
-  const [emailSending, setEmailSending] = useState(false);
+  const [loginPhone, setLoginPhone] = useState('');
+  const [loginCode, setLoginCode] = useState('');
+  const [loginSmsSending, setLoginSmsSending] = useState(false);
+  const [regSending, setRegSending] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [fAccount, setFAccount] = useState('');
   const [fCode, setFCode] = useState('');
   const [fCountdown, setFCountdown] = useState(0);
   const [fNewPwd, setFNewPwd] = useState('');
   const [fNewPwd2, setFNewPwd2] = useState('');
-  const [loginPhone, setLoginPhone] = useState('');
-  const [loginCode, setLoginCode] = useState('');
-  const [loginSmsSending, setLoginSmsSending] = useState(false);
 
   /** 验证码重发倒计时（60 秒） */
   const startCountdown = () => {
@@ -79,7 +54,6 @@ export default function AuthPage() {
     };
     setTimeout(tick, 1000);
   };
-
 
   /** 手机号验证码登录：验证码由后端生成并校验 */
   const sendLoginSms = async () => {
@@ -115,10 +89,46 @@ export default function AuthPage() {
     navigate('/profile');
   };
 
-  /** 忘记密码：向后端申请验证码（验证码由后端生成并校验，演示环境直接显示） */
+  const loginForm = useForm<z.infer<typeof phoneLoginSchema>>({
+    resolver: zodResolver(phoneLoginSchema),
+    defaultValues: { phone: '', code: '' },
+  });
+  const regForm = useForm<z.infer<typeof phoneRegSchema>>({
+    resolver: zodResolver(phoneRegSchema),
+    defaultValues: { phone: '', code: '', nickname: '', password: '' },
+  });
+
+  /** 注册：手机号验证码 + 首次设置密码（提现二次验证） */
+  const sendRegSms = async () => {
+    const phone = regForm.getValues('phone');
+    if (!/^1[3-9]\d{9}$/.test(phone)) {
+      toast.error('请先输入正确的 11 位手机号');
+      return;
+    }
+    const res = await api.sendCode(phone, 'register');
+    if (!res.ok) {
+      toast.error(res.msg ?? '发送失败');
+      return;
+    }
+    setRegSending(true);
+    toast.success(`验证码已发送至 ${phone.slice(0, 3)}****${phone.slice(7)}：${res.demoCode}`, { duration: 30000 });
+    window.setTimeout(() => setRegSending(false), 60000);
+  };
+
+  const onPhoneRegister = async (v: z.infer<typeof phoneRegSchema>) => {
+    const res = await api.phoneRegister(v.phone, v.code, v.password, v.nickname);
+    if (!res.ok) {
+      toast.error(res.msg === '该手机号已注册，可直接登录' ? '该手机号已注册，可直接登录' : res.msg ?? '注册失败');
+      return;
+    }
+    toast.success('注册成功，赠送 100 书币');
+    navigate('/profile');
+  };
+
+  /** 忘记密码：手机号验证码找回（验证码由后端生成并校验） */
   const sendForgotCode = async () => {
-    if (!fAccount.trim()) {
-      toast.error('请先输入注册账号（用户名 / 手机号 / 邮箱）');
+    if (!/^1[3-9]\d{9}$/.test(fAccount.trim())) {
+      toast.error('请输入注册时使用的 11 位手机号');
       return;
     }
     const res = await api.requestResetCode(fAccount.trim());
@@ -132,7 +142,7 @@ export default function AuthPage() {
 
   const doResetPwd = async () => {
     if (!fAccount.trim() || !fCode.trim()) {
-      toast.error('请填写账号与验证码');
+      toast.error('请填写手机号与验证码');
       return;
     }
     if (fNewPwd.length < 6) {
@@ -157,110 +167,6 @@ export default function AuthPage() {
     toast.success('密码已重置，请使用新密码登录');
   };
 
-  const loginForm = useForm<z.infer<typeof loginSchema>>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { username: '', password: '' },
-  });
-  const accountForm = useForm<z.infer<typeof accountSchema>>({
-    resolver: zodResolver(accountSchema),
-    defaultValues: { username: '', nickname: '', password: '' },
-  });
-  const phoneForm = useForm<z.infer<typeof phoneSchema>>({
-    resolver: zodResolver(phoneSchema),
-    defaultValues: { phone: '', code: '', nickname: '', password: '' },
-  });
-  const emailForm = useForm<z.infer<typeof emailSchema>>({
-    resolver: zodResolver(emailSchema),
-    defaultValues: { email: '', nickname: '', password: '' },
-  });
-
-  const onLogin = async (v: z.infer<typeof loginSchema>) => {
-    const res = await api.login(v.username, v.password);
-    if (!res.ok) {
-      toast.error(res.msg ?? '登录失败');
-      return;
-    }
-    toast.success(`欢迎回来，${res.user?.nickname}`);
-    navigate('/profile');
-  };
-
-  const onAccountRegister = async (v: z.infer<typeof accountSchema>) => {
-    const res = await api.register(v.username, v.password, v.nickname);
-    if (!res.ok) {
-      toast.error(res.msg ?? '注册失败');
-      return;
-    }
-    toast.success('注册成功，赠送 100 书币');
-    navigate('/profile');
-  };
-
-  const sendSms = async () => {
-    const phone = phoneForm.getValues('phone');
-    if (!/^1[3-9]\d{9}$/.test(phone)) {
-      toast.error('请先输入正确的 11 位手机号');
-      return;
-    }
-    const res = await api.sendCode(phone, 'register');
-    if (!res.ok) {
-      toast.error(res.msg ?? '发送失败');
-      return;
-    }
-    setSentCode(res.demoCode ?? '');
-    setSending(true);
-    toast.success(`验证码已发送至 ${phone.slice(0, 3)}****${phone.slice(7)}：${res.demoCode}`, { duration: 30000 });
-    window.setTimeout(() => setSending(false), 60000);
-  };
-
-  const onPhoneRegister = async (v: z.infer<typeof phoneSchema>) => {
-    if (!sentCode) {
-      toast.error('请先获取验证码');
-      return;
-    }
-    if (v.code !== sentCode) {
-      toast.error('验证码错误');
-      return;
-    }
-    const res = await api.phoneRegister(v.phone, v.code, v.password, v.nickname);
-    if (!res.ok) {
-      toast.error(res.msg === '该手机号已注册，可直接登录' ? '该手机号已注册，可直接登录' : res.msg ?? '注册失败');
-      return;
-    }
-    toast.success('注册成功，赠送 100 书币');
-    navigate('/profile');
-  };
-
-  const onEmailRegister = async (v: z.infer<typeof emailSchema>) => {
-    if (!emailSentCode) {
-      toast.error('请先获取邮箱验证码');
-      return;
-    }
-    if (v.code !== emailSentCode) {
-      toast.error('验证码错误');
-      return;
-    }
-    const res = await api.register(v.email, v.password, v.nickname);
-    if (!res.ok) {
-      toast.error(res.msg === '账号已存在' ? '该邮箱已注册，可直接登录' : res.msg ?? '注册失败');
-      return;
-    }
-    api.verifyEmail(res.user!.id); // 邮箱验证码注册通过 → 邮箱认证打标
-    toast.success('注册成功，赠送 100 书币');
-    navigate('/profile');
-  };
-
-  const sendEmailCode = () => {
-    const email = emailForm.getValues('email');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast.error('请先输入正确的邮箱地址');
-      return;
-    }
-    const code = String(Math.floor(100000 + Math.random() * 900000));
-    setEmailSentCode(code);
-    setEmailSending(true);
-    toast.success(`验证码已发送至 ${email}（演示：${code}）`, { duration: 30000 });
-    window.setTimeout(() => setEmailSending(false), 60000);
-  };
-
   const thirdParty = async (provider: 'wechat' | 'qq') => {
     const res = await api.thirdPartyLogin(provider);
     if (!res.ok) {
@@ -273,7 +179,6 @@ export default function AuthPage() {
 
   return (<div className="page-enter mx-auto max-w-sm py-8">
       <div className="mb-6 flex flex-col items-center gap-2 text-center">
-        {/* 书灵迎宾：登录时读书（等你回来）、注册时开心（欢迎新朋友） */}
         <div className="mascot-float drop-shadow-[0_0_16px_rgba(168,130,255,0.4)]">
           <MoyingMascot mood={tab === 'login' ? 'reading' : 'happy'} size={88} art />
         </div>
@@ -291,58 +196,24 @@ export default function AuthPage() {
           <TabsTrigger value="register">注册</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="login">
-          <Form {...loginForm}>
-            <form onSubmit={loginForm.handleSubmit(onLogin)} noValidate className="space-y-3">
-              <FormField
-                control={loginForm.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>账号 / 手机号 / 邮箱</FormLabel>
-                    <FormControl>
-                      <Input placeholder="请输入账号" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={loginForm.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>密码</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="请输入密码" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="btn-anime w-full" disabled={loginForm.formState.isSubmitting}>
-                登录
+        <TabsContent value="login" className="pt-3">
+          <div className="space-y-2 rounded-xl border border-border/60 bg-muted/30 p-4">
+            <p className="text-sm font-medium text-muted-foreground">
+              <Smartphone className="mr-1 inline h-4 w-4" /> 手机号验证码登录（未注册自动注册）
+            </p>
+            <div className="flex gap-2">
+              <Input placeholder="11 位手机号" inputMode="numeric" maxLength={11} value={loginPhone} onChange={(e) => setLoginPhone(e.target.value)} />
+              <Button type="button" variant="outline" className="shrink-0" disabled={loginSmsSending} onClick={sendLoginSms}>
+                {loginSmsSending ? '已发送(60s)' : '获取验证码'}
               </Button>
-              <div className="space-y-2 rounded-xl border border-border/60 bg-muted/30 p-3">
-                <p className="text-xs font-medium text-muted-foreground">手机号验证码登录</p>
-                <div className="flex gap-2">
-                  <Input placeholder="11 位手机号" inputMode="numeric" maxLength={11} value={loginPhone} onChange={(e) => setLoginPhone(e.target.value)} />
-                  <Button type="button" variant="outline" className="shrink-0" disabled={loginSmsSending} onClick={sendLoginSms}>
-                    {loginSmsSending ? '已发送(60s)' : '获取验证码'}
-                  </Button>
-                </div>
-                <div className="flex gap-2">
-                  <Input placeholder="6 位验证码" inputMode="numeric" maxLength={6} value={loginCode} onChange={(e) => setLoginCode(e.target.value)} />
-                  <Button type="button" className="shrink-0" onClick={doPhoneLogin}>登录</Button>
-                </div>
-              </div>
-              <div className="flex justify-end">
-                <button type="button" onClick={() => setForgotOpen(true)} className="text-xs text-muted-foreground underline-offset-4 hover:text-primary hover:underline">
-                  忘记密码？通过验证码找回
-                </button>
-              </div>
-            </form>
-          </Form>
+            </div>
+            <div className="flex gap-2">
+              <Input placeholder="6 位验证码" inputMode="numeric" maxLength={6} value={loginCode} onChange={(e) => setLoginCode(e.target.value)} />
+              <Button type="button" className="shrink-0" onClick={doPhoneLogin}>
+                <Smartphone className="mr-1 h-4 w-4" /> 登录
+              </Button>
+            </div>
+          </div>
 
           <div className="mt-4">
             <p className="mb-2 text-center text-xs text-muted-foreground">或使用第三方快捷登录</p>
@@ -355,243 +226,95 @@ export default function AuthPage() {
               </Button>
             </div>
           </div>
+
+          <div className="mt-3 flex justify-center">
+            <button type="button" onClick={() => setForgotOpen(true)} className="text-xs text-muted-foreground underline-offset-4 hover:text-primary hover:underline">
+              忘记密码？通过手机号验证码找回
+            </button>
+          </div>
         </TabsContent>
 
-        <TabsContent value="register">
-          <Tabs value={regMode} onValueChange={(v) => setRegMode(v as RegisterMode)}>
-            <TabsList className="grid w-full grid-cols-3 rounded-full border border-border/60 bg-muted/50 p-1">
-              <TabsTrigger value="account" className="gap-1">
-                <KeyRound className="h-3.5 w-3.5" /> 账号
-              </TabsTrigger>
-              <TabsTrigger value="phone" className="gap-1">
-                <Smartphone className="h-3.5 w-3.5" /> 手机号
-              </TabsTrigger>
-              <TabsTrigger value="email" className="gap-1">
-                <Mail className="h-3.5 w-3.5" /> 邮箱
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="account" className="pt-3">
-              <Form {...accountForm}>
-                <form onSubmit={accountForm.handleSubmit(onAccountRegister)} noValidate className="space-y-3">
-                  <FormField
-                    control={accountForm.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>账号</FormLabel>
-                        <FormControl>
-                          <Input placeholder="3-20 位字母数字" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={accountForm.control}
-                    name="nickname"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>昵称</FormLabel>
-                        <FormControl>
-                          <Input placeholder="你希望被叫的名字" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={accountForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>密码</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="至少 6 位" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="btn-anime w-full" disabled={accountForm.formState.isSubmitting}>
-                    注册并赠送 100 书币
-                  </Button>
-                </form>
-              </Form>
-            </TabsContent>
-
-            <TabsContent value="phone" className="pt-3">
-              <Form {...phoneForm}>
-                <form onSubmit={phoneForm.handleSubmit(onPhoneRegister)} noValidate className="space-y-3">
-                  <FormField
-                    control={phoneForm.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>手机号</FormLabel>
-                        <FormControl>
-                          <Input placeholder="11 位手机号" inputMode="numeric" maxLength={11} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={phoneForm.control}
-                    name="code"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>验证码</FormLabel>
-                        <FormControl>
-                          <div className="flex gap-2">
-                            <Input placeholder="6 位验证码" inputMode="numeric" maxLength={6} {...field} className="flex-1" />
-                            <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={sendSms} disabled={sending}>
-                              {sending ? '已发送(60s)' : '获取验证码'}
-                            </Button>
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={phoneForm.control}
-                    name="nickname"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>昵称</FormLabel>
-                        <FormControl>
-                          <Input placeholder="你希望被叫的名字" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={phoneForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>密码</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="至少 6 位" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="btn-anime w-full" disabled={phoneForm.formState.isSubmitting}>
-                    手机号注册并赠送 100 书币
-                  </Button>
-                </form>
-              </Form>
-            </TabsContent>
-
-            <TabsContent value="email" className="pt-3">
-              <Form {...emailForm}>
-                <form onSubmit={emailForm.handleSubmit(onEmailRegister)} noValidate className="space-y-3">
-                  <FormField
-                    control={emailForm.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>邮箱</FormLabel>
-                        <FormControl>
-                          <Input placeholder="example@mail.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={emailForm.control}
-                    name="code"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>邮箱验证码</FormLabel>
-                        <FormControl>
-                          <div className="flex gap-2">
-                            <Input placeholder="6 位验证码" inputMode="numeric" maxLength={6} {...field} className="flex-1" />
-                            <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={sendEmailCode} disabled={emailSending}>
-                              {emailSending ? '已发送(60s)' : '获取验证码'}
-                            </Button>
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={emailForm.control}
-                    name="nickname"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>昵称</FormLabel>
-                        <FormControl>
-                          <Input placeholder="你希望被叫的名字" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={emailForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>密码</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="至少 6 位" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="btn-anime w-full" disabled={emailForm.formState.isSubmitting}>
-                    邮箱注册并赠送 100 书币
-                  </Button>
-                </form>
-              </Form>
-            </TabsContent>
-          </Tabs>
+        <TabsContent value="register" className="pt-3">
+          <Form {...regForm}>
+            <form onSubmit={regForm.handleSubmit(onPhoneRegister)} noValidate className="space-y-3">
+              <FormField
+                control={regForm.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>手机号</FormLabel>
+                    <FormControl>
+                      <Input placeholder="11 位手机号" inputMode="numeric" maxLength={11} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={regForm.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>验证码</FormLabel>
+                    <FormControl>
+                      <div className="flex gap-2">
+                        <Input placeholder="6 位验证码" inputMode="numeric" maxLength={6} {...field} className="flex-1" />
+                        <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={sendRegSms} disabled={regSending}>
+                          {regSending ? '已发送(60s)' : '获取验证码'}
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={regForm.control}
+                name="nickname"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>昵称</FormLabel>
+                    <FormControl>
+                      <Input placeholder="你希望被叫的名字" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={regForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>密码（提现二次验证用）</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="至少 6 位" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="btn-anime w-full" disabled={regForm.formState.isSubmitting}>
+                手机号注册并赠送 100 书币
+              </Button>
+            </form>
+          </Form>
         </TabsContent>
       </Tabs>
 
-      <Card className="mt-5">
-        <CardContent className="p-4">
-          <p className="mb-2 text-xs font-medium text-muted-foreground">演示账号（点击填入）</p>
-          <div className="flex flex-wrap gap-2">
-            {DEMO_ACCOUNTS.map((d) => (
-              <button
-                key={d.username}
-                type="button"
-                className="rounded-md border border-border bg-muted/50 px-2.5 py-1.5 text-xs transition-colors hover:border-primary/60"
-                onClick={() => {
-                  setTab('login');
-                  loginForm.setValue('username', d.username);
-                  loginForm.setValue('password', d.password);
-                }}
-              >
-                {d.role} · {d.username}
-              </button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* 忘记密码：账号 + 演示验证码 + 新密码 */}
+      {/* 忘记密码：手机号 + 演示验证码 + 新密码 */}
       <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>找回密码</DialogTitle>
             <DialogDescription>
-              输入注册时使用的账号（用户名 / 手机号 / 邮箱），验证通过后设置新密码
+              输入注册时使用的手机号，验证通过后设置新密码（用于提现二次验证）
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label>注册账号</Label>
-              <Input value={fAccount} onChange={(e) => setFAccount(e.target.value)} placeholder="用户名 / 手机号 / 邮箱" />
+              <Label>手机号</Label>
+              <Input value={fAccount} onChange={(e) => setFAccount(e.target.value)} placeholder="11 位手机号" inputMode="numeric" maxLength={11} />
             </div>
             <div className="flex gap-2">
               <div className="flex-1 space-y-1.5">

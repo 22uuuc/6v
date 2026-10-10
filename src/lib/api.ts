@@ -89,6 +89,21 @@ function uid(prefix: string): string {
   return `${prefix}${Date.now().toString(36)}${idSeq}`;
 }
 
+/** 设备级持久化 openid：同一设备同一渠道（微信/QQ）永远映射同一后端账号；仅标识自身设备，不含任何后端加密材料 */
+function getDeviceOpenid(provider: 'wechat' | 'qq'): string {
+  const K = `moying_openid_${provider}`;
+  let v = localStorage.getItem(K);
+  if (!v || !/^[A-Za-z0-9_-]{6,64}$/.test(v)) {
+    const rnd =
+      typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID().replace(/-/g, '')
+        : Math.random().toString(36).slice(2) + Date.now().toString(36);
+    v = `${provider.slice(0, 2)}_${rnd.slice(0, 18)}`;
+    localStorage.setItem(K, v);
+  }
+  return v;
+}
+
 /** 用户对象兜底：老数据补齐新增字段 */
 function normalizeUser(u: IUser): IUser {
   return { level: 1, exp: 0, withdrawable: 0, ...u };
@@ -512,10 +527,10 @@ export const api = {
     notify();
   },
 
-  /** 第三方快捷登录/注册（演示：微信/QQ 固定演示账号，首次自动注册） */
+  /** 第三方快捷登录/注册：微信/QQ 使用设备级持久化 openid，同一设备同一渠道永远映射同一账号 */
   async thirdPartyLogin(provider: 'wechat' | 'qq'): Promise<{ ok: boolean; msg?: string; user?: IUser }> {
     if (isRemoteReady()) {
-      const res = await remoteCall('/auth/third-party', { method: 'POST', body: { provider } });
+      const res = await remoteCall('/auth/third-party', { method: 'POST', body: { provider, openid: getDeviceOpenid(provider) } });
       if (!res.ok) return { ok: false, msg: res.msg ?? '第三方登录失败' };
       setToken(res.token);
       const ls = getSnap();
