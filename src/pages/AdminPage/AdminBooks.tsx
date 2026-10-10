@@ -45,8 +45,7 @@ export default function AdminBooks() {
     setQuarantineBook(null);
   };
 
-  return (
-    <div className="space-y-6">
+  return (<div className="page-enter space-y-6">
       <section>
         <h3 className="mb-3 flex items-center gap-2 font-medium">
           待审核（{pending.length}）

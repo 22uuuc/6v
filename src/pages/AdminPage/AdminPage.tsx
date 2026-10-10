@@ -149,8 +149,7 @@ function AdminGate({ onUnlocked }: { onUnlocked: () => void }) {
         ? '后端管理员向固定 QQ 邮箱投递随机验证码（真实邮件，10 分钟有效），验证通过即加密解锁。'
         : '输入管理员安全码解锁后台。连续输错 5 次将锁定 10 分钟并触发入侵警告。';
 
-  return (
-    <div className="mx-auto max-w-sm space-y-5 py-16">
+  return (<div className="page-enter mx-auto max-w-sm space-y-5 py-16">
       <Card>
         <CardContent className="p-6">
           <div className="mb-4 flex flex-col items-center text-center">
@@ -243,8 +242,7 @@ export default function AdminPage() {
   const touchX = useRef<number | null>(null);
 
   if (!user || user.role !== 'admin') {
-    return (
-      <div className="py-20">
+    return (<div className="page-enter py-20">
         <EmptyState text={user ? '当前账号不是管理员，请用管理员账号登录' : '请先登录管理员账号（admin）后再进入后台'} />
         <div className="flex justify-center gap-2">
           {!user && <Button variant="outline" onClick={() => navigate('/auth')}>去登录</Button>}
@@ -277,8 +275,7 @@ export default function AdminPage() {
     if (next !== idx) setTab(ADMIN_TABS[next].value);
   };
 
-  return (
-    <div className="space-y-5">
+  return (<div className="page-enter space-y-5">
       {/* 顶部栏：移动端汉堡入口 + 标题 + 锁定 */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">

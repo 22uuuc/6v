@@ -42,8 +42,7 @@ export default function AnimePage() {
   }, [book?.id]);
 
   if (!book || (book.status !== 'published' && !(user && user.role === 'admin'))) {
-    return (
-      <div className="py-20 text-center text-sm text-muted-foreground">
+    return (<div className="page-enter py-20 text-center text-sm text-muted-foreground">
         作品不存在或未上架
         <div className="mt-4">
           <Button size="sm" variant="outline" onClick={() => navigate(-1)}>返回</Button>
@@ -69,8 +68,7 @@ export default function AnimePage() {
     toast.success(`已解锁《${book.title}》（${book.chapterPrice} 书币）`);
   };
 
-  return (
-    <div className="mx-auto max-w-2xl space-y-5">
+  return (<div className="page-enter mx-auto max-w-2xl space-y-5">
       <Button variant="ghost" size="sm" onClick={() => navigate(`/book/${book.id}`)}>
         <ArrowLeft className="mr-1 h-4 w-4" /> 返回详情
       </Button>

@@ -83,8 +83,7 @@ export default function CreatorPage() {
   };
 
   if (!user || (user.role !== 'creator' && user.role !== 'admin')) {
-    return (
-      <div className="py-20">
+    return (<div className="page-enter py-20">
         {!user ? (
           <>
             <EmptyState text="请先登录后申请开通创作者" />
@@ -222,8 +221,7 @@ export default function CreatorPage() {
     return null;
   };
 
-  return (
-    <div className="space-y-5">
+  return (<div className="page-enter space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-serif text-2xl font-bold">创作者中心</h1>

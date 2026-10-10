@@ -89,8 +89,7 @@ export default function UploadGamePage() {
     }
   };
 
-  return (
-    <div className="mx-auto max-w-3xl space-y-5">
+  return (<div className="page-enter mx-auto max-w-3xl space-y-5">
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" onClick={() => navigate('/creator')} aria-label="返回">
           <ArrowLeft className="h-4.5 w-4.5" />

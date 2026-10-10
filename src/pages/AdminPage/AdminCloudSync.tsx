@@ -524,8 +524,7 @@ export default function AdminCloudSync() {
     </div>
   );
 
-  return (
-    <div className="space-y-6">
+  return (<div className="page-enter space-y-6">
       {/* 通道区分：管理员后台接入总数据仓库的操作 与 普通用户使用严格分离 */}
       <Card className="border-primary/30 bg-primary/5">
         <CardContent className="grid gap-4 p-4 md:grid-cols-2">

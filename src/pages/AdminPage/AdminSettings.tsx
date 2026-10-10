@@ -90,8 +90,7 @@ export default function AdminSettings() {
     toast.success('管理安全码已更新');
   };
 
-  return (
-    <div className="grid gap-4 lg:grid-cols-2">
+  return (<div className="page-enter grid gap-4 lg:grid-cols-2">
       <Card>
         <CardContent className="space-y-3 p-4">
           <h3 className="flex items-center gap-1.5 font-medium">

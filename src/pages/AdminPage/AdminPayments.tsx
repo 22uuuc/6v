@@ -107,8 +107,7 @@ function TransferLog() {
   if (list.length === 0) {
     return <p className="py-8 text-center text-sm text-muted-foreground">还没有收款记录。管理员确认提现到账后会自动生成平台单号。</p>;
   }
-  return (
-    <div className="space-y-2">
+  return (<div className="page-enter space-y-2">
       {list.slice(0, 10).map((t) => (
         <div key={t.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm">
           <div className="flex items-center gap-2">
@@ -128,8 +127,7 @@ export default function AdminPayments() {
   useDataVersion();
   const providers = api.paymentProviders();
 
-  return (
-    <div className="space-y-4">
+  return (<div className="page-enter space-y-4">
       <Card className="border-emerald-500/20 bg-emerald-500/5">
         <CardContent className="flex gap-3 p-4">
           <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-500" />

@@ -118,8 +118,7 @@ export default function AdminSecurity() {
     toast.success('已封禁攻击账号，该账号将无法再登录');
   };
 
-  return (
-    <div className="space-y-4">
+  return (<div className="page-enter space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="flex items-center gap-1.5 font-medium">

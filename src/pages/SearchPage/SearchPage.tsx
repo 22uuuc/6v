@@ -23,8 +23,7 @@ export default function SearchPage() {
       );
   }, [query]);
 
-  return (
-    <div className="space-y-5">
+  return (<div className="page-enter space-y-5">
       <form
         className="flex gap-2"
         onSubmit={(e) => {

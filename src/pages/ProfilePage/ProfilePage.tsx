@@ -121,8 +121,7 @@ export default function ProfilePage() {
   );
 
   if (!user) {
-    return (
-      <div className="py-20">
+    return (<div className="page-enter py-20">
         <EmptyState text="还没有登录" />
         <div className="flex justify-center">
           <Button onClick={() => navigate('/auth')}>去登录 / 注册</Button>
@@ -225,8 +224,7 @@ export default function ProfilePage() {
     toast.success('个性化已保存，阅读页立即生效');
   };
 
-  return (
-    <div className="space-y-5">
+  return (<div className="page-enter space-y-5">
       {/* 用户卡 */}
       <Card>
         <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center">

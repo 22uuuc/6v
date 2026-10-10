@@ -55,8 +55,7 @@ function MemoryGame({ onWin }: { onWin: (steps: number) => void }) {
     });
   };
 
-  return (
-    <div className="space-y-3">
+  return (<div className="page-enter space-y-3">
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>翻开两张相同牌面即可消除</span>
         <span>步数：{Math.max(1, Math.round(steps / 2))} · 已配对 {matched.length / 2} / {deck.length / 2}</span>
@@ -106,8 +105,7 @@ export default function GamePage() {
   }, []);
 
   if (!book || book.type !== 'game' || book.status !== 'published') {
-    return (
-      <div className="space-y-4">
+    return (<div className="page-enter space-y-4">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
           <ArrowLeft className="mr-1 h-4 w-4" /> 返回
         </Button>
@@ -118,8 +116,7 @@ export default function GamePage() {
 
   const win = (steps: number) => setBest((b) => (b === null ? steps : Math.min(b, steps)));
 
-  return (
-    <div className="mx-auto max-w-2xl space-y-5">
+  return (<div className="page-enter mx-auto max-w-2xl space-y-5">
       <Button variant="ghost" size="sm" onClick={() => navigate(`/book/${bookId}`)}>
         <ArrowLeft className="mr-1 h-4 w-4" /> 返回详情
       </Button>

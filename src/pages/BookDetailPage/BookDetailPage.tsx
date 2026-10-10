@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { api, isVip, fmtCoins } from '@/lib/api';
+import { heroArtUrl } from '@/lib/charArt';
 import { useDataVersion } from '@/hooks/use-data';
 import { useAuth } from '@/lib/auth-context';
 import BookCover from '@/components/BookCover';
@@ -44,8 +45,7 @@ export default function BookDetailPage() {
   }, [book]);
 
   if (!book || (book.status !== 'published' && !(user && user.role === 'admin'))) {
-    return (
-      <div className="space-y-4">
+    return (<div className="page-enter space-y-4">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
           <ArrowLeft className="mr-1 h-4 w-4" /> 返回
         </Button>
@@ -105,13 +105,21 @@ export default function BookDetailPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="page-enter space-y-6">
       <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
         <ArrowLeft className="mr-1 h-4 w-4" /> 返回
       </Button>
 
-      <section className="flex flex-col gap-5 sm:flex-row">
-        <div className="cover-lift relative w-36 shrink-0 self-center overflow-hidden rounded-xl sm:w-44">
+      <section className="relative overflow-hidden rounded-2xl border border-border p-5 shadow-lg shadow-primary/10 md:p-6">
+        <img
+          src={heroArtUrl(`detail-${book.coverSeed}`)}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover opacity-95"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/70 to-background/30" />
+        <div className="anime-glow absolute inset-0" />
+        <div className="relative flex flex-col gap-5 sm:flex-row">
+          <div className="cover-lift relative w-36 shrink-0 self-center overflow-hidden rounded-xl sm:w-44">
           <BookCover seed={book.coverSeed} title={book.title} author={book.authorName} genre={book.genre} style={book.coverStyle} bookId={book.id} coverType={book.coverType} font={book.coverFont}  type={book.type} />
         </div>
         <div className="min-w-0 flex-1 space-y-3">
@@ -156,6 +164,7 @@ export default function BookDetailPage() {
               开通 <Link to="/profile" className="text-primary hover:underline">VIP</Link> 可免费阅读全部付费内容
             </p>
           )}
+          </div>
         </div>
       </section>
 

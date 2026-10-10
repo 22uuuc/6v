@@ -35,8 +35,7 @@ export default function FeedbackPage() {
   const [list, setList] = useState<IFeedback[]>(() => (user ? api.myFeedback(user.id) : []));
 
   if (!user) {
-    return (
-      <div className="mx-auto max-w-md py-16 text-center">
+    return (<div className="page-enter mx-auto max-w-md py-16 text-center">
         <p className="mb-4 text-muted-foreground">登录后才能提交意见反馈</p>
         <Button onClick={() => navigate('/auth')}>去登录</Button>
       </div>
@@ -56,8 +55,7 @@ export default function FeedbackPage() {
     setList(api.myFeedback(user.id));
   };
 
-  return (
-    <div className="mx-auto max-w-lg space-y-5 py-6">
+  return (<div className="page-enter mx-auto max-w-lg space-y-5 py-6">
       <div>
         <h1 className="font-serif text-xl font-bold">意见反馈</h1>
         <p className="text-sm text-muted-foreground">功能建议、问题反馈、内容举报，都可以告诉我们</p>

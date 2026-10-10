@@ -29,8 +29,7 @@ export default function ComicPage() {
   }, [chapterId]);
 
   if (!book || !chapter) {
-    return (
-      <div className="py-20 text-center text-sm text-muted-foreground">
+    return (<div className="page-enter py-20 text-center text-sm text-muted-foreground">
         章节不存在
         <div className="mt-4">
           <Button size="sm" variant="outline" onClick={() => navigate(`/book/${bookId}`)}>返回详情</Button>
@@ -56,8 +55,7 @@ export default function ComicPage() {
     toast.success(`已订阅第${chapter.index}话（${chapter.price} 书币）`);
   };
 
-  return (
-    <div className="mx-auto max-w-md">
+  return (<div className="page-enter mx-auto max-w-md">
       {/* 顶栏 */}
       <div className="sticky top-14 z-30 -mx-4 mb-4 flex items-center gap-2 border-b border-border bg-background/90 px-4 py-2.5 backdrop-blur-sm">
         <Button variant="ghost" size="icon" onClick={() => navigate(`/book/${bookId}`)} aria-label="返回">

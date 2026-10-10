@@ -38,8 +38,7 @@ export default function VisualPage() {
   }, [nodeId]);
 
   if (!book || !script || script.nodes.length === 0) {
-    return (
-      <div className="py-20 text-center text-sm text-muted-foreground">
+    return (<div className="page-enter py-20 text-center text-sm text-muted-foreground">
         剧本不存在
         <div className="mt-4">
           <Button size="sm" variant="outline" onClick={() => navigate(`/book/${bookId}`)}>返回详情</Button>

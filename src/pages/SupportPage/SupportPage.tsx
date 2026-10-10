@@ -24,8 +24,7 @@ export default function SupportPage() {
   }, [list.length]);
 
   if (!user) {
-    return (
-      <div className="mx-auto max-w-md py-16 text-center">
+    return (<div className="page-enter mx-auto max-w-md py-16 text-center">
         <p className="mb-4 text-muted-foreground">登录后才能联系客服</p>
         <Button onClick={() => navigate('/auth')}>去登录</Button>
       </div>
@@ -42,8 +41,7 @@ export default function SupportPage() {
     setText('');
   };
 
-  return (
-    <div className="mx-auto max-w-lg py-6">
+  return (<div className="page-enter mx-auto max-w-lg py-6">
       <div className="mb-4 flex items-center gap-3">
         <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
           <Headset className="h-5 w-5" />

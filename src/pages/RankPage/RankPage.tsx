@@ -27,8 +27,7 @@ export default function RankPage() {
     { key: 'tips', label: '打赏榜', icon: Trophy },
   ];
 
-  return (
-    <div className="space-y-5">
+  return (<div className="page-enter space-y-5">
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="返回">
           <ArrowLeft className="h-4.5 w-4.5" />

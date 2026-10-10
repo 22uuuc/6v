@@ -39,8 +39,7 @@ export default function AdminSettlements() {
     toast.success(ok ? `已通过 ${s.amount} 币结算，计入创作者可提现余额` : `已驳回 ${s.amount} 币结算`);
   };
 
-  return (
-    <div className="space-y-3">
+  return (<div className="page-enter space-y-3">
       <Card>
         <CardContent className="p-4">
           <h3 className="flex items-center gap-1.5 font-medium">

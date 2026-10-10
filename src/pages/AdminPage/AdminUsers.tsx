@@ -43,8 +43,7 @@ export default function AdminUsers() {
     toast.success(`已为 ${u.nickname} ${n > 0 ? '发放' : '扣除'} ${Math.abs(n)} 书币`);
   };
 
-  return (
-    <div className="space-y-3">
+  return (<div className="page-enter space-y-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">共 {users.length} 位用户 · VIP 授权 / 等级调整 / 封禁解封 / 书币调整，操作均写入审计日志</p>
         <div className="w-56">

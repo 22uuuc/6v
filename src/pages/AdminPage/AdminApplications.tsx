@@ -46,8 +46,7 @@ export default function AdminApplications() {
     toast.success(ok ? `已通过《${app.workTitle}》，创作者身份已开通` : `已驳回 ${app.nickname} 的申请`);
   };
 
-  return (
-    <div className="space-y-5">
+  return (<div className="page-enter space-y-5">
       <div className="grid gap-3 sm:grid-cols-3">
         <Card>
           <CardContent className="p-4">

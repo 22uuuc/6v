@@ -34,8 +34,7 @@ export default function AdminWithdrawals() {
     toast.success(ok ? '渠道已通过审核，创作者可正常提现' : '渠道已驳回，创作者可修改后重新提交');
   };
 
-  return (
-    <div className="space-y-6">
+  return (<div className="page-enter space-y-6">
       <section>
         <h3 className="mb-3 flex items-center gap-2 font-medium">
           提现渠道审核（{chPending.length}）

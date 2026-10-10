@@ -91,8 +91,7 @@ export default function AdminService() {
     setAdminDraft('');
   };
 
-  return (
-    <div className="space-y-6">
+  return (<div className="page-enter space-y-6">
       {/* 意见反馈工单 */}
       <section>
         <div className="mb-3 flex items-center gap-2">

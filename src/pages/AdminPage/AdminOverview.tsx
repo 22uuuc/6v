@@ -69,8 +69,7 @@ export default function AdminOverview() {
     { icon: MessageSquareText, label: '反馈工单', value: stats.feedbackPending, sub: `${stats.supportUnread} 条客服未读消息` },
   ];
 
-  return (
-    <div className="space-y-5">
+  return (<div className="page-enter space-y-5">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((c) => (
           <Card key={c.label} className="card-anime">

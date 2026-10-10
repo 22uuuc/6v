@@ -31,8 +31,7 @@ export default function ShelfPage() {
   const privacy: IPrivacy = { hideBalance: false, hideRecent: false, hideShelf: false, hideRecords: false, stealth: false, ...(user?.privacy ?? {}) };
 
   if (!user) {
-    return (
-      <div className="py-20">
+    return (<div className="page-enter py-20">
         <EmptyState text="登录后，你的书架和阅读记录会出现在这里" />
         <div className="flex justify-center">
           <Button onClick={() => navigate('/auth')} className="gap-1.5">
@@ -43,8 +42,7 @@ export default function ShelfPage() {
     );
   }
 
-  return (
-    <div className="space-y-5">
+  return (<div className="page-enter space-y-5">
       <h1 className="text-gradient-anime font-serif text-2xl font-bold">我的书架</h1>
       {privacy.hideShelf && (
         <p className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">

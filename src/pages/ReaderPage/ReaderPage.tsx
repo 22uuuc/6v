@@ -70,8 +70,7 @@ export default function ReaderPage() {
   }, [chapterId]);
 
   if (!book || !chapter) {
-    return (
-      <div className="py-20 text-center text-sm text-muted-foreground">
+    return (<div className="page-enter py-20 text-center text-sm text-muted-foreground">
         章节不存在
         <div className="mt-4">
           <Button size="sm" variant="outline" onClick={() => navigate(`/book/${bookId}`)}>返回详情</Button>
@@ -108,8 +107,7 @@ export default function ReaderPage() {
     setImmersive((v) => !v);
   };
 
-  return (
-    <div className="mx-auto max-w-2xl">
+  return (<div className="page-enter mx-auto max-w-2xl">
       {/* 顶栏（沉浸阅读时淡出，点正文呼出） */}
       <div
         className={`sticky top-14 z-30 -mx-4 mb-4 flex items-center gap-2 border-b border-border bg-background/90 px-4 py-2.5 backdrop-blur-sm transition-all duration-300 ${

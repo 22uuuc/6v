@@ -31,8 +31,7 @@ export default function UploadAnimePage() {
   const [busy, setBusy] = useState(false);
 
   if (!user || user.role !== 'admin') {
-    return (
-      <div className="py-20 text-center text-sm text-muted-foreground">
+    return (<div className="page-enter py-20 text-center text-sm text-muted-foreground">
         <ShieldCheck className="mx-auto mb-3 h-8 w-8 text-primary" />
         动漫视频上传权限仅限管理员
         <div className="mt-4">
@@ -114,8 +113,7 @@ export default function UploadAnimePage() {
     }
   };
 
-  return (
-    <div className="mx-auto max-w-3xl space-y-5">
+  return (<div className="page-enter mx-auto max-w-3xl space-y-5">
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" onClick={() => navigate('/creator')} aria-label="返回">
           <ArrowLeft className="h-4.5 w-4.5" />
