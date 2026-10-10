@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Smartphone, MessageCircle, QrCode, KeyRound, RotateCcw } from 'lucide-react';
+import { Smartphone, MessageCircle, QrCode, KeyRound, RotateCcw, ShieldCheck } from 'lucide-react';
 import { api } from '@/lib/api';
 import MoyingMascot from '@/components/MoyingMascot';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,10 @@ export default function AuthPage() {
   const [loginCode, setLoginCode] = useState('');
   const [loginSmsSending, setLoginSmsSending] = useState(false);
   const [regSending, setRegSending] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
+  const [adminUser, setAdminUser] = useState('');
+  const [adminPwd, setAdminPwd] = useState('');
+  const [adminMsg, setAdminMsg] = useState('');
   const [forgotOpen, setForgotOpen] = useState(false);
   const [fAccount, setFAccount] = useState('');
   const [fCode, setFCode] = useState('');
@@ -177,6 +181,27 @@ export default function AuthPage() {
     navigate('/profile');
   };
 
+  /** 管理员专用登录：密码仅对管理员账号有效（普通用户密码登录后端 403），登录后进入管理后台审核 */
+  const doAdminLogin = async () => {
+    if (!adminUser.trim() || !adminPwd) {
+      toast.error('请输入管理员账号与密码');
+      return;
+    }
+    const res = await api.login(adminUser.trim(), adminPwd);
+    if (!res.ok) {
+      setAdminMsg(res.msg ?? '登录失败');
+      return;
+    }
+    if (res.user?.role !== 'admin') {
+      setAdminMsg('该账号不是管理员，用户侧请使用手机号/微信/QQ 登录');
+      return;
+    }
+    setAdminOpen(false);
+    setAdminMsg('');
+    toast.success(`管理员 ${res.user.nickname} 已登录`);
+    navigate('/admin');
+  };
+
   return (<div className="page-enter mx-auto max-w-sm py-8">
       <div className="mb-6 flex flex-col items-center gap-2 text-center">
         <div className="mascot-float drop-shadow-[0_0_16px_rgba(168,130,255,0.4)]">
@@ -230,6 +255,11 @@ export default function AuthPage() {
           <div className="mt-3 flex justify-center">
             <button type="button" onClick={() => setForgotOpen(true)} className="text-xs text-muted-foreground underline-offset-4 hover:text-primary hover:underline">
               忘记密码？通过手机号验证码找回
+            </button>
+          </div>
+          <div className="mt-2 flex justify-center">
+            <button type="button" onClick={() => setAdminOpen(true)} className="text-[11px] text-muted-foreground/70 underline-offset-4 hover:text-foreground hover:underline">
+              管理员入口（审核作品 / 后台管理）
             </button>
           </div>
         </TabsContent>
@@ -338,6 +368,35 @@ export default function AuthPage() {
             <Button variant="outline" onClick={() => setForgotOpen(false)}>取消</Button>
             <Button onClick={doResetPwd} disabled={!fAccount || !fCode || !fNewPwd || !fNewPwd2}>
               <KeyRound className="mr-1 h-4 w-4" /> 重置密码
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 管理员专用登录：密码通道仅管理员有效（用户侧登录方式不受影响） */}
+      <Dialog open={adminOpen} onOpenChange={(v) => { setAdminOpen(v); if (!v) setAdminMsg(''); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>管理员登录</DialogTitle>
+            <DialogDescription>
+              仅后端管理员账号可通过（审核作品、资质、结算等后台操作）。普通账号请使用手机号/微信/QQ 登录。
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>管理员账号</Label>
+              <Input value={adminUser} onChange={(e) => setAdminUser(e.target.value)} placeholder="admin" autoComplete="username" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>密码</Label>
+              <Input type="password" value={adminPwd} onChange={(e) => setAdminPwd(e.target.value)} placeholder="管理员密码" autoComplete="current-password" onKeyDown={(e) => e.key === 'Enter' && doAdminLogin()} />
+            </div>
+            {adminMsg && <p className="text-xs text-destructive">{adminMsg}</p>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setAdminOpen(false); setAdminMsg(''); }}>取消</Button>
+            <Button onClick={doAdminLogin}>
+              <ShieldCheck className="mr-1 h-4 w-4" /> 进入后台
             </Button>
           </DialogFooter>
         </DialogContent>

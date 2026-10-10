@@ -356,7 +356,7 @@ export const api = {
       if (!res.ok) return { ok: false, msg: res.msg ?? '账号或密码不对' };
       setToken(res.token);
       const ls = getSnap();
-      if (ls && !ls.me && res.user) applySnap({ ...ls, me: res.user });
+      if (res.user) applySnap({ ...ls, me: res.user });
       notify();
       return { ok: true, user: res.user };
     }
@@ -415,7 +415,7 @@ export const api = {
       if (!res.ok) return { ok: false, msg: res.msg ?? '注册失败' };
       setToken(res.token);
       const ls = getSnap();
-      if (ls && !ls.me && res.user) applySnap({ ...ls, me: res.user });
+      if (res.user) applySnap({ ...ls, me: res.user });
       notify();
       return { ok: true, user: res.user };
     }
@@ -459,7 +459,7 @@ export const api = {
       if (!res.ok) return { ok: false, msg: res.msg ?? '注册失败' };
       setToken(res.token);
       const ls = getSnap();
-      if (ls && !ls.me && res.user) applySnap({ ...ls, me: res.user });
+      if (res.user) applySnap({ ...ls, me: res.user });
       notify();
       return { ok: true, user: res.user };
     }
@@ -475,7 +475,7 @@ export const api = {
       if (!res.ok) return { ok: false, msg: res.msg ?? '登录失败' };
       setToken(res.token);
       const ls = getSnap();
-      if (ls && !ls.me && res.user) applySnap({ ...ls, me: res.user });
+      if (res.user) applySnap({ ...ls, me: res.user });
       notify();
       return { ok: true, user: res.user };
     }
@@ -534,7 +534,7 @@ export const api = {
       if (!res.ok) return { ok: false, msg: res.msg ?? '第三方登录失败' };
       setToken(res.token);
       const ls = getSnap();
-      if (ls && !ls.me && res.user) applySnap({ ...ls, me: res.user });
+      if (res.user) applySnap({ ...ls, me: res.user });
       notify();
       return { ok: true, user: res.user };
     }
